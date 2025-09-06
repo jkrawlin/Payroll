@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { createTheme, ThemeProvider } from '@mui/material/styles';
-import { CssBaseline } from '@mui/material';
+import { CssBaseline, useMediaQuery } from '@mui/material';
 
 const ThemeContext = createContext();
 
@@ -27,12 +27,19 @@ const createAppTheme = (mode) => createTheme({
       dark: '#0097a7',
     },
     background: {
-      default: mode === 'light' ? '#f8fafc' : '#0f172a',
-      paper: mode === 'light' ? '#ffffff' : '#1e293b',
+      default: mode === 'light' ? '#f8fafc' : '#0f0f0f',
+      paper: mode === 'light' ? '#ffffff' : '#1a1a1a',
+      surface: mode === 'light' ? '#f1f5f9' : '#262626',
     },
     text: {
-      primary: mode === 'light' ? '#1e293b' : '#f1f5f9',
-      secondary: mode === 'light' ? '#64748b' : '#94a3b8',
+      primary: mode === 'light' ? '#1e293b' : '#ffffff',
+      secondary: mode === 'light' ? '#64748b' : '#b0b0b0',
+      disabled: mode === 'light' ? '#94a3b8' : '#666666',
+    },
+    divider: mode === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+    action: {
+      hover: mode === 'light' ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.08)',
+      selected: mode === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.12)',
     },
     qatar: {
       maroon: '#800000',
@@ -40,75 +47,89 @@ const createAppTheme = (mode) => createTheme({
     }
   },
   typography: {
-    fontFamily: '"Roboto", "Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+    fontFamily: '"Inter", "Roboto", -apple-system, BlinkMacSystemFont, sans-serif',
     h1: {
       fontSize: '2.5rem',
       fontWeight: 700,
       letterSpacing: '-0.025em',
+      color: mode === 'light' ? '#1e293b' : '#ffffff',
     },
     h2: {
       fontSize: '2rem',
       fontWeight: 600,
       letterSpacing: '-0.025em',
+      color: mode === 'light' ? '#1e293b' : '#ffffff',
     },
     h3: {
       fontSize: '1.5rem',
       fontWeight: 600,
+      color: mode === 'light' ? '#334155' : '#f1f5f9',
     },
     h4: {
       fontSize: '1.25rem',
       fontWeight: 600,
-    },
-    h5: {
-      fontSize: '1.125rem',
-      fontWeight: 600,
-    },
-    h6: {
-      fontSize: '1rem',
-      fontWeight: 600,
+      color: mode === 'light' ? '#475569' : '#e2e8f0',
     },
     body1: {
       fontSize: '1rem',
       lineHeight: 1.6,
+      color: mode === 'light' ? '#475569' : '#cbd5e1',
     },
     body2: {
       fontSize: '0.875rem',
       lineHeight: 1.5,
+      color: mode === 'light' ? '#64748b' : '#94a3b8',
     },
   },
-  shape: {
-    borderRadius: 12,
-  },
   components: {
-    MuiButton: {
+    MuiCssBaseline: {
       styleOverrides: {
-        root: {
-          borderRadius: '12px',
-          textTransform: 'none',
-          fontWeight: 600,
-          padding: '10px 24px',
-          transition: 'all 0.2s ease-in-out',
-          '&:hover': {
-            transform: 'translateY(-1px)',
-            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-          },
+        body: {
+          backgroundColor: mode === 'light' ? '#f8fafc' : '#0f0f0f',
+          color: mode === 'light' ? '#1e293b' : '#ffffff',
+          transition: 'background-color 0.3s ease, color 0.3s ease',
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: '16px',
+          backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+          color: mode === 'light' ? '#1e293b' : '#ffffff',
+          borderRadius: 16,
           boxShadow: mode === 'light' 
-            ? '0 4px 6px rgba(0, 0, 0, 0.05)' 
-            : '0 4px 6px rgba(0, 0, 0, 0.3)',
-          transition: 'all 0.2s ease-in-out',
+            ? '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)'
+            : '0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3)',
+          border: mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+          transition: 'background-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s ease',
           '&:hover': {
             transform: 'translateY(-2px)',
-            boxShadow: mode === 'light' 
-              ? '0 8px 25px rgba(0, 0, 0, 0.1)' 
-              : '0 8px 25px rgba(0, 0, 0, 0.4)',
+            boxShadow: mode === 'light'
+              ? '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'
+              : '0 10px 15px -3px rgba(0, 0, 0, 0.8), 0 4px 6px -2px rgba(0, 0, 0, 0.5)',
           },
+        },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+          color: mode === 'light' ? '#1e293b' : '#ffffff',
+          border: mode === 'dark' ? '1px solid rgba(255, 255, 255, 0.1)' : 'none',
+        },
+      },
+    },
+    MuiTableCell: {
+      styleOverrides: {
+        root: {
+          color: mode === 'light' ? '#374151' : '#f9fafb',
+          borderBottomColor: mode === 'light' ? 'rgba(0, 0, 0, 0.08)' : 'rgba(255, 255, 255, 0.08)',
+        },
+        head: {
+          backgroundColor: mode === 'light' ? '#f8fafc' : '#262626',
+          color: mode === 'light' ? '#1f2937' : '#ffffff',
+          fontWeight: 600,
         },
       },
     },
@@ -116,42 +137,102 @@ const createAppTheme = (mode) => createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: '12px',
+            backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+            color: mode === 'light' ? '#1e293b' : '#ffffff',
+            '& fieldset': {
+              borderColor: mode === 'light' ? '#d1d5db' : '#374151',
+            },
+            '&:hover fieldset': {
+              borderColor: mode === 'light' ? '#6b7280' : '#6b7280',
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: mode === 'light' ? '#6a1b9a' : '#ab47bc',
+            },
+          },
+          '& .MuiInputLabel-root': {
+            color: mode === 'light' ? '#6b7280' : '#9ca3af',
+            '&.Mui-focused': {
+              color: mode === 'light' ? '#6a1b9a' : '#ab47bc',
+            },
           },
         },
       },
     },
-    MuiAppBar: {
+    MuiButton: {
       styleOverrides: {
         root: {
-          backgroundColor: mode === 'light' ? '#ffffff' : '#1e293b',
-          color: mode === 'light' ? '#1e293b' : '#f1f5f9',
-          boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+          textTransform: 'none',
+          borderRadius: 12,
+          fontWeight: 600,
+          padding: '10px 24px',
+          boxShadow: 'none',
+          transition: 'all 0.2s ease',
+          '&:hover': {
+            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
+            transform: 'translateY(-1px)',
+          },
+        },
+        contained: {
+          background: mode === 'light' 
+            ? 'linear-gradient(45deg, #6a1b9a 30%, #ab47bc 90%)'
+            : 'linear-gradient(45deg, #ab47bc 30%, #ce93d8 90%)',
+          color: '#ffffff',
+          '&:hover': {
+            background: mode === 'light'
+              ? 'linear-gradient(45deg, #4a148c 30%, #8e24aa 90%)'
+              : 'linear-gradient(45deg, #9c27b0 30%, #ba68c8 90%)',
+          },
+        },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#e2e8f0' : '#374151',
+          color: mode === 'light' ? '#1e293b' : '#f9fafb',
+          '&:hover': {
+            backgroundColor: mode === 'light' ? '#cbd5e1' : '#4b5563',
+          },
+        },
+      },
+    },
+    MuiSwitch: {
+      styleOverrides: {
+        root: {
+          padding: 8,
+          '& .MuiSwitch-track': {
+            borderRadius: 22 / 2,
+            backgroundColor: mode === 'light' ? '#e2e8f0' : '#374151',
+            '&:before, &:after': {
+              content: '""',
+              position: 'absolute',
+              top: '50%',
+              transform: 'translateY(-50%)',
+              width: 16,
+              height: 16,
+            },
+          },
+          '& .MuiSwitch-thumb': {
+            boxShadow: 'none',
+            width: 16,
+            height: 16,
+            margin: 2,
+            backgroundColor: mode === 'light' ? '#ffffff' : '#f1f5f9',
+          },
         },
       },
     },
   },
-  breakpoints: {
-    values: {
-      xs: 0,
-      sm: 640,
-      md: 768,
-      lg: 1024,
-      xl: 1280,
-    },
+  shape: {
+    borderRadius: 12,
   },
 });
 
 export const ThemeContextProvider = ({ children }) => {
+  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
   const [mode, setMode] = useState(() => {
-    // Check system preference first
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('themeMode');
-      if (saved) return saved;
-      
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-    }
-    return 'light';
+    const saved = localStorage.getItem('themeMode');
+    return saved || (prefersDarkMode ? 'dark' : 'light');
   });
 
   useEffect(() => {
@@ -164,14 +245,14 @@ export const ThemeContextProvider = ({ children }) => {
 
   const theme = createAppTheme(mode);
 
-  const value = {
+  const contextValue = {
     mode,
     toggleMode,
     theme,
   };
 
   return (
-    <ThemeContext.Provider value={value}>
+    <ThemeContext.Provider value={contextValue}>
       <ThemeProvider theme={theme}>
         <CssBaseline />
         {children}
@@ -179,3 +260,5 @@ export const ThemeContextProvider = ({ children }) => {
     </ThemeContext.Provider>
   );
 };
+
+export default ThemeContextProvider;

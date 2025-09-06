@@ -4,7 +4,6 @@ import { db } from '../firebase';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 
 const Customers = () => {
   const [customers, setCustomers] = useState([]);
@@ -12,7 +11,6 @@ const Customers = () => {
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [showInvoiceForm, setShowInvoiceForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { t } = useTranslation();
 
   const customerValidationSchema = Yup.object({
     name: Yup.string().required('Company name is required'),
@@ -241,7 +239,7 @@ const Customers = () => {
   return (
     <div className="customers-page">
       <div className="page-header">
-        <h2>🏢 {t('customers')}</h2>
+        <h2>🏢 Customers</h2>
         <div className="header-actions">
           <input
             type="text"

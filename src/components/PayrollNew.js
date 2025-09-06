@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, getDocs, updateDoc, doc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import {
   Box,
   Card,
@@ -44,6 +45,7 @@ const Payroll = () => {
   const [searchLoading, setSearchLoading] = useState(false);
   const [qidSearchValue, setQidSearchValue] = useState('');
   const [filteredEmployees, setFilteredEmployees] = useState([]);
+  const { t } = useTranslation();
 
   useEffect(() => {
     fetchEmployees();
@@ -250,7 +252,7 @@ const Payroll = () => {
         console.log('Accounts collection may not exist yet, creating transaction anyway');
       }
 
-      toast.success('Transaction added successfully');
+      toast.success(t('transactionAdded'));
       
       // Reset form completely
       resetForm();

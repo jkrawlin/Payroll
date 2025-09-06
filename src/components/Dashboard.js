@@ -4,7 +4,6 @@ import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase'; // Removed auth import for demo
 // import { signOut } from 'firebase/auth'; // Commented out for demo
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 // import { useNavigate } from 'react-router-dom'; // Commented out for demo
 
 const Dashboard = ({ role = 'admin' }) => {
@@ -15,7 +14,6 @@ const Dashboard = ({ role = 'admin' }) => {
     pendingAdvances: 0,
     customersCount: 0
   });
-  const { t, i18n } = useTranslation();
   // const navigate = useNavigate(); // Commented out for demo
 
   useEffect(() => {
@@ -64,7 +62,7 @@ const Dashboard = ({ role = 'admin' }) => {
         });
 
         if (expiries.length > 0) {
-          toast.warn(t('upcomingExpirations'));
+          toast.warn('Upcoming Expirations');
         }
       } catch (error) {
         console.error('Error fetching dashboard data:', error);
@@ -87,22 +85,14 @@ const Dashboard = ({ role = 'admin' }) => {
     // }
   };
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang);
-  };
-
   return (
     <div className="dashboard">
       <header className="dashboard-header">
         <div className="header-content">
-          <h1>{t('dashboard')}</h1>
+          <h1>Dashboard</h1>
           <div className="header-actions">
-            <button onClick={toggleLanguage} className="lang-btn">
-              {i18n.language === 'en' ? 'العربية' : 'English'}
-            </button>
             <button onClick={handleLogout} className="logout-btn">
-              {t('logout')}
+              Logout
             </button>
           </div>
         </div>
@@ -110,7 +100,7 @@ const Dashboard = ({ role = 'admin' }) => {
 
       {upcomingExpiries.length > 0 && (
         <div className="alert alert-warning">
-          <h3>⚠️ {t('upcomingExpirations')}</h3>
+          <h3>⚠️ Upcoming Expirations</h3>
           <ul>
             {upcomingExpiries.map((exp, i) => (
               <li key={i}>{exp}</li>
@@ -122,7 +112,7 @@ const Dashboard = ({ role = 'admin' }) => {
       {/* Stats Cards */}
       <div className="stats-grid">
         <div className="stat-card">
-          <h3>👥 {t('employees')}</h3>
+          <h3>👥 Employees</h3>
           <p className="stat-number">{stats.totalEmployees}</p>
         </div>
         <div className="stat-card">
@@ -134,7 +124,7 @@ const Dashboard = ({ role = 'admin' }) => {
           <p className="stat-number">{stats.pendingAdvances.toLocaleString()} QAR</p>
         </div>
         <div className="stat-card">
-          <h3>🏢 {t('customers')}</h3>
+          <h3>🏢 Customers</h3>
           <p className="stat-number">{stats.customersCount}</p>
         </div>
       </div>
@@ -145,7 +135,7 @@ const Dashboard = ({ role = 'admin' }) => {
           {(role === 'admin' || role === 'hr') && (
             <Link to="/employees" className="nav-card">
               <div className="nav-icon">👥</div>
-              <h3>{t('employees')}</h3>
+              <h3>Employees</h3>
               <p>Manage employee records and documents</p>
             </Link>
           )}
@@ -153,7 +143,7 @@ const Dashboard = ({ role = 'admin' }) => {
           {(role === 'admin' || role === 'accountant') && (
             <Link to="/payroll" className="nav-card">
               <div className="nav-icon">💰</div>
-              <h3>{t('payroll')}</h3>
+              <h3>Payroll</h3>
               <p>Process salaries and advances</p>
             </Link>
           )}
@@ -161,21 +151,21 @@ const Dashboard = ({ role = 'admin' }) => {
           {(role === 'admin' || role === 'accountant') && (
             <Link to="/customers" className="nav-card">
               <div className="nav-icon">🏢</div>
-              <h3>{t('customers')}</h3>
+              <h3>Customers</h3>
               <p>Manage customer database</p>
             </Link>
           )}
           
           <Link to="/accounts" className="nav-card">
             <div className="nav-icon">📊</div>
-            <h3>{t('accounts')}</h3>
+            <h3>Accounts</h3>
             <p>Track cash flow and ledger</p>
           </Link>
           
           {(role === 'admin' || role === 'accountant') && (
             <Link to="/receipts" className="nav-card">
               <div className="nav-icon">🧾</div>
-              <h3>{t('receipts')}</h3>
+              <h3>Receipts</h3>
               <p>Generate and print receipts</p>
             </Link>
           )}
@@ -183,14 +173,14 @@ const Dashboard = ({ role = 'admin' }) => {
           {role === 'admin' && (
             <Link to="/analytics" className="nav-card">
               <div className="nav-icon">📈</div>
-              <h3>{t('analytics')}</h3>
+              <h3>Analytics</h3>
               <p>View reports and analytics</p>
             </Link>
           )}
           
           <Link to="/self-service" className="nav-card">
             <div className="nav-icon">🔐</div>
-            <h3>{t('selfService')}</h3>
+            <h3>Self-Service</h3>
             <p>Employee self-service portal</p>
           </Link>
         </div>

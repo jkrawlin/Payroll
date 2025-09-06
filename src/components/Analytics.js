@@ -14,7 +14,7 @@ import {
   PointElement,
   LineElement,
 } from 'chart.js';
-import { useTranslation } from 'react-i18next';
+import * as XLSX from 'xlsx';
 
 ChartJS.register(
   CategoryScale,
@@ -45,7 +45,6 @@ const Analytics = () => {
   });
   const [selectedPeriod, setSelectedPeriod] = useState('30'); // days
   const [loading, setLoading] = useState(true);
-  const { t } = useTranslation();
 
   useEffect(() => {
     fetchAnalyticsData();
@@ -331,7 +330,7 @@ const Analytics = () => {
   return (
     <div className="analytics-page">
       <div className="page-header">
-        <h2>📈 {t('analytics')}</h2>
+        <h2>📈 Analytics</h2>
         <div className="header-actions">
           <select
             value={selectedPeriod}

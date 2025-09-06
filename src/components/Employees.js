@@ -6,14 +6,12 @@ import Dropzone from 'react-dropzone';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 
 const Employees = () => {
   const [employees, setEmployees] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const { t } = useTranslation();
 
   const validationSchema = Yup.object({
     name: Yup.string().required('Name is required'),
@@ -94,7 +92,7 @@ const Employees = () => {
           setEditingId(null);
         } else {
           await addDoc(collection(db, 'employees'), employeeData);
-          toast.success(t('employeeSaved'));
+          toast.success('Employee saved successfully');
         }
 
         resetForm();
@@ -183,7 +181,7 @@ const Employees = () => {
   return (
     <div className="employees-page">
       <div className="page-header">
-        <h2>👥 {t('employees')}</h2>
+        <h2>👥 Employees</h2>
         <div className="header-actions">
           <input
             type="text"
@@ -197,7 +195,7 @@ const Employees = () => {
 
       {/* Employee Form */}
       <div className="employee-form-section">
-        <h3>{editingId ? 'Edit Employee' : t('addEmployee')}</h3>
+        <h3>{editingId ? 'Edit Employee' : 'Add Employee'}</h3>
         <form onSubmit={formik.handleSubmit} className="employee-form">
           <div className="form-grid">
             {/* Personal Information */}
@@ -205,7 +203,7 @@ const Employees = () => {
               <label>Name *</label>
               <input
                 name="name"
-                placeholder={t('employeeName')}
+                placeholder="Employee Name"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.name}
@@ -284,7 +282,7 @@ const Employees = () => {
               <input
                 name="salary"
                 type="number"
-                placeholder={t('salary')}
+                placeholder="Monthly Salary"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.salary}
@@ -300,7 +298,7 @@ const Employees = () => {
               <label>Passport Number *</label>
               <input
                 name="passportNumber"
-                placeholder={t('passportNumber')}
+                placeholder="Passport Number"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.passportNumber}
@@ -331,7 +329,7 @@ const Employees = () => {
               <label>QID Number *</label>
               <input
                 name="qidNumber"
-                placeholder={t('qidNumber')}
+                placeholder="QID Number"
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 value={formik.values.qidNumber}
@@ -407,7 +405,7 @@ const Employees = () => {
               disabled={formik.isSubmitting || loading}
               className="submit-btn"
             >
-              {loading ? 'Saving...' : editingId ? t('update') : t('add')} Employee
+              {loading ? 'Saving...' : editingId ? 'Update' : 'Add'} Employee
             </button>
             {editingId && (
               <button
@@ -418,7 +416,7 @@ const Employees = () => {
                 }}
                 className="cancel-btn"
               >
-                {t('cancel')}
+                Cancel
               </button>
             )}
           </div>

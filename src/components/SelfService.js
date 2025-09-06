@@ -4,7 +4,6 @@ import { db, auth } from '../firebase';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 
 const SelfService = ({ userId }) => {
   const [employee, setEmployee] = useState(null);
@@ -12,7 +11,6 @@ const SelfService = ({ userId }) => {
   const [showAdvanceRequest, setShowAdvanceRequest] = useState(false);
   // const [advanceRequests, setAdvanceRequests] = useState([]); // Currently unused
   const [payslips, setPayslips] = useState([]);
-  const { t } = useTranslation();
 
   const advanceRequestSchema = Yup.object({
     amount: Yup.number()
@@ -215,7 +213,7 @@ Generated on: ${new Date().toLocaleDateString()}
   return (
     <div className="self-service-page">
       <div className="page-header">
-        <h2>🔐 {t('selfService')}</h2>
+        <h2>🔐 Self Service</h2>
         <p>Welcome, {employee.name}!</p>
       </div>
 

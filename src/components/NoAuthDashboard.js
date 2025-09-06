@@ -1,14 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 
 const NoAuthDashboard = ({ role = 'admin' }) => {
-  const { i18n } = useTranslation(); // Removed unused 't' variable
-
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang);
-  };
 
   const menuItems = [
     { name: 'Employees', path: '/employees', icon: '👥', roles: ['admin', 'hr'] },
@@ -30,16 +23,6 @@ const NoAuthDashboard = ({ role = 'admin' }) => {
         <div className="header-content">
           <h1>🏢 Qatar Payroll Management System</h1>
           <h2 className="arabic-title">نظام إدارة كشوف المرتبات القطري</h2>
-          
-          <div className="header-actions">
-            <button 
-              onClick={toggleLanguage} 
-              className="language-toggle"
-              type="button"
-            >
-              {i18n.language === 'en' ? 'العربية' : 'English'}
-            </button>
-          </div>
         </div>
       </div>
 

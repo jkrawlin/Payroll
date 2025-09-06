@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { doc, getDoc, updateDoc, arrayUnion, setDoc, collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 
 const Accounts = () => {
   const [ledger, setLedger] = useState([]);
@@ -26,8 +25,6 @@ const Accounts = () => {
   const [customerAccounts, setCustomerAccounts] = useState([]);
   const [payrollAccounts, setPayrollAccounts] = useState([]);
   const [searchTerm, setSearchTerm] = useState(''); // Add missing searchTerm state
-  
-  const { t } = useTranslation();
 
   const categories = [
     { value: 'general', label: 'General Ledger', icon: '📊' },

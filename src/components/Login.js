@@ -5,11 +5,9 @@ import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth, isFirebaseConfigured } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 
 const Login = () => {
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
 
   const formik = useFormik({
     initialValues: { 
@@ -29,7 +27,7 @@ const Login = () => {
         }
         
         await signInWithEmailAndPassword(auth, values.email, values.password);
-        toast.success(t('loginSuccess'));
+        toast.success('Logged in successfully');
         navigate('/');
       } catch (error) {
         console.error('Login error:', error);
@@ -48,24 +46,12 @@ const Login = () => {
     },
   });
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang);
-  };
-
   return (
     <div className="login-container">
       <div className="login-card">
         <div className="login-header">
           <h1>Qatar Payroll System</h1>
           <h2 className="arabic-title">نظام كشوف المرتبات القطري</h2>
-          <button 
-            onClick={toggleLanguage} 
-            className="language-toggle"
-            type="button"
-          >
-            {i18n.language === 'en' ? 'العربية' : 'English'}
-          </button>
         </div>
 
         {!isFirebaseConfigured() && (
@@ -86,7 +72,7 @@ const Login = () => {
             <input
               name="email"
               type="email"
-              placeholder={t('email')}
+              placeholder="Email"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.email}
@@ -101,7 +87,7 @@ const Login = () => {
             <input
               name="password"
               type="password"
-              placeholder={t('password')}
+              placeholder="Password"
               onChange={formik.handleChange}
               onBlur={formik.handleBlur}
               value={formik.values.password}
@@ -117,7 +103,7 @@ const Login = () => {
             disabled={formik.isSubmitting}
             className="login-btn"
           >
-            {formik.isSubmitting ? 'Logging in...' : t('login')}
+            {formik.isSubmitting ? 'Logging in...' : 'Login'}
           </button>
         </form>
 

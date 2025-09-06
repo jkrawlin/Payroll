@@ -23,12 +23,10 @@ import {
   Search as SearchIcon,
   DarkMode as DarkModeIcon,
   LightMode as LightModeIcon,
-  Language as LanguageIcon,
   NotificationsActive as NotificationIcon,
   AccountCircle,
   Close as CloseIcon,
 } from '@mui/icons-material';
-import { useTranslation } from 'react-i18next';
 import { useTheme as useCustomTheme } from '../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 
@@ -36,7 +34,6 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { mode, toggleMode } = useCustomTheme();
-  const { i18n } = useTranslation();
   const [anchorEl, setAnchorEl] = useState(null);
   const [showDemoAlert, setShowDemoAlert] = useState(true);
 
@@ -46,13 +43,6 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
-  };
-
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'en' ? 'ar' : 'en';
-    i18n.changeLanguage(newLang);
-    document.dir = newLang === 'ar' ? 'rtl' : 'ltr';
-    handleMenuClose();
   };
 
   const SearchBox = () => (
@@ -204,13 +194,6 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
               </IconButton>
             </Tooltip>
 
-            {/* Language Toggle */}
-            <Tooltip title="Change Language">
-              <IconButton onClick={toggleLanguage} color="inherit">
-                <LanguageIcon />
-              </IconButton>
-            </Tooltip>
-
             {/* Profile Menu */}
             <Tooltip title="Account settings">
               <IconButton
@@ -309,11 +292,6 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
         <MenuItem onClick={handleMenuClose}>
           <AccountCircle sx={{ mr: 2 }} />
           Profile Settings
-        </MenuItem>
-        
-        <MenuItem onClick={toggleLanguage}>
-          <LanguageIcon sx={{ mr: 2 }} />
-          {i18n.language === 'en' ? 'العربية' : 'English'}
         </MenuItem>
         
         <MenuItem 

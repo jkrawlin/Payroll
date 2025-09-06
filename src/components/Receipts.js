@@ -4,7 +4,6 @@ import { useFormik } from 'formik';
 import { collection, getDocs, updateDoc, doc, arrayUnion } from 'firebase/firestore';
 import { db } from '../firebase';
 import { toast } from 'react-toastify';
-import { useTranslation } from 'react-i18next';
 import * as Yup from 'yup';
 
 // Receipt Component for Printing
@@ -140,7 +139,6 @@ const Receipts = () => {
     email: 'info@qatarpayroll.com',
     taxId: 'TX123456789'
   });
-  const { t } = useTranslation();
 
   const receiptValidationSchema = Yup.object({
     amount: Yup.number().positive('Amount must be positive').required('Amount is required'),
@@ -212,7 +210,7 @@ const Receipts = () => {
         };
         setRecentReceipts(prev => [newReceipt, ...prev.slice(0, 9)]); // Keep last 10
 
-        toast.success(t('receiptGenerated'));
+        toast.success('Receipt generated successfully');
         
         // Refresh customers list
         fetchCustomers();
@@ -283,7 +281,7 @@ const Receipts = () => {
   return (
     <div className="receipts-page">
       <div className="page-header">
-        <h2>🧾 {t('receipts')}</h2>
+        <h2>🧾 Receipts</h2>
       </div>
 
       <div className="receipts-content">

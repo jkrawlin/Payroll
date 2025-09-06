@@ -55,6 +55,7 @@ ChartJS.register(
 const ModernDashboard = ({ role = 'admin' }) => {
   const theme = useTheme();
   const navigate = useNavigate();
+  const isDarkMode = theme.palette.mode === 'dark';
   const [stats, setStats] = useState({
     totalEmployees: 156,
     totalPaid: 485000,
@@ -70,7 +71,7 @@ const ModernDashboard = ({ role = 'admin' }) => {
     { id: 3, type: 'success', message: 'All invoices for this month processed', priority: 'low' },
   ]);
 
-  // Chart data
+  // Chart data with dark mode support
   const payrollTrendData = {
     labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
     datasets: [
@@ -78,9 +79,14 @@ const ModernDashboard = ({ role = 'admin' }) => {
         label: 'Total Payroll',
         data: [450000, 465000, 478000, 485000, 492000, 485000],
         borderColor: theme.palette.primary.main,
-        backgroundColor: theme.palette.primary.main + '20',
+        backgroundColor: theme.palette.primary.main + (isDarkMode ? '30' : '20'),
         tension: 0.4,
         fill: true,
+        pointBackgroundColor: theme.palette.primary.main,
+        pointBorderColor: theme.palette.background.paper,
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        pointHoverRadius: 6,
       },
     ],
   };
@@ -97,7 +103,8 @@ const ModernDashboard = ({ role = 'admin' }) => {
           '#4ECDC4',
           '#FFE66D',
         ],
-        borderWidth: 0,
+        borderWidth: isDarkMode ? 2 : 0,
+        borderColor: theme.palette.background.paper,
       },
     ],
   };
@@ -109,10 +116,28 @@ const ModernDashboard = ({ role = 'admin' }) => {
       legend: {
         display: false,
       },
+      tooltip: {
+        backgroundColor: isDarkMode ? 'rgba(0,0,0,0.8)' : 'rgba(255,255,255,0.95)',
+        titleColor: theme.palette.text.primary,
+        bodyColor: theme.palette.text.secondary,
+        borderColor: theme.palette.divider,
+        borderWidth: 1,
+        cornerRadius: 8,
+      },
     },
     scales: {
-      x: { display: false },
-      y: { display: false },
+      x: { 
+        display: false,
+        grid: {
+          color: theme.palette.divider,
+        },
+      },
+      y: { 
+        display: false,
+        grid: {
+          color: theme.palette.divider,
+        },
+      },
     },
   };
 
@@ -125,8 +150,21 @@ const ModernDashboard = ({ role = 'admin' }) => {
         sx={{
           height: '100%',
           cursor: onClick ? 'pointer' : 'default',
-          background: `linear-gradient(135deg, ${color}10 0%, ${color}05 100%)`,
-          border: `1px solid ${color}20`,
+          background: isDarkMode 
+            ? `linear-gradient(135deg, ${color}15 0%, ${color}08 100%)`
+            : `linear-gradient(135deg, ${color}10 0%, ${color}05 100%)`,
+          border: isDarkMode 
+            ? `1px solid ${color}40`
+            : `1px solid ${color}20`,
+          backdropFilter: 'blur(10px)',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: isDarkMode 
+              ? `0 8px 32px ${color}20`
+              : `0 8px 32px ${color}15`,
+            border: `1px solid ${color}${isDarkMode ? '60' : '40'}`,
+          },
         }}
         onClick={onClick}
       >
@@ -137,6 +175,7 @@ const ModernDashboard = ({ role = 'admin' }) => {
                 backgroundColor: color,
                 width: 56,
                 height: 56,
+                boxShadow: `0 4px 12px ${color}30`,
               }}
             >
               {icon}
@@ -162,13 +201,27 @@ const ModernDashboard = ({ role = 'admin' }) => {
             )}
           </Box>
           
-          <Typography variant="h4" fontWeight={700} gutterBottom>
+          <Typography 
+            variant="h4" 
+            fontWeight={700} 
+            gutterBottom
+            sx={{
+              color: theme.palette.text.primary,
+              textShadow: isDarkMode ? '0 1px 2px rgba(0,0,0,0.3)' : 'none',
+            }}
+          >
             {typeof value === 'number' && value > 1000 
               ? `${(value / 1000).toFixed(0)}K` 
               : value}
           </Typography>
           
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 500,
+            }}
+          >
             {title}
           </Typography>
         </CardContent>
@@ -185,7 +238,20 @@ const ModernDashboard = ({ role = 'admin' }) => {
         sx={{
           height: '100%',
           cursor: 'pointer',
-          border: `1px solid ${theme.palette.divider}`,
+          border: isDarkMode 
+            ? '1px solid rgba(255,255,255,0.1)'
+            : `1px solid ${theme.palette.divider}`,
+          background: isDarkMode
+            ? 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.02) 100%)'
+            : 'linear-gradient(135deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0.01) 100%)',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-2px)',
+            boxShadow: isDarkMode 
+              ? '0 8px 32px rgba(0,0,0,0.6)'
+              : '0 8px 32px rgba(0,0,0,0.1)',
+            border: `1px solid ${color}40`,
+          },
         }}
         onClick={onClick}
       >
@@ -197,14 +263,28 @@ const ModernDashboard = ({ role = 'admin' }) => {
               height: 48,
               mx: 'auto',
               mb: 2,
+              boxShadow: `0 4px 12px ${color}30`,
             }}
           >
             {icon}
           </Avatar>
-          <Typography variant="h6" fontWeight={600} gutterBottom>
+          <Typography 
+            variant="h6" 
+            fontWeight={600} 
+            gutterBottom
+            sx={{
+              color: theme.palette.text.primary,
+            }}
+          >
             {title}
           </Typography>
-          <Typography variant="body2" color="text.secondary">
+          <Typography 
+            variant="body2" 
+            sx={{
+              color: theme.palette.text.secondary,
+              fontWeight: 500,
+            }}
+          >
             {description}
           </Typography>
         </CardContent>
@@ -373,7 +453,12 @@ const ModernDashboard = ({ role = 'admin' }) => {
           {/* Notifications */}
           <Card sx={{ mb: 3 }}>
             <CardContent>
-              <Typography variant="h6" fontWeight={600} gutterBottom>
+              <Typography 
+                variant="h6" 
+                fontWeight={600} 
+                gutterBottom
+                sx={{ color: theme.palette.text.primary }}
+              >
                 Recent Notifications
               </Typography>
               {notifications.map((notification, index) => (
@@ -383,7 +468,21 @@ const ModernDashboard = ({ role = 'admin' }) => {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <Box sx={{ display: 'flex', mb: 2, p: 1.5, borderRadius: 2, bgcolor: 'background.default' }}>
+                  <Box 
+                    sx={{ 
+                      display: 'flex', 
+                      mb: 2, 
+                      p: 1.5, 
+                      borderRadius: 2, 
+                      bgcolor: isDarkMode ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)',
+                      border: isDarkMode ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.05)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        bgcolor: isDarkMode ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.05)',
+                        transform: 'translateX(4px)',
+                      }
+                    }}
+                  >
                     <Avatar
                       sx={{
                         width: 24,
@@ -392,6 +491,7 @@ const ModernDashboard = ({ role = 'admin' }) => {
                         backgroundColor: 
                           notification.type === 'warning' ? '#FF9800' :
                           notification.type === 'success' ? '#4CAF50' : '#2196F3',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
                       }}
                     >
                       {notification.type === 'warning' ? <WarningIcon fontSize="small" /> :
@@ -399,14 +499,30 @@ const ModernDashboard = ({ role = 'admin' }) => {
                        <ScheduleIcon fontSize="small" />}
                     </Avatar>
                     <Box sx={{ flex: 1 }}>
-                      <Typography variant="body2" sx={{ mb: 0.5 }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          mb: 0.5,
+                          color: theme.palette.text.primary,
+                          fontWeight: 500,
+                        }}
+                      >
                         {notification.message}
                       </Typography>
                       <Chip
                         label={notification.priority}
                         size="small"
                         color={notification.priority === 'high' ? 'error' : 'default'}
-                        sx={{ height: 20, fontSize: '0.7rem' }}
+                        sx={{ 
+                          height: 20, 
+                          fontSize: '0.7rem',
+                          bgcolor: isDarkMode && notification.priority !== 'high' 
+                            ? 'rgba(255,255,255,0.1)' 
+                            : undefined,
+                          color: isDarkMode && notification.priority !== 'high' 
+                            ? theme.palette.text.secondary 
+                            : undefined,
+                        }}
                       />
                     </Box>
                   </Box>
