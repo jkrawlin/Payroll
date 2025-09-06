@@ -130,6 +130,41 @@ body {
   font-family: 'Courier New', monospace;
 }
 
+/* Demo Dashboard Styles */
+.demo-notice {
+  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  color: white;
+  padding: 2rem;
+  border-radius: 15px;
+  margin-bottom: 2rem;
+  text-align: center;
+  box-shadow: 0 10px 30px rgba(79, 172, 254, 0.3);
+}
+
+.demo-notice h3 {
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.demo-notice p {
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.role-info {
+  background: #f8f9fa;
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+  margin-top: 2rem;
+  border: 1px solid #e2e8f0;
+}
+
+.role-info p {
+  margin-bottom: 0.5rem;
+  color: #64748b;
+}
+
 .language-toggle:hover {
   background: #cbd5e0;
 }

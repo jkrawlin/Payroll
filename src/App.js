@@ -1,9 +1,10 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { auth, db } from './firebase';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc } from 'firebase/firestore';
-import Login from './components/Login';
+// import { auth, db } from './firebase';  // Commented out for demo
+// import { onAuthStateChanged } from 'firebase/auth';  // Commented out for demo
+// import { doc, getDoc } from 'firebase/firestore';  // Commented out for demo
+// import Login from './components/Login';  // Commented out for demo
+import NoAuthDashboard from './components/NoAuthDashboard'; // Demo dashboard without Firebase
 import Dashboard from './components/Dashboard';
 import Employees from './components/Employees';
 import Payroll from './components/Payroll';
@@ -17,46 +18,9 @@ import { ToastContainer } from 'react-toastify';
 import './App.css';
 
 function App() {
-  const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        try {
-          // Try to fetch user role from Firestore
-          const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-          if (userDoc.exists()) {
-            setRole(userDoc.data()?.role || 'employee');
-          } else {
-            // If no user document exists, default to admin for demo purposes
-            setRole('admin');
-          }
-        } catch (error) {
-          console.log('Error fetching user role, defaulting to admin for demo:', error);
-          setRole('admin'); // Default role for demo
-        }
-      } else {
-        setRole(null);
-      }
-      setLoading(false);
-    });
-    
-    return () => unsubscribe();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loading-spinner">
-          <h2>Qatar Payroll System</h2>
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Bypassing authentication for demo - default to admin role
+  const role = 'admin';
+  const mockUser = { uid: 'demo-user-123', email: 'demo@example.com' };
 
   return (
     <div className="app">
@@ -74,65 +38,41 @@ function App() {
       />
       <Routes>
         <Route 
-          path="/login" 
-          element={user ? <Navigate to="/" replace /> : <Login />} 
-        />
-        <Route 
           path="/" 
-          element={user ? <Dashboard role={role} /> : <Navigate to="/login" replace />} 
+          element={<NoAuthDashboard role={role} />} 
         />
         <Route 
           path="/employees" 
-          element={
-            user && (role === 'admin' || role === 'hr') 
-              ? <Employees /> 
-              : <Navigate to="/" replace />
-          } 
+          element={<Employees />} 
         />
         <Route 
           path="/payroll" 
-          element={
-            user && (role === 'admin' || role === 'accountant') 
-              ? <Payroll /> 
-              : <Navigate to="/" replace />
-          } 
+          element={<Payroll />} 
         />
         <Route 
           path="/customers" 
-          element={
-            user && (role === 'admin' || role === 'accountant') 
-              ? <Customers /> 
-              : <Navigate to="/" replace />
-          } 
+          element={<Customers />} 
         />
         <Route 
           path="/accounts" 
-          element={user ? <Accounts /> : <Navigate to="/" replace />} 
+          element={<Accounts />} 
         />
         <Route 
           path="/receipts" 
-          element={
-            user && (role === 'admin' || role === 'accountant') 
-              ? <Receipts /> 
-              : <Navigate to="/" replace />
-          } 
+          element={<Receipts />} 
         />
         <Route 
           path="/analytics" 
-          element={
-            user && role === 'admin' 
-              ? <Analytics /> 
-              : <Navigate to="/" replace />
-          } 
+          element={<Analytics />} 
         />
         <Route 
           path="/self-service" 
-          element={user ? <SelfService userId={user.uid} /> : <Navigate to="/" replace />} 
+          element={<SelfService userId={mockUser.uid} />} 
         />
-        {/* Catch all route */}
+        {/* Catch all route - redirect to dashboard */}
         <Route 
           path="*" 
-          element={<Navigate to={user ? "/" : "/login"} replace />} 
+          element={<Navigate to="/" replace />} 
         />
       </Routes>
     </div>

@@ -1,11 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { collection, getDocs } from 'firebase/firestore';
-import { db, auth } from '../firebase';
-import { signOut } from 'firebase/auth';
+import { db } from '../firebase'; // Removed auth import for demo
+// import { signOut } from 'firebase/auth'; // Commented out for demo
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
+// import { useNavigate } from 'react-router-dom'; // Commented out for demo
 
 const Dashboard = ({ role = 'admin' }) => {
   const [upcomingExpiries, setUpcomingExpiries] = useState([]);
@@ -16,7 +16,7 @@ const Dashboard = ({ role = 'admin' }) => {
     customersCount: 0
   });
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Commented out for demo
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -75,14 +75,16 @@ const Dashboard = ({ role = 'admin' }) => {
     fetchDashboardData();
   }, [t]);
 
+  // Logout functionality commented out for demo
   const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      toast.success('Logged out successfully');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Error logging out');
-    }
+    toast.info('Logout functionality disabled in demo mode');
+    // try {
+    //   await signOut(auth);
+    //   toast.success('Logged out successfully');
+    //   navigate('/login');
+    // } catch (error) {
+    //   toast.error('Error logging out');
+    // }
   };
 
   const toggleLanguage = () => {
