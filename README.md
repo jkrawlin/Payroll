@@ -63,7 +63,17 @@ npm install
 4. Get your Firebase config:
    - Go to Project Settings → General → Your apps
    - Add a web app and copy the config object
-   - Replace the placeholder in `src/firebase.js`
+
+5. **Option A: Using Environment Variables (Recommended)**
+   - Copy `.env.example` to `.env`
+   - Update the values in `.env` with your Firebase config
+   
+6. **Option B: Direct Configuration**
+   - Replace the placeholder values in `src/firebase.js` with your config
+
+7. **Create Test Users**
+   - Go to Firebase Console → Authentication → Users
+   - Add a test user: `admin@example.com` / `password123`
 
 ### 3. Configure Firebase Authentication
 1. In Firebase Console, go to Authentication → Sign-in method

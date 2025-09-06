@@ -78,7 +78,56 @@ body {
   border-radius: 8px;
   cursor: pointer;
   margin-bottom: 2rem;
-  transition: all 0.3s ease;
+  transition: background-color 0.2s;
+}
+
+.language-toggle:hover {
+  background: #cbd5e0;
+}
+
+.config-warning {
+  background: #fed7e2;
+  border: 2px solid #f56565;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  text-align: left;
+}
+
+.config-warning h3 {
+  color: #c53030;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.config-warning p {
+  margin-bottom: 1rem;
+  color: #744210;
+}
+
+.config-warning ol {
+  padding-left: 1.5rem;
+  color: #744210;
+}
+
+.config-warning li {
+  margin-bottom: 0.5rem;
+}
+
+.config-warning a {
+  color: #3182ce;
+  text-decoration: none;
+}
+
+.config-warning a:hover {
+  text-decoration: underline;
+}
+
+.config-warning code {
+  background: #e2e8f0;
+  padding: 2px 4px;
+  border-radius: 4px;
+  font-family: 'Courier New', monospace;
 }
 
 .language-toggle:hover {

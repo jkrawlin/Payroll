@@ -2,7 +2,7 @@ import React from 'react';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '../firebase';
+import { auth, isFirebaseConfigured } from '../firebase';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useTranslation } from 'react-i18next';
@@ -22,11 +22,26 @@ const Login = () => {
     }),
     onSubmit: async (values, { setSubmitting }) => {
       try {
+        // Check if Firebase is configured
+        if (!isFirebaseConfigured()) {
+          toast.error('Firebase is not configured. Please set up your Firebase project first.');
+          return;
+        }
+        
         await signInWithEmailAndPassword(auth, values.email, values.password);
         toast.success(t('loginSuccess'));
         navigate('/');
       } catch (error) {
-        toast.error(error.message);
+        console.error('Login error:', error);
+        if (error.code === 'auth/user-not-found') {
+          toast.error('No user found with this email. Please check your credentials or contact admin.');
+        } else if (error.code === 'auth/wrong-password') {
+          toast.error('Incorrect password. Please try again.');
+        } else if (error.code === 'auth/invalid-email') {
+          toast.error('Invalid email format.');
+        } else {
+          toast.error(`Login failed: ${error.message}`);
+        }
       } finally {
         setSubmitting(false);
       }
@@ -52,7 +67,20 @@ const Login = () => {
             {i18n.language === 'en' ? 'العربية' : 'English'}
           </button>
         </div>
-        
+
+        {!isFirebaseConfigured() && (
+          <div className="config-warning">
+            <h3>⚠️ Firebase Configuration Required</h3>
+            <p>To use this application, please:</p>
+            <ol>
+              <li>Create a Firebase project at <a href="https://console.firebase.google.com" target="_blank" rel="noopener noreferrer">Firebase Console</a></li>
+              <li>Enable Authentication (Email/Password)</li>
+              <li>Enable Firestore Database</li>
+              <li>Enable Storage</li>
+              <li>Update the config in <code>src/firebase.js</code></li>
+            </ol>
+          </div>
+        )}
         <form onSubmit={formik.handleSubmit} className="login-form">
           <div className="form-group">
             <input
