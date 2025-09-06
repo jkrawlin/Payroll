@@ -179,3 +179,692 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+/* Enhanced Accounts Page Styling */
+.accounts-page {
+  padding: 1.5rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.page-header h2 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: rgb(31 41 55);
+}
+
+.header-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.export-btn {
+  background-color: rgb(37 99 235);
+  color: white;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.export-btn:hover {
+  background-color: rgb(29 78 216);
+}
+
+/* Tab Navigation */
+.accounts-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.5rem;
+  padding: 0.25rem;
+  background-color: rgb(243 244 246);
+  border-radius: 0.5rem;
+}
+
+.tab-btn {
+  flex: 1;
+  padding: 0.5rem 1rem;
+  border-radius: 0.375rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+  background: none;
+}
+
+.tab-btn:not(.active) {
+  color: rgb(75 85 99);
+}
+
+.tab-btn:not(.active):hover {
+  color: rgb(31 41 55);
+  background-color: white;
+}
+
+.tab-btn.active {
+  background-color: white;
+  color: rgb(37 99 235);
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  font-weight: 600;
+}
+
+/* Qatar ID Search */
+.qatar-id-search {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+  margin-bottom: 1.5rem;
+}
+
+.search-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.search-input-group {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.qatar-id-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgb(209 213 219);
+  border-radius: 0.5rem;
+  background-color: white;
+  color: rgb(17 24 39);
+}
+
+.qatar-id-input:focus {
+  outline: none;
+  border-color: rgb(59 130 246);
+  box-shadow: 0 0 0 3px rgb(59 130 246 / 0.1);
+}
+
+.search-btn {
+  padding: 0.75rem 1.5rem;
+  background-color: rgb(37 99 235);
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.search-btn:hover:not(:disabled) {
+  background-color: rgb(29 78 216);
+}
+
+.search-btn:disabled {
+  background-color: rgb(156 163 175);
+  cursor: not-allowed;
+}
+
+.search-help {
+  font-size: 0.875rem;
+  color: rgb(75 85 99);
+}
+
+/* Employee Profile */
+.employee-profile-section {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.employee-profile-card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  overflow: hidden;
+}
+
+.profile-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.5rem;
+  background: linear-gradient(to right, rgb(239 246 255), rgb(238 242 255));
+}
+
+.profile-avatar {
+  width: 4rem;
+  height: 4rem;
+  background-color: rgb(37 99 235);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.avatar-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: rgb(17 24 39);
+  margin: 0;
+}
+
+.employee-id {
+  font-size: 0.875rem;
+  color: rgb(37 99 235);
+  font-weight: 500;
+}
+
+.employee-position {
+  font-size: 0.875rem;
+  color: rgb(75 85 99);
+}
+
+.status-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background-color: rgb(220 252 231);
+  color: rgb(22 163 74);
+}
+
+.profile-details {
+  padding: 1.5rem;
+}
+
+.detail-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .detail-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgb(243 244 246);
+}
+
+.detail-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(75 85 99);
+}
+
+.detail-value {
+  font-size: 0.875rem;
+  color: rgb(17 24 39);
+  font-weight: 500;
+}
+
+/* Account Summary */
+.employee-account-summary {
+  padding: 1.5rem;
+  background-color: rgb(249 250 251);
+}
+
+.account-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .account-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .account-summary-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.account-summary-card {
+  background-color: white;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+}
+
+.summary-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: rgb(75 85 99);
+  margin-bottom: 0.25rem;
+}
+
+.summary-value {
+  display: block;
+  font-size: 1.125rem;
+  font-weight: bold;
+}
+
+.summary-value.positive {
+  color: rgb(22 163 74);
+}
+
+.summary-value.negative {
+  color: rgb(220 38 38);
+}
+
+.summary-value.warning {
+  color: rgb(217 119 6);
+}
+
+/* Quick Actions */
+.employee-quick-actions {
+  padding: 1.5rem;
+}
+
+.quick-actions-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 1024px) {
+  .quick-actions-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+
+.quick-action-btn {
+  padding: 1rem;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  transition: all 0.2s;
+  text-align: center;
+  border: none;
+  cursor: pointer;
+}
+
+.quick-action-btn.advance {
+  background-color: rgb(254 215 170);
+  color: rgb(154 52 18);
+}
+
+.quick-action-btn.advance:hover {
+  background-color: rgb(253 186 116);
+}
+
+.quick-action-btn.deduction {
+  background-color: rgb(254 202 202);
+  color: rgb(153 27 27);
+}
+
+.quick-action-btn.deduction:hover {
+  background-color: rgb(252 165 165);
+}
+
+.quick-action-btn.salary {
+  background-color: rgb(187 247 208);
+  color: rgb(22 101 52);
+}
+
+.quick-action-btn.salary:hover {
+  background-color: rgb(134 239 172);
+}
+
+.quick-action-btn.view-history {
+  background-color: rgb(191 219 254);
+  color: rgb(30 64 175);
+}
+
+.quick-action-btn.view-history:hover {
+  background-color: rgb(147 197 253);
+}
+
+/* Recent Transactions */
+.employee-recent-transactions {
+  padding: 1.5rem;
+  border-top: 1px solid rgb(229 231 235);
+}
+
+.transaction-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+
+.transaction-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background-color: rgb(249 250 251);
+  border-radius: 0.5rem;
+}
+
+.transaction-icon {
+  font-size: 1.5rem;
+}
+
+.transaction-details {
+  flex: 1;
+}
+
+.transaction-description {
+  font-weight: 500;
+  color: rgb(17 24 39);
+}
+
+.transaction-meta {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: rgb(75 85 99);
+  margin-top: 0.25rem;
+}
+
+.transaction-category {
+  background-color: rgb(229 231 235);
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.25rem;
+}
+
+.transaction-amount {
+  font-weight: bold;
+  font-size: 1.125rem;
+}
+
+.transaction-amount.credit {
+  color: rgb(22 163 74);
+}
+
+.transaction-amount.debit {
+  color: rgb(220 38 38);
+}
+
+/* Linked Employee Info */
+.linked-employee-info {
+  background-color: rgb(239 246 255);
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+/* Category badges for new categories */
+.category-employee-advance {
+  background-color: rgb(254 215 170);
+  color: rgb(154 52 18);
+}
+
+.category-employee-deduction {
+  background-color: rgb(254 202 202);
+  color: rgb(153 27 27);
+}
+
+.category-customer-payment {
+  background-color: rgb(207 250 254);
+  color: rgb(22 78 99);
+}
+
+.category-maintenance {
+  background-color: rgb(253 230 138);
+  color: rgb(146 64 14);
+}
+
+.category-insurance {
+  background-color: rgb(167 243 208);
+  color: rgb(6 78 59);
+}
+
+.category-tax-gov {
+  background-color: rgb(231 229 228);
+  color: rgb(87 83 78);
+}
+
+.category-bank-charges {
+  background-color: rgb(226 232 240);
+  color: rgb(51 65 85);
+}
+
+/* Employee Summary */
+.employee-financial-summary {
+  background-color: white;
+  padding: 1.5rem;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+}
+
+.employee-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+@media (min-width: 768px) {
+  .employee-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .employee-summary-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.employee-summary-card {
+  background-color: rgb(249 250 251);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.employee-summary-header {
+  border-bottom: 1px solid rgb(229 231 235);
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.employee-summary-header h5 {
+  font-weight: bold;
+  color: rgb(17 24 39);
+  margin: 0;
+}
+
+.employee-qid {
+  font-size: 0.75rem;
+  color: rgb(75 85 99);
+}
+
+.employee-summary-amounts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.amount-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.875rem;
+}
+
+.amount-item.total {
+  border-top: 1px solid rgb(229 231 235);
+  padding-top: 0.5rem;
+  font-weight: bold;
+}
+
+.amount-label {
+  color: rgb(75 85 99);
+}
+
+.amount-value {
+  font-weight: 500;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .page-header h2 {
+    color: white;
+  }
+  
+  .accounts-tabs {
+    background-color: rgb(31 41 55);
+  }
+  
+  .tab-btn:not(.active) {
+    color: rgb(156 163 175);
+  }
+  
+  .tab-btn:not(.active):hover {
+    color: rgb(209 213 219);
+    background-color: rgb(55 65 81);
+  }
+  
+  .tab-btn.active {
+    background-color: rgb(55 65 81);
+    color: rgb(96 165 250);
+  }
+  
+  .qatar-id-search,
+  .employee-profile-card,
+  .employee-financial-summary {
+    background-color: rgb(31 41 55);
+  }
+  
+  .profile-header {
+    background: linear-gradient(to right, rgb(17 24 39), rgb(31 41 55));
+  }
+  
+  .profile-info h3,
+  .detail-value,
+  .transaction-description {
+    color: white;
+  }
+  
+  .employee-id {
+    color: rgb(96 165 250);
+  }
+  
+  .employee-position,
+  .detail-label,
+  .search-help,
+  .transaction-meta {
+    color: rgb(156 163 175);
+  }
+  
+  .qatar-id-input {
+    background-color: rgb(55 65 81);
+    border-color: rgb(75 85 99);
+    color: white;
+  }
+  
+  .detail-item {
+    border-bottom-color: rgb(55 65 81);
+  }
+  
+  .employee-account-summary {
+    background-color: rgb(17 24 39 / 0.5);
+  }
+  
+  .account-summary-card {
+    background-color: rgb(31 41 55);
+  }
+  
+  .summary-label {
+    color: rgb(156 163 175);
+  }
+  
+  .employee-recent-transactions {
+    border-top-color: rgb(55 65 81);
+  }
+  
+  .transaction-item {
+    background-color: rgb(17 24 39 / 0.5);
+  }
+  
+  .transaction-category {
+    background-color: rgb(55 65 81);
+  }
+  
+  .linked-employee-info {
+    background-color: rgb(30 64 175 / 0.3);
+  }
+  
+  .employee-summary-card {
+    background-color: rgb(17 24 39 / 0.5);
+  }
+  
+  .employee-summary-header {
+    border-bottom-color: rgb(75 85 99);
+  }
+  
+  .employee-summary-header h5 {
+    color: white;
+  }
+  
+  .employee-qid,
+  .amount-label {
+    color: rgb(156 163 175);
+  }
+  
+  .amount-item.total {
+    border-top-color: rgb(75 85 99);
+  }
+}
+
+/* Responsive Design Enhancements for Accounts */
+@media (max-width: 768px) {
+  .accounts-tabs {
+    flex-direction: column;
+  }
+  
+  .tab-btn {
+    text-align: left;
+  }
+  
+  .search-input-group {
+    flex-direction: column;
+  }
+  
+  .profile-header {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .quick-actions-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+  
+  .account-summary-grid {
+    grid-template-columns: repeat(1, minmax(0, 1fr));
+  }
+}
