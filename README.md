@@ -1,70 +1,408 @@
-# Getting Started with Create React App
+# Qatar Payroll Management System 🏢
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A comprehensive payroll management web application built with React and Firebase, designed specifically for businesses operating in Qatar. This system handles employee management, payroll processing, customer invoicing, accounting, receipt generation, and provides detailed analytics.
 
-## Available Scripts
+## 🌟 Features
 
-In the project directory, you can run:
+### Core Features
+- **Employee Management**: Complete employee profiles with passport and QID document management
+- **Payroll Processing**: Salary payments, advances, bonuses, and deductions
+- **Customer Database**: Customer management with invoicing capabilities  
+- **Accounting System**: Cash flow tracking and ledger management
+- **Receipt Generation**: Professional receipt printing with Arabic support
+- **Analytics Dashboard**: Comprehensive reports and data visualization
+- **Self-Service Portal**: Employee access to payslips and advance requests
 
-### `npm start`
+### Advanced Features
+- **Document Expiry Alerts**: Automated notifications for QID and passport expirations
+- **Role-Based Access Control**: Admin, HR, Accountant, and Employee roles
+- **Multi-Language Support**: English and Arabic localization
+- **Cloud Functions**: Automated processes and notifications
+- **Responsive Design**: Mobile-friendly interface
+- **File Upload**: Secure document storage
+- **Audit Trail**: Complete transaction logging
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## 🚀 Tech Stack
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+- **Frontend**: React 18, React Router, React Charts
+- **Backend**: Firebase (Firestore, Auth, Storage, Functions)
+- **Styling**: Custom CSS with responsive design
+- **Forms**: Formik with Yup validation
+- **File Upload**: React Dropzone
+- **Internationalization**: React i18next
+- **Notifications**: React Toastify
+- **PDF Generation**: React-to-Print
 
-### `npm test`
+## 📋 Prerequisites
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+Before you begin, ensure you have the following installed:
+- Node.js (v18 or higher)
+- npm or yarn
+- Firebase CLI: `npm install -g firebase-tools`
+- A Firebase account (free tier available)
 
-### `npm run build`
+## 🛠️ Installation
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+### 1. Clone and Setup
+```bash
+git clone <your-repo-url>
+cd payroll-app
+npm install
+```
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+### 2. Firebase Setup
+1. Go to [Firebase Console](https://console.firebase.google.com)
+2. Create a new project
+3. Enable the following services:
+   - Authentication (Email/Password)
+   - Firestore Database
+   - Storage
+   - Cloud Functions
+   - Hosting (optional)
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+4. Get your Firebase config:
+   - Go to Project Settings → General → Your apps
+   - Add a web app and copy the config object
+   - Replace the placeholder in `src/firebase.js`
 
-### `npm run eject`
+### 3. Configure Firebase Authentication
+1. In Firebase Console, go to Authentication → Sign-in method
+2. Enable "Email/Password" provider
+3. Add test users or use the demo credentials
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+### 4. Deploy Security Rules
+```bash
+firebase login
+firebase init
+# Select Firestore, Functions, Storage, and Hosting
+# Use existing project and select your project
+firebase deploy --only firestore:rules,storage:rules
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+### 5. Deploy Cloud Functions
+```bash
+cd functions
+npm install
+cd ..
+firebase deploy --only functions
+```
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+## 🏃‍♂️ Running the Application
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+### Development
+```bash
+npm start
+```
+The app will open at `http://localhost:3000`
 
-## Learn More
+### Production Build
+```bash
+npm run build
+firebase deploy --only hosting
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+## 🔐 Demo Credentials
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+For testing purposes, use these demo credentials:
+- **Email**: admin@example.com
+- **Password**: password123
 
-### Code Splitting
+> **Note**: You'll need to create these users in Firebase Authentication or modify the login component for demo purposes.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+## 👥 User Roles
 
-### Analyzing the Bundle Size
+The system supports four user roles:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+1. **Admin**: Full system access
+2. **HR**: Employee management and reporting
+3. **Accountant**: Payroll, customers, and accounting
+4. **Employee**: Self-service portal access
 
-### Making a Progressive Web App
+## 📊 Database Schema
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+### Collections Structure
 
-### Advanced Configuration
+#### `employees`
+```javascript
+{
+  id: "auto-generated",
+  name: "Employee Name",
+  email: "employee@company.com",
+  phone: "+974XXXXXXXX",
+  department: "IT",
+  position: "Developer",
+  salary: 5000,
+  passport: {
+    number: "A12345678",
+    expiry: "2025-12-31",
+    photoUrl: "https://..."
+  },
+  qid: {
+    number: "12345678901",
+    expiry: "2025-06-30",
+    photoUrl: "https://..."
+  },
+  transactions: [
+    {
+      date: "2024-01-01T00:00:00.000Z",
+      amount: 5000,
+      type: "salary",
+      description: "Monthly salary"
+    }
+  ],
+  advances: [
+    {
+      date: "2024-01-15T00:00:00.000Z",
+      amount: 1000,
+      repaid: false,
+      description: "Emergency advance"
+    }
+  ],
+  totalPaid: 15000,
+  createdAt: "2024-01-01T00:00:00.000Z"
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+#### `customers`
+```javascript
+{
+  id: "auto-generated",
+  name: "Company Name",
+  contactPerson: "John Doe",
+  email: "contact@company.com",
+  phone: "+974XXXXXXXX",
+  address: "Doha, Qatar",
+  taxId: "TX123456789",
+  invoices: [
+    {
+      id: "INV001",
+      amount: 10000,
+      date: "2024-01-01T00:00:00.000Z",
+      status: "paid",
+      description: "Service payment"
+    }
+  ],
+  totalInvoiced: 50000,
+  totalPaid: 40000
+}
+```
 
-### Deployment
+#### `accounts`
+```javascript
+{
+  id: "main",
+  ledger: [
+    {
+      date: "2024-01-01T00:00:00.000Z",
+      type: "credit", // or "debit"
+      amount: 10000,
+      description: "Payment from customer",
+      category: "revenue"
+    }
+  ],
+  balance: 25000
+}
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+## 🔧 Configuration
 
-### `npm run build` fails to minify
+### Firebase Config
+Update `src/firebase.js` with your Firebase project configuration:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+```javascript
+const firebaseConfig = {
+  apiKey: "your-api-key",
+  authDomain: "your-project.firebaseapp.com",
+  projectId: "your-project-id",
+  storageBucket: "your-project.appspot.com",
+  messagingSenderId: "123456789",
+  appId: "your-app-id"
+};
+```
+
+### Environment Variables
+Create a `.env` file in the root directory:
+
+```
+REACT_APP_FIREBASE_API_KEY=your-api-key
+REACT_APP_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+REACT_APP_FIREBASE_PROJECT_ID=your-project-id
+REACT_APP_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+REACT_APP_FIREBASE_MESSAGING_SENDER_ID=123456789
+REACT_APP_FIREBASE_APP_ID=your-app-id
+```
+
+## 📱 Features Guide
+
+### Employee Management
+- Add, edit, and delete employees
+- Upload passport and QID photos
+- Track document expiration dates
+- Department and position management
+- Salary information
+
+### Payroll Processing
+- Process monthly salaries
+- Handle advance payments
+- Apply bonuses and deductions
+- Track payment history
+- Generate payment reports
+
+### Customer Management
+- Maintain customer database
+- Create and manage invoices
+- Track payments and outstanding amounts
+- Generate customer statements
+
+### Accounting
+- Maintain general ledger
+- Track cash flow
+- Category-wise expense tracking
+- Financial reporting
+- Balance calculations
+
+### Receipt Generation
+- Professional receipt templates
+- Arabic and English support
+- Print functionality
+- Customer and company information
+- Payment method tracking
+
+### Analytics
+- Employee payroll analysis
+- Department-wise breakdowns
+- Revenue and expense charts
+- Cash flow trends
+- Key performance indicators
+
+### Self-Service Portal
+- Employee profile viewing
+- Payslip downloads
+- Advance request submissions
+- Transaction history
+- Document status checking
+
+## 🔔 Notifications
+
+The system includes automated notifications for:
+- Document expiry alerts (90-day advance warning)
+- Payroll processing confirmations
+- Advance request status updates
+- Monthly report generation
+
+## 🛡️ Security
+
+### Firebase Security Rules
+- Role-based database access
+- File upload restrictions
+- Size and type limitations
+- User authentication requirements
+
+### Data Privacy
+- Encrypted data transmission
+- Secure file storage
+- Access audit trails
+- User permission management
+
+## 🌐 Deployment
+
+### Firebase Hosting
+```bash
+npm run build
+firebase deploy --only hosting
+```
+
+### Custom Domain
+1. Go to Firebase Console → Hosting
+2. Add custom domain
+3. Follow DNS configuration steps
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+1. **Firebase Connection Issues**
+   - Check your Firebase config
+   - Verify project ID and API keys
+   - Ensure Firebase services are enabled
+
+2. **Authentication Problems**
+   - Check Firebase Auth settings
+   - Verify email/password provider is enabled
+   - Create test users in Firebase Console
+
+3. **Permission Denied Errors**
+   - Review Firestore security rules
+   - Check user roles and permissions
+   - Verify authentication status
+
+4. **File Upload Issues**
+   - Check Storage security rules
+   - Verify file size and type restrictions
+   - Ensure proper permissions
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+For support and questions:
+- Create an issue in the repository
+- Check the documentation
+- Review Firebase documentation
+- Contact the development team
+
+## 🔄 Updates and Maintenance
+
+### Regular Maintenance
+- Update dependencies monthly
+- Monitor Firebase usage
+- Review security rules
+- Backup database regularly
+- Check for security updates
+
+### Feature Requests
+- Submit feature requests via issues
+- Provide detailed requirements
+- Include mockups if applicable
+- Consider business impact
+
+## 📚 Documentation
+
+Additional documentation available:
+- [API Documentation](docs/api.md)
+- [Deployment Guide](docs/deployment.md)
+- [User Manual](docs/user-manual.md)
+- [Developer Guide](docs/developer.md)
+
+---
+
+## 🎯 Roadmap
+
+### Upcoming Features
+- [ ] Email notifications integration
+- [ ] SMS alerts via Twilio
+- [ ] Advanced reporting dashboard
+- [ ] Mobile application
+- [ ] Biometric attendance integration
+- [ ] Leave management system
+- [ ] Performance evaluation module
+
+### Version History
+- **v1.0.0** - Initial release with core features
+- **v1.1.0** - Added analytics and reporting
+- **v1.2.0** - Enhanced self-service portal
+- **v2.0.0** - Mobile responsiveness and PWA support
+
+---
+
+Made with ❤️ for Qatar businesses

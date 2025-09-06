@@ -1,0 +1,70 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Allow authenticated users to read and write
+    match /{document=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // More specific rules for production:
+    
+    // Employees collection
+    match /employees/{employeeId} {
+      // Admin and HR can read/write all employee data
+      allow read, write: if request.auth != null && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'hr']);
+      
+      // Accountants can read employee data for payroll
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'accountant';
+      
+      // Employees can read their own data
+      allow read: if request.auth != null && request.auth.uid == employeeId;
+    }
+    
+    // Customers collection
+    match /customers/{customerId} {
+      // Admin and Accountants can manage customers
+      allow read, write: if request.auth != null && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'accountant']);
+    }
+    
+    // Accounts collection
+    match /accounts/{accountId} {
+      // Admin and Accountants can manage accounts
+      allow read, write: if request.auth != null && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'accountant']);
+      
+      // HR can read accounts for reporting
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'hr';
+    }
+    
+    // Users collection (for role management)
+    match /users/{userId} {
+      // Users can read their own data
+      allow read: if request.auth != null && request.auth.uid == userId;
+      
+      // Only admins can write user data
+      allow write: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Audit logs - only admins can read
+    match /audit_logs/{logId} {
+      allow read: if request.auth != null && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+    
+    // Monthly reports - admins and accountants can read
+    match /monthly_reports/{reportId} {
+      allow read: if request.auth != null && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'accountant']);
+    }
+    
+    // Alerts - authenticated users can read
+    match /alerts/{alertId} {
+      allow read: if request.auth != null;
+    }
+  }
+}

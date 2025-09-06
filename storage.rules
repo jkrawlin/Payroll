@@ -1,0 +1,35 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to upload employee documents
+    match /passports/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    match /qids/{allPaths=**} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // More restrictive rules for production:
+    
+    // Only admins and HR can upload/delete files
+    match /{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write, delete: if request.auth != null && 
+        (get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin', 'hr']);
+    }
+    
+    // File size and type restrictions
+    match /passports/{fileName} {
+      allow write: if request.auth != null &&
+        request.resource.size < 5 * 1024 * 1024 &&  // 5MB limit
+        request.resource.contentType.matches('image/.*');
+    }
+    
+    match /qids/{fileName} {
+      allow write: if request.auth != null &&
+        request.resource.size < 5 * 1024 * 1024 &&  // 5MB limit
+        request.resource.contentType.matches('image/.*');
+    }
+  }
+}
