@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { doc, getDoc, collection, query, where, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
+import { doc, collection, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
 import { db, auth } from '../firebase';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -10,7 +10,7 @@ const SelfService = ({ userId }) => {
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showAdvanceRequest, setShowAdvanceRequest] = useState(false);
-  const [advanceRequests, setAdvanceRequests] = useState([]);
+  // const [advanceRequests, setAdvanceRequests] = useState([]); // Currently unused
   const [payslips, setPayslips] = useState([]);
   const { t } = useTranslation();
 
@@ -73,7 +73,7 @@ const SelfService = ({ userId }) => {
     if (userId || auth.currentUser) {
       fetchEmployeeData();
     }
-  }, [userId]);
+  }, [userId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchEmployeeData = async () => {
     try {
@@ -82,7 +82,7 @@ const SelfService = ({ userId }) => {
       // In a real app, you'd link the userId to employee ID through a users collection
       // For demo purposes, we'll try to find an employee by email or use the first one
       const currentUser = auth.currentUser;
-      let employeeDoc = null;
+      // let employeeDoc = null; // Currently unused
 
       if (currentUser) {
         // Try to find employee by email first

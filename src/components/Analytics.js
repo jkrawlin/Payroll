@@ -49,7 +49,7 @@ const Analytics = () => {
 
   useEffect(() => {
     fetchAnalyticsData();
-  }, [selectedPeriod]);
+  }, [selectedPeriod]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const fetchAnalyticsData = async () => {
     setLoading(true);
@@ -107,7 +107,7 @@ const Analytics = () => {
 
       const deptLabels = Object.keys(departmentGroups);
       const deptCounts = Object.values(departmentGroups).map(dept => dept.count);
-      const deptSalaries = Object.values(departmentGroups).map(dept => dept.totalSalary);
+      // const deptSalaries = Object.values(departmentGroups).map(dept => dept.totalSalary); // Currently unused
 
       setDepartmentData({
         labels: deptLabels,
