@@ -201,28 +201,19 @@ const Dashboard = ({ role = 'admin' }) => {
         <h3>Quick Actions</h3>
         <div className="action-buttons">
           {(role === 'admin' || role === 'hr') && (
-            <button 
-              onClick={() => navigate('/employees')} 
-              className="quick-btn"
-            >
+            <Link to="/employees" className="quick-btn">
               ➕ Add Employee
-            </button>
+            </Link>
           )}
           {(role === 'admin' || role === 'accountant') && (
-            <button 
-              onClick={() => navigate('/payroll')} 
-              className="quick-btn"
-            >
+            <Link to="/payroll" className="quick-btn">
               💰 Process Payment
-            </button>
+            </Link>
           )}
           {(role === 'admin' || role === 'accountant') && (
-            <button 
-              onClick={() => navigate('/receipts')} 
-              className="quick-btn"
-            >
+            <Link to="/receipts" className="quick-btn">
               🧾 Generate Receipt
-            </button>
+            </Link>
           )}
         </div>
       </div>

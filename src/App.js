@@ -5,7 +5,7 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 // import { doc, getDoc } from 'firebase/firestore';  // Commented out for demo
 // import Login from './components/Login';  // Commented out for demo
 import NoAuthDashboard from './components/NoAuthDashboard'; // Demo dashboard without Firebase
-import Dashboard from './components/Dashboard';
+// import Dashboard from './components/Dashboard'; // Original dashboard - commented for demo
 import Employees from './components/Employees';
 import Payroll from './components/Payroll';
 import Customers from './components/Customers';
