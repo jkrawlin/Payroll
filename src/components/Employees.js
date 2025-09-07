@@ -50,6 +50,11 @@ import {
   useMediaQuery,
   CircularProgress,
   Backdrop,
+  Fab,
+  AppBar,
+  Toolbar,
+  Slide,
+  Container,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -73,6 +78,37 @@ import {
 import { motion } from 'framer-motion';
 import { DataGrid } from '@mui/x-data-grid';
 
+// Transition component for modal slide animation
+const Transition = React.forwardRef(function Transition(props, ref) {
+  return <Slide direction="up" ref={ref} {...props} />;
+});
+
+// TabPanel component for organized content sections
+function TabPanel({ children, value, index, ...other }) {
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`employee-details-tabpanel-${index}`}
+      aria-labelledby={`employee-details-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ py: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
+function a11yProps(index) {
+  return {
+    id: `employee-details-tab-${index}`,
+    'aria-controls': `employee-details-tabpanel-${index}`,
+  };
+}
+
 const Employees = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -93,6 +129,7 @@ const Employees = () => {
   const [detailsModalEmployee, setDetailsModalEmployee] = useState(null);
   const [openEmployeeDetails, setOpenEmployeeDetails] = useState(false);
   const [employeeDetailsLoading, setEmployeeDetailsLoading] = useState(false);
+  const [modalTabValue, setModalTabValue] = useState(0);
 
   // Helper functions for calculations and formatting
   const calculateDaysPaid = (employee) => {
@@ -105,6 +142,20 @@ const Employees = () => {
     if (!employee?.salary || !employee?.totalPaid) return 0;
     const daysPaid = calculateDaysPaid(employee);
     return Math.max(0, 30 - daysPaid); // 30 days in a month minus days already paid
+  };
+
+  // Helper function to calculate days until document expiry
+  const calculateDaysToExpiry = (expiryDate) => {
+    if (!expiryDate) return null;
+    try {
+      const expiry = expiryDate.toDate ? expiryDate.toDate() : new Date(expiryDate);
+      const today = new Date();
+      const diffTime = expiry - today;
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays;
+    } catch (error) {
+      return null;
+    }
   };
 
   // Photo upload functionality
@@ -161,28 +212,69 @@ const Employees = () => {
     disabled: uploading
   });
 
-  // Handler for clicking employee names to open details modal
+  // Handler for clicking employee names to open comprehensive details modal
   const handleNameClick = async (employee) => {
     setEmployeeDetailsLoading(true);
     setOpenEmployeeDetails(true);
+    setModalTabValue(0); // Reset to first tab
     
     try {
-      // Fetch full details if not already loaded
-      if (!employee.fullDetails) {
-        const docSnap = await getDoc(doc(db, 'employees', employee.id));
-        if (docSnap.exists()) {
-          const fullData = { id: employee.id, ...docSnap.data(), fullDetails: true };
-          setDetailsModalEmployee(fullData);
-        } else {
-          setDetailsModalEmployee(employee);
+      let comprehensiveEmployeeData = { ...employee };
+      
+      if (isFirebaseConfigured) {
+        // Fetch comprehensive employee data from Firebase
+        const employeeDoc = await getDoc(doc(db, 'employees', employee.id));
+        if (employeeDoc.exists()) {
+          comprehensiveEmployeeData = { ...employeeDoc.data(), id: employee.id };
+        }
+
+        // Fetch additional data like advances and transactions if they exist
+        try {
+          const advancesSnapshot = await getDocs(collection(db, 'employees', employee.id, 'advances'));
+          comprehensiveEmployeeData.advances = advancesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+        } catch (error) {
+          console.log('No advances collection found');
+          comprehensiveEmployeeData.advances = [];
+        }
+
+        try {
+          const transactionsSnapshot = await getDocs(collection(db, 'employees', employee.id, 'transactions'));
+          comprehensiveEmployeeData.transactions = transactionsSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          })).sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date, newest first
+        } catch (error) {
+          console.log('No transactions collection found');
+          comprehensiveEmployeeData.transactions = [];
         }
       } else {
-        setDetailsModalEmployee(employee);
+        // Use mock data with additional details
+        const mockAdvances = [
+          { id: 1, amount: 5000, date: new Date('2024-08-15'), repaid: false, reason: 'Emergency medical' },
+          { id: 2, amount: 2000, date: new Date('2024-07-10'), repaid: true, reason: 'Travel advance' }
+        ];
+        const mockTransactions = [
+          { id: 1, amount: 12000, date: new Date('2024-09-01'), type: 'Salary Payment' },
+          { id: 2, amount: -5000, date: new Date('2024-08-15'), type: 'Advance Deduction' },
+          { id: 3, amount: 12000, date: new Date('2024-08-01'), type: 'Salary Payment' },
+        ];
+        
+        comprehensiveEmployeeData.advances = mockAdvances;
+        comprehensiveEmployeeData.transactions = mockTransactions;
+        comprehensiveEmployeeData.joinDate = new Date('2023-01-15');
+        comprehensiveEmployeeData.phone = '+974 5555 1234';
+        comprehensiveEmployeeData.email = `${employee.name.toLowerCase().replace(' ', '.')}@company.com`;
+        comprehensiveEmployeeData.address = 'Doha, Qatar';
       }
+      
+      setDetailsModalEmployee(comprehensiveEmployeeData);
     } catch (error) {
-      console.error('Error fetching employee details:', error);
+      console.error('Error fetching comprehensive employee data:', error);
       toast.error('Failed to load employee details');
-      setDetailsModalEmployee(employee);
+      setDetailsModalEmployee(employee); // Fallback to basic data
     } finally {
       setEmployeeDetailsLoading(false);
     }
