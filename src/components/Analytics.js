@@ -316,32 +316,21 @@ const Analytics = ({
         <Paper 
           elevation={3} 
           sx={{ 
-            p: 3, 
-            mb: 3, 
+            p: { xs: 3, md: 4 }, 
+            mb: 4, 
             borderRadius: 3,
             background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
             color: 'white'
           }}
         >
-          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap">
-            <Box display="flex" alignItems="center">
-              <Avatar sx={{ 
-                bgcolor: alpha('#fff', 0.2), 
-                width: 60, 
-                height: 60,
-                mr: 3,
-                color: 'white'
-              }}>
-                📊
-              </Avatar>
-              <Box>
-                <Typography variant="h3" fontWeight={700} gutterBottom>
-                  Analytics Dashboard
-                </Typography>
-                <Typography variant="body1" sx={{ opacity: 0.9 }}>
-                  Comprehensive insights and reporting
-                </Typography>
-              </Box>
+          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={3}>
+            <Box>
+              <Typography variant="h3" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '2rem', md: '3rem' } }}>
+                Analytics Dashboard
+              </Typography>
+              <Typography variant="body1" sx={{ opacity: 0.9, fontSize: '1.1rem' }}>
+                Comprehensive insights and reporting
+              </Typography>
             </Box>
             <Box display="flex" alignItems="center" gap={2}>
               <Typography variant="h6" fontWeight={600}>
@@ -355,8 +344,9 @@ const Analytics = ({
                   color: 'white',
                   border: `1px solid ${alpha('#fff', 0.3)}`,
                   borderRadius: '8px',
-                  padding: '8px 16px',
-                  fontSize: '14px'
+                  padding: '10px 16px',
+                  fontSize: '16px',
+                  fontWeight: 500
                 }}
               >
                 <option value="7" style={{color: '#000'}}>Last 7 days</option>
@@ -409,24 +399,13 @@ const Analytics = ({
                   transform: 'translateY(-4px)'
                 }
               }}>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Avatar sx={{ 
-                    bgcolor: alpha(theme.palette.primary.main, 0.1), 
-                    color: theme.palette.primary.main,
-                    width: 56,
-                    height: 56,
-                    mr: 2
-                  }}>
-                    👥
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" fontWeight={600} color="primary">
-                      Total Employees
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="text.primary">
-                      {kpis.totalEmployees}
-                    </Typography>
-                  </Box>
+                <Box>
+                  <Typography variant="h6" fontWeight={600} color="primary" sx={{ mb: 1 }}>
+                    Total Employees
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700} color="text.primary">
+                    {kpis.totalEmployees}
+                  </Typography>
                 </Box>
               </Card>
             </motion.div>
@@ -445,24 +424,13 @@ const Analytics = ({
                   transform: 'translateY(-4px)'
                 }
               }}>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Avatar sx={{ 
-                    bgcolor: alpha(theme.palette.success.main, 0.1), 
-                    color: theme.palette.success.main,
-                    width: 56,
-                    height: 56,
-                    mr: 2
-                  }}>
-                    💰
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" fontWeight={600} color="success.main">
-                      Total Payroll
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="text.primary">
-                      {kpis.totalPayroll.toLocaleString()} QAR
-                    </Typography>
-                  </Box>
+                <Box>
+                  <Typography variant="h6" fontWeight={600} color="success.main" sx={{ mb: 1 }}>
+                    Total Payroll
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700} color="text.primary">
+                    {kpis.totalPayroll.toLocaleString()} QAR
+                  </Typography>
                 </Box>
               </Card>
             </motion.div>
@@ -481,24 +449,13 @@ const Analytics = ({
                   transform: 'translateY(-4px)'
                 }
               }}>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Avatar sx={{ 
-                    bgcolor: alpha(theme.palette.info.main, 0.1), 
-                    color: theme.palette.info.main,
-                    width: 56,
-                    height: 56,
-                    mr: 2
-                  }}>
-                    💵
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" fontWeight={600} color="info.main">
-                      Average Salary
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="text.primary">
-                      {kpis.avgSalary.toLocaleString()} QAR
-                    </Typography>
-                  </Box>
+                <Box>
+                  <Typography variant="h6" fontWeight={600} color="info.main" sx={{ mb: 1 }}>
+                    Average Salary
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700} color="text.primary">
+                    {kpis.avgSalary.toLocaleString()} QAR
+                  </Typography>
                 </Box>
               </Card>
             </motion.div>
@@ -517,24 +474,13 @@ const Analytics = ({
                   transform: 'translateY(-4px)'
                 }
               }}>
-                <Box display="flex" alignItems="center" mb={2}>
-                  <Avatar sx={{ 
-                    bgcolor: alpha(kpis.profitMargin >= 0 ? theme.palette.success.main : theme.palette.error.main, 0.1), 
-                    color: kpis.profitMargin >= 0 ? theme.palette.success.main : theme.palette.error.main,
-                    width: 56,
-                    height: 56,
-                    mr: 2
-                  }}>
-                    📈
-                  </Avatar>
-                  <Box>
-                    <Typography variant="h6" fontWeight={600} color={kpis.profitMargin >= 0 ? 'success.main' : 'error.main'}>
-                      Profit Margin
-                    </Typography>
-                    <Typography variant="h4" fontWeight={700} color="text.primary">
-                      {kpis.profitMargin.toFixed(1)}%
-                    </Typography>
-                  </Box>
+                <Box>
+                  <Typography variant="h6" fontWeight={600} color={kpis.profitMargin >= 0 ? 'success.main' : 'error.main'} sx={{ mb: 1 }}>
+                    Profit Margin
+                  </Typography>
+                  <Typography variant="h4" fontWeight={700} color="text.primary">
+                    {kpis.profitMargin.toFixed(1)}%
+                  </Typography>
                 </Box>
               </Card>
             </motion.div>
@@ -561,14 +507,7 @@ const Analytics = ({
                   transform: 'translateY(-2px)'
                 }
               }}>
-                <Box display="flex" alignItems="center" mb={3}>
-                  <Avatar sx={{ 
-                    bgcolor: alpha(theme.palette.success.main, 0.1), 
-                    color: theme.palette.success.main,
-                    mr: 2
-                  }}>
-                    💰
-                  </Avatar>
+                <Box mb={3}>
                   <Typography variant="h5" fontWeight={700} color="text.primary">
                     Employee Payroll Analysis
                   </Typography>
@@ -603,14 +542,7 @@ const Analytics = ({
                   transform: 'translateY(-2px)'
                 }
               }}>
-                <Box display="flex" alignItems="center" mb={3}>
-                  <Avatar sx={{ 
-                    bgcolor: alpha(theme.palette.primary.main, 0.1), 
-                    color: theme.palette.primary.main,
-                    mr: 2
-                  }}>
-                    📊
-                  </Avatar>
+                <Box mb={3}>
                   <Typography variant="h5" fontWeight={700} color="text.primary">
                     Salary Distribution
                   </Typography>
@@ -645,14 +577,7 @@ const Analytics = ({
                   transform: 'translateY(-2px)'
                 }
               }}>
-                <Box display="flex" alignItems="center" mb={3}>
-                  <Avatar sx={{ 
-                    bgcolor: alpha(theme.palette.info.main, 0.1), 
-                    color: theme.palette.info.main,
-                    mr: 2
-                  }}>
-                    📈
-                  </Avatar>
+                <Box mb={3}>
                   <Typography variant="h5" fontWeight={700} color="text.primary">
                     Monthly Financial Trends
                   </Typography>
@@ -691,14 +616,7 @@ const Analytics = ({
             background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.1)} 0%, ${alpha(theme.palette.secondary.main, 0.05)} 100%)`,
           }}
         >
-          <Box display="flex" alignItems="center" mb={3}>
-            <Avatar sx={{ 
-              bgcolor: alpha(theme.palette.secondary.main, 0.1), 
-              color: theme.palette.secondary.main,
-              mr: 2
-            }}>
-              💡
-            </Avatar>
+          <Box mb={3}>
             <Typography variant="h5" fontWeight={700} color="text.primary">
               Business Insights
             </Typography>
@@ -713,16 +631,7 @@ const Analytics = ({
                   background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)} 0%, ${alpha(theme.palette.success.main, 0.05)} 100%)`,
                   border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
                 }}>
-                  <Box display="flex" alignItems="center" mb={2}>
-                    <Avatar sx={{ 
-                      bgcolor: alpha(theme.palette.success.main, 0.1), 
-                      color: theme.palette.success.main,
-                      mr: 2,
-                      width: 40,
-                      height: 40
-                    }}>
-                      💰
-                    </Avatar>
+                  <Box mb={2}>
                     <Typography variant="h6" fontWeight={600} color="success.main">
                       Competitive Salaries
                     </Typography>
@@ -742,16 +651,7 @@ const Analytics = ({
                   background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)} 0%, ${alpha(theme.palette.success.main, 0.05)} 100%)`,
                   border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
                 }}>
-                  <Box display="flex" alignItems="center" mb={2}>
-                    <Avatar sx={{ 
-                      bgcolor: alpha(theme.palette.success.main, 0.1), 
-                      color: theme.palette.success.main,
-                      mr: 2,
-                      width: 40,
-                      height: 40
-                    }}>
-                      📈
-                    </Avatar>
+                  <Box mb={2}>
                     <Typography variant="h6" fontWeight={600} color="success.main">
                       Healthy Profit Margin
                     </Typography>

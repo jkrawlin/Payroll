@@ -52,23 +52,10 @@ import {
 } from '@mui/material';
 import {
   Person as PersonIcon,
-  Search as SearchIcon,
-  Upload as UploadIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
-  Email as EmailIcon,
-  Phone as PhoneIcon,
-  Business as BusinessIcon,
-  AttachMoney as MoneyIcon,
-  Assignment as AssignmentIcon,
-  ExpandMore as ExpandMoreIcon,
-  CloudUpload as CloudUploadIcon,
   Close as CloseIcon,
-  Work as WorkIcon,
-  Description as DescriptionIcon,
-  DateRange as DateRangeIcon,
-  AccountBalance as AccountBalanceIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { DataGrid } from '@mui/x-data-grid';
@@ -345,32 +332,21 @@ const Employees = () => {
         <Paper 
           elevation={3} 
           sx={{ 
-            p: 3, 
-            mb: 3, 
+            p: { xs: 3, md: 4 }, 
+            mb: 4, 
             borderRadius: 3,
             background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
             color: 'white'
           }}
         >
-          <Box display="flex" alignItems="center" justifyContent="space-between">
-            <Box display="flex" alignItems="center">
-              <Avatar sx={{ 
-                bgcolor: alpha('#fff', 0.2), 
-                width: 60, 
-                height: 60,
-                mr: 3,
-                color: 'white'
-              }}>
-                <PersonIcon sx={{ fontSize: 32 }} />
-              </Avatar>
-              <Box>
-                <Typography variant="h3" fontWeight={700} gutterBottom>
-                  Employee Management
-                </Typography>
-                <Typography variant="body1" sx={{ opacity: 0.9 }}>
-                  Manage employee information, documents, and records
-                </Typography>
-              </Box>
+          <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={3}>
+            <Box>
+              <Typography variant="h3" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '2rem', md: '3rem' } }}>
+                Employee Management
+              </Typography>
+              <Typography variant="body1" sx={{ opacity: 0.9, fontSize: '1.1rem' }}>
+                Manage employee information, documents, and records
+              </Typography>
             </Box>
             <Button
               variant="contained"
@@ -385,7 +361,10 @@ const Employees = () => {
                 },
                 borderRadius: 2,
                 textTransform: 'none',
-                fontWeight: 600
+                fontWeight: 600,
+                px: 3,
+                py: 1.5,
+                minWidth: { xs: '100%', sm: 'auto' }
               }}
             >
               Add Employee
@@ -402,24 +381,23 @@ const Employees = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <Card elevation={3} sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ p: 3 }}>
+            <Card elevation={2} sx={{ borderRadius: 3 }}>
+              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
                 <TextField
                   fullWidth
                   placeholder="Search employees by name, department, QID, or passport..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon color="action" />
-                      </InputAdornment>
-                    ),
+                  sx={{ 
+                    mb: 3,
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
+                      backgroundColor: alpha(theme.palette.background.paper, 0.5)
+                    }
                   }}
-                  sx={{ mb: 2 }}
                 />
                 
-                <Typography variant="body2" color="text.secondary">
+                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '1rem' }}>
                   {filteredEmployees.length} of {employees.length} employees found
                 </Typography>
               </CardContent>
@@ -434,13 +412,13 @@ const Employees = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
           >
-            <Card elevation={3} sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ p: 3 }}>
-                <Typography variant="h5" fontWeight={700} color="text.primary" gutterBottom>
-                  Employee List - Click on any row for details
+            <Card elevation={2} sx={{ borderRadius: 3 }}>
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <Typography variant="h5" fontWeight={600} color="text.primary" gutterBottom sx={{ mb: 3 }}>
+                  Employee Directory
                 </Typography>
 
-                <Box sx={{ height: 500, width: '100%' }}>
+                <Box sx={{ height: 600, width: '100%' }}>
                   <DataGrid
                     rows={filteredEmployees.map((emp, index) => ({ 
                       ...emp, 
@@ -452,27 +430,29 @@ const Employees = () => {
                       {
                         field: 'employee',
                         headerName: 'Employee',
-                        width: 250,
+                        width: 280,
                         renderCell: (params) => (
-                          <Box display="flex" alignItems="center" sx={{ cursor: 'pointer' }}>
+                          <Box display="flex" alignItems="center" sx={{ cursor: 'pointer', py: 1 }}>
                             <Avatar 
                               src={params.row.photoUrl}
                               sx={{ 
-                                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                color: theme.palette.primary.main,
-                                mr: 2,
-                                width: 40,
-                                height: 40
+                                bgcolor: theme.palette.primary.main,
+                                color: 'white',
+                                mr: 3,
+                                width: 44,
+                                height: 44,
+                                fontSize: '1.2rem',
+                                fontWeight: 600
                               }}
                             >
-                              <PersonIcon />
+                              {params.row.name?.charAt(0)}
                             </Avatar>
                             <Box>
-                              <Typography variant="body2" fontWeight={600}>
+                              <Typography variant="body1" fontWeight={600} sx={{ mb: 0.5 }}>
                                 {params.row.name}
                               </Typography>
                               {params.row.email && (
-                                <Typography variant="caption" color="text.secondary">
+                                <Typography variant="body2" color="text.secondary">
                                   {params.row.email}
                                 </Typography>
                               )}
@@ -579,28 +559,42 @@ const Employees = () => {
                     ]}
                     onRowClick={(params) => handleRowClick(params.row)}
                     sx={{
+                      '& .MuiDataGrid-root': {
+                        border: 'none',
+                      },
                       '& .MuiDataGrid-row': {
                         cursor: 'pointer',
+                        borderRadius: 1,
+                        mb: 0.5,
                         '&:hover': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                          boxShadow: `0 0 15px ${alpha(theme.palette.primary.main, 0.2)}`,
+                          backgroundColor: alpha(theme.palette.primary.main, 0.04),
                           transform: 'translateY(-1px)',
-                          transition: 'all 0.2s ease-in-out'
+                          transition: 'all 0.2s ease-in-out',
+                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.1)}`,
                         }
                       },
                       '& .MuiDataGrid-cell': {
-                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                        py: 2,
+                        fontSize: '0.95rem'
                       },
                       '& .MuiDataGrid-columnHeaders': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-                        fontWeight: 700,
-                        fontSize: '0.9rem'
+                        backgroundColor: alpha(theme.palette.grey[100], 0.8),
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        color: theme.palette.text.primary,
+                        borderBottom: `2px solid ${theme.palette.divider}`,
+                        borderRadius: 0
                       },
                       backgroundColor: 'background.paper',
                       borderRadius: 2,
-                      border: 'none',
+                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
                       '& .MuiDataGrid-footerContainer': {
-                        backgroundColor: alpha(theme.palette.background.paper, 0.8)
+                        backgroundColor: alpha(theme.palette.grey[50], 0.5),
+                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.3)}`
+                      },
+                      '& .MuiDataGrid-virtualScroller': {
+                        backgroundColor: 'background.paper'
                       }
                     }}
                     pageSize={10}
@@ -708,25 +702,15 @@ const Employees = () => {
                 '& .MuiTab-root': {
                   textTransform: 'none',
                   fontWeight: 600,
-                  minWidth: 120
+                  minWidth: 120,
+                  fontSize: '1rem',
+                  py: 2
                 }
               }}
             >
-              <Tab 
-                icon={<PersonIcon />} 
-                label="Personal Details" 
-                iconPosition="start"
-              />
-              <Tab 
-                icon={<DescriptionIcon />} 
-                label="Documents" 
-                iconPosition="start"
-              />
-              <Tab 
-                icon={<AccountBalanceIcon />} 
-                label="Payroll History" 
-                iconPosition="start"
-              />
+              <Tab label="Personal Details" />
+              <Tab label="Documents" />
+              <Tab label="Payroll History" />
             </Tabs>
           </Box>
 
@@ -736,108 +720,106 @@ const Employees = () => {
             <TabPanel value={tabValue} index={0}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={4}>
-                  <Paper elevation={2} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
+                  <Paper elevation={1} sx={{ p: 4, textAlign: 'center', borderRadius: 3 }}>
                     <Avatar
                       src={selectedEmployee?.photoUrl}
                       sx={{
-                        width: 120,
-                        height: 120,
+                        width: 100,
+                        height: 100,
                         mx: 'auto',
-                        mb: 2,
-                        bgcolor: alpha(theme.palette.primary.main, 0.1),
-                        color: theme.palette.primary.main
+                        mb: 3,
+                        bgcolor: theme.palette.primary.main,
+                        color: 'white',
+                        fontSize: '2.5rem',
+                        fontWeight: 600
                       }}
                     >
-                      <PersonIcon sx={{ fontSize: 60 }} />
+                      {selectedEmployee?.name?.charAt(0)}
                     </Avatar>
-                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                    <Typography variant="h5" fontWeight={600} gutterBottom sx={{ mb: 2 }}>
                       {selectedEmployee?.name}
                     </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      {selectedEmployee?.position}
+                    </Typography>
                     <Chip
-                      label={`Employee ID: ${selectedEmployee?.id || 'N/A'}`}
+                      label={`ID: ${selectedEmployee?.id || 'N/A'}`}
                       color="primary"
                       variant="outlined"
-                      size="small"
+                      sx={{ fontWeight: 500 }}
                     />
                   </Paper>
                 </Grid>
                 
                 <Grid item xs={12} md={8}>
-                  <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
-                      <WorkIcon sx={{ mr: 1, color: 'primary.main' }} />
+                  <Paper elevation={1} sx={{ p: 4, borderRadius: 3 }}>
+                    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
                       Employment Information
                     </Typography>
-                    <Divider sx={{ mb: 2 }} />
+                    <Divider sx={{ mb: 3 }} />
                     
-                    <Grid container spacing={2}>
+                    <Grid container spacing={3}>
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Join Date
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            <DateRangeIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                             {formatDate(selectedEmployee?.joinDate || selectedEmployee?.createdAt)}
                           </Typography>
                         </Box>
                       </Grid>
                       
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Department
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            <BusinessIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                             {selectedEmployee?.department}
                           </Typography>
                         </Box>
                       </Grid>
                       
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Position
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            <AssignmentIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                             {selectedEmployee?.position}
                           </Typography>
                         </Box>
                       </Grid>
                       
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Monthly Salary
                           </Typography>
-                          <Typography variant="body1" fontWeight={700} color="success.main">
-                            <MoneyIcon sx={{ fontSize: 16, mr: 1 }} />
+                          <Typography variant="body1" fontWeight={700} color="success.main" sx={{ fontSize: '1.2rem' }}>
                             {selectedEmployee?.salary?.toLocaleString() || 0} QAR
                           </Typography>
                         </Box>
                       </Grid>
                       
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Email Address
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            <EmailIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                             {selectedEmployee?.email || 'Not provided'}
                           </Typography>
                         </Box>
                       </Grid>
                       
                       <Grid item xs={12} sm={6}>
-                        <Box sx={{ mb: 2 }}>
-                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                        <Box sx={{ mb: 3 }}>
+                          <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                             Phone Number
                           </Typography>
-                          <Typography variant="body1" fontWeight={600}>
-                            <PhoneIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                          <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
                             {selectedEmployee?.phone || 'Not provided'}
                           </Typography>
                         </Box>
