@@ -6,12 +6,45 @@ import Dropzone from 'react-dropzone';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
+import {
+  Box,
+  Card,
+  CardContent,
+  Typography,
+  TextField,
+  Button,
+  Grid,
+  Avatar,
+  Chip,
+  useTheme,
+  alpha,
+  InputAdornment,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  LinearProgress,
+} from '@mui/material';
+import {
+  Person as PersonIcon,
+  ExpandMore as ExpandMoreIcon,
+  Upload as UploadIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
+import { motion } from 'framer-motion';
 
 const Employees = () => {
+  const theme = useTheme();
   const [employees, setEmployees] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+
+  // Calculate form completion progress
+  const calculateProgress = (values) => {
+    const requiredFields = ['name', 'passportNumber', 'passportExpiry', 'qidNumber', 'qidExpiry', 'salary', 'department', 'position'];
+    const completedFields = requiredFields.filter(field => values[field] && values[field].toString().trim() !== '').length;
+    return (completedFields / requiredFields.length) * 100;
+  };
 
   const validationSchema = Yup.object({
     name: Yup.string().required('Name is required'),

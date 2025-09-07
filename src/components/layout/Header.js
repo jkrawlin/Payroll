@@ -180,16 +180,37 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
 
           {/* Action Buttons */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            {/* Notifications */}
+            {/* Notifications with enhanced visibility */}
             <Tooltip title="Notifications">
-              <IconButton color="inherit">
+              <IconButton 
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.2),
+                    transform: 'scale(1.05)',
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              >
                 <NotificationIcon />
               </IconButton>
             </Tooltip>
 
-            {/* Theme Toggle */}
+            {/* Theme Toggle with enhanced visibility */}
             <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-              <IconButton onClick={toggleMode} color="inherit">
+              <IconButton 
+                onClick={toggleMode}
+                sx={{ 
+                  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
+                  color: theme.palette.secondary.main,
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.secondary.main, 0.2),
+                    transform: 'scale(1.05)',
+                  },
+                  transition: 'all 0.2s ease',
+                }}
+              >
                 {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
               </IconButton>
             </Tooltip>

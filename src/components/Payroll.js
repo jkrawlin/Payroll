@@ -22,6 +22,7 @@ import {
   useTheme,
   InputAdornment,
   CircularProgress,
+  alpha,
 } from '@mui/material';
 import {
   Search as SearchIcon,
@@ -511,6 +512,21 @@ const Payroll = () => {
                     variant="outlined"
                     onClick={resetForm}
                     disabled={processing}
+                    sx={{
+                      borderColor: theme.palette.primary.main,
+                      color: theme.palette.primary.main,
+                      '&:hover': {
+                        borderColor: theme.palette.primary.dark,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                        transform: 'translateY(-2px)',
+                      },
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      borderRadius: 2,
+                      px: 3,
+                      py: 1.5,
+                      transition: 'all 0.2s ease',
+                    }}
                   >
                     Reset
                   </Button>
@@ -518,7 +534,30 @@ const Payroll = () => {
                     variant="contained"
                     onClick={handleTransaction}
                     disabled={processing || !selectedEmp || !amount}
-                    startIcon={processing ? <CircularProgress size={20} /> : <MoneyIcon />}
+                    startIcon={processing ? <CircularProgress size={20} color="inherit" /> : <MoneyIcon />}
+                    sx={{
+                      backgroundColor: theme.palette.primary.main,
+                      color: '#ffffff', // Explicit white text for maximum contrast
+                      '&:hover': {
+                        backgroundColor: theme.palette.primary.dark,
+                        boxShadow: `0 8px 25px ${alpha(theme.palette.primary.main, 0.4)}`,
+                        transform: 'translateY(-2px)',
+                      },
+                      '&:active': {
+                        transform: 'translateY(0px)',
+                      },
+                      '&:disabled': {
+                        backgroundColor: theme.palette.action.disabledBackground,
+                        color: theme.palette.action.disabled,
+                      },
+                      fontWeight: 600,
+                      textTransform: 'none',
+                      borderRadius: 2,
+                      px: 4,
+                      py: 1.5,
+                      boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.3)}`,
+                      transition: 'all 0.2s ease',
+                    }}
                   >
                     {processing ? 'Processing...' : `Process ${type.charAt(0).toUpperCase() + type.slice(1)}`}
                   </Button>
