@@ -56,6 +56,13 @@ import {
   Delete as DeleteIcon,
   Add as AddIcon,
   Close as CloseIcon,
+  ExpandMore as ExpandMoreIcon,
+  Email as EmailIcon,
+  Phone as PhoneIcon,
+  Business as BusinessIcon,
+  Assignment as AssignmentIcon,
+  AttachMoney as MoneyIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { DataGrid } from '@mui/x-data-grid';
