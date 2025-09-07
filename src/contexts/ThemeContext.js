@@ -91,6 +91,45 @@ const createAppTheme = (mode) => createTheme({
         },
       },
     },
+    MuiButton: {
+      styleOverrides: {
+        containedPrimary: {
+          backgroundColor: mode === 'light' ? '#6a1b9a' : '#ab47bc',
+          color: '#ffffff',
+          fontWeight: 600,
+          '&:hover': {
+            backgroundColor: mode === 'light' ? '#4a148c' : '#9c27b0',
+            color: '#ffffff',
+          },
+        },
+        containedSecondary: {
+          backgroundColor: mode === 'light' ? '#00bcd4' : '#4dd0e1',
+          color: '#ffffff',
+          '&:hover': {
+            backgroundColor: mode === 'light' ? '#0097a7' : '#26c6da',
+            color: '#ffffff',
+          },
+        },
+      },
+    },
+    MuiAppBar: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#6a1b9a' : '#ab47bc',
+          color: '#ffffff',
+        },
+      },
+    },
+    MuiTypography: {
+      styleOverrides: {
+        h5: {
+          color: mode === 'light' ? '#1e293b' : '#ffffff',
+        },
+        h6: {
+          color: mode === 'light' ? '#374151' : '#f9fafb',
+        },
+      },
+    },
     MuiCard: {
       styleOverrides: {
         root: {
@@ -235,33 +274,6 @@ const createAppTheme = (mode) => createTheme({
             '&:hover': {
               backgroundColor: mode === 'light' ? '#e2e8f0' : '#404040',
             },
-          },
-        },
-      },
-    },
-    MuiButton: {
-      styleOverrides: {
-        root: {
-          textTransform: 'none',
-          borderRadius: 12,
-          fontWeight: 600,
-          padding: '10px 24px',
-          boxShadow: 'none',
-          transition: 'all 0.2s ease',
-          '&:hover': {
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.15)',
-            transform: 'translateY(-1px)',
-          },
-        },
-        contained: {
-          background: mode === 'light' 
-            ? 'linear-gradient(45deg, #6a1b9a 30%, #ab47bc 90%)'
-            : 'linear-gradient(45deg, #ab47bc 30%, #ce93d8 90%)',
-          color: '#ffffff',
-          '&:hover': {
-            background: mode === 'light'
-              ? 'linear-gradient(45deg, #4a148c 30%, #8e24aa 90%)'
-              : 'linear-gradient(45deg, #9c27b0 30%, #ba68c8 90%)',
           },
         },
       },

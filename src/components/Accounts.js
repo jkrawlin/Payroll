@@ -42,7 +42,6 @@ import {
   GetApp as ExportIcon,
   Add as AddIcon,
   FilterList as FilterIcon,
-  DateRange as DateRangeIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import * as XLSX from 'xlsx';
@@ -762,7 +761,7 @@ const Accounts = () => {
                   background: alpha(theme.palette.primary.main, 0.02)
                 }}>
                   <Typography variant="h6" fontWeight={600}>
-                    📈 Key Performance Indicators
+                    Key Performance Indicators
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
                     Overview of critical financial metrics with 30-day trends
@@ -781,15 +780,36 @@ const Accounts = () => {
                       '& .MuiDataGrid-cell': {
                         borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
                         py: 2,
+                        px: 3,
+                        fontSize: '0.95rem',
                       },
                       '& .MuiDataGrid-row': {
+                        minHeight: 60,
                         '&:hover': {
                           backgroundColor: alpha(theme.palette.primary.main, 0.04),
                         },
+                        '&:last-child': {
+                          '& .MuiDataGrid-cell': {
+                            borderBottom: 'none',
+                          },
+                        },
                       },
                       '& .MuiDataGrid-columnHeaders': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.08),
-                        borderBottom: `2px solid ${theme.palette.primary.main}`,
+                        backgroundColor: theme.palette.primary.main,
+                        color: 'common.white',
+                        fontWeight: 600,
+                        fontSize: '1rem',
+                        '& .MuiDataGrid-columnHeader': {
+                          color: 'common.white',
+                        },
+                        '& .MuiDataGrid-columnHeaderTitle': {
+                          color: 'common.white',
+                          fontWeight: 600,
+                        },
+                        borderBottom: 'none',
+                      },
+                      '& .MuiDataGrid-virtualScroller': {
+                        backgroundColor: 'background.paper',
                       },
                     }}
                   />
@@ -801,16 +821,17 @@ const Accounts = () => {
             <Card sx={{ 
               mb: 4, 
               borderRadius: 3,
+              boxShadow: 3,
               background: cashFlow.netFlow >= 0 
                 ? `linear-gradient(135deg, ${alpha('#4caf50', 0.1)} 0%, ${alpha('#81c784', 0.05)} 100%)`
                 : `linear-gradient(135deg, ${alpha('#f44336', 0.1)} 0%, ${alpha('#e57373', 0.05)} 100%)`,
               border: `2px solid ${cashFlow.netFlow >= 0 ? alpha('#4caf50', 0.3) : alpha('#f44336', 0.3)}`
             }}>
-              <CardContent sx={{ p: 3 }}>
+              <CardContent sx={{ p: 4 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <Box>
                     <Typography variant="h6" fontWeight={600} gutterBottom>
-                      💰 30-Day Net Cash Flow
+                      30-Day Net Cash Flow
                     </Typography>
                     <Typography 
                       variant="h4" 
@@ -820,7 +841,7 @@ const Accounts = () => {
                       {cashFlow.netFlow >= 0 ? '+' : ''}{cashFlow.netFlow.toLocaleString()} QAR
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                      {cashFlow.netFlow >= 0 ? '🟢 Healthy cash flow' : '🔴 Negative cash flow - review expenses'}
+                      {cashFlow.netFlow >= 0 ? 'Healthy cash flow' : 'Negative cash flow - review expenses'}
                     </Typography>
                   </Box>
                   <Avatar sx={{ 

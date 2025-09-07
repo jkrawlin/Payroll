@@ -26,8 +26,6 @@ import {
   Business as BusinessIcon,
   Person as PersonIcon,
   Email as EmailIcon,
-  Phone as PhoneIcon,
-  LocationOn as LocationIcon,
   Search as SearchIcon,
   Add as AddIcon,
   Edit as EditIcon,
@@ -372,13 +370,6 @@ const Customers = () => {
                         onBlur={customerFormik.handleBlur}
                         error={customerFormik.touched.phone && Boolean(customerFormik.errors.phone)}
                         helperText={customerFormik.touched.phone && customerFormik.errors.phone}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <PhoneIcon />
-                            </InputAdornment>
-                          ),
-                        }}
                       />
                     </Grid>
 
@@ -401,13 +392,6 @@ const Customers = () => {
                         rows={2}
                         value={customerFormik.values.address}
                         onChange={customerFormik.handleChange}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <LocationIcon />
-                            </InputAdornment>
-                          ),
-                        }}
                       />
                     </Grid>
 
@@ -536,12 +520,10 @@ const Customers = () => {
                                       {customer.contactPerson}
                                     </Typography>
                                     <Typography variant="body2" color="text.secondary" gutterBottom>
-                                      <PhoneIcon sx={{ fontSize: 14, mr: 0.5 }} />
                                       {customer.phone}
                                     </Typography>
                                     {customer.email && (
                                       <Typography variant="body2" color="text.secondary">
-                                        <EmailIcon sx={{ fontSize: 14, mr: 0.5 }} />
                                         {customer.email}
                                       </Typography>
                                     )}
