@@ -2592,6 +2592,508 @@ const Employees = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Photo Upload Modal */}
+          <Box display="flex" alignItems="center" gap={2}>
+            <Avatar
+              src={detailsModalEmployee?.photoURL}
+              alt={detailsModalEmployee?.name}
+              sx={{
+                width: 56,
+                height: 56,
+                border: '3px solid rgba(255,255,255,0.2)',
+                fontSize: '1.5rem',
+                fontWeight: 700
+              }}
+            >
+              {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box>
+              <Typography variant="h5" sx={{ fontWeight: 700, mb: 0.5 }}>
+                {detailsModalEmployee?.name}
+              </Typography>
+              <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                {detailsModalEmployee?.position} • {detailsModalEmployee?.department}
+              </Typography>
+            </Box>
+          </Box>
+          <IconButton
+            onClick={() => {
+              setDetailsModalEmployee(null);
+              setOpenEmployeeDetails(false);
+              setEmployeeDetailsLoading(false);
+            }}
+            sx={{
+              color: 'rgba(255,255,255,0.7)',
+              '&:hover': {
+                color: 'white',
+                backgroundColor: 'rgba(255,255,255,0.1)'
+              }
+            }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 0 }}>
+          {employeeDetailsLoading ? (
+            <Box display="flex" justifyContent="center" alignItems="center" py={8}>
+              <CircularProgress size={48} thickness={4} />
+            </Box>
+          ) : (
+            <Box>
+              {/* Personal Information Section */}
+              <Box sx={{ p: 3, borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  mb: 3,
+                  color: theme.palette.primary.main,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <PersonIcon /> Personal Information
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <Paper sx={{ 
+                      p: 2.5, 
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="body2" sx={{ 
+                        color: theme.palette.text.secondary, 
+                        fontWeight: 500,
+                        mb: 1,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        fontSize: '0.75rem'
+                      }}>
+                        Full Name
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {detailsModalEmployee?.name || 'Not provided'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                  
+                  <Grid item xs={12} sm={6}>
+                    <Paper sx={{ 
+                      p: 2.5, 
+                      backgroundColor: alpha(theme.palette.secondary.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="body2" sx={{ 
+                        color: theme.palette.text.secondary, 
+                        fontWeight: 500,
+                        mb: 1,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        fontSize: '0.75rem'
+                      }}>
+                        Position
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {detailsModalEmployee?.position || 'Not specified'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Paper sx={{ 
+                      p: 2.5, 
+                      backgroundColor: alpha(theme.palette.info.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.info.main, 0.1)}`,
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="body2" sx={{ 
+                        color: theme.palette.text.secondary, 
+                        fontWeight: 500,
+                        mb: 1,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        fontSize: '0.75rem'
+                      }}>
+                        Department
+                      </Typography>
+                      <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                        {detailsModalEmployee?.department || 'Not assigned'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={6}>
+                    <Paper sx={{ 
+                      p: 2.5, 
+                      backgroundColor: alpha(theme.palette.success.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.success.main, 0.1)}`,
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="body2" sx={{ 
+                        color: theme.palette.text.secondary, 
+                        fontWeight: 500,
+                        mb: 1,
+                        textTransform: 'uppercase',
+                        letterSpacing: 0.5,
+                        fontSize: '0.75rem'
+                      }}>
+                        Salary
+                      </Typography>
+                      <Typography variant="h6" sx={{ 
+                        fontWeight: 600,
+                        color: theme.palette.success.main
+                      }}>
+                        QAR {detailsModalEmployee?.salary?.toLocaleString() || 'Not set'}
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Document Information Section */}
+              <Box sx={{ p: 3, borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  mb: 3,
+                  color: theme.palette.primary.main,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <BadgeIcon /> Official Documents
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ 
+                      p: 3, 
+                      border: `2px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                      borderRadius: 2,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.05)} 0%, ${alpha(theme.palette.warning.light, 0.05)} 100%)`
+                    }}>
+                      <Box display="flex" alignItems="center" gap={2} mb={2}>
+                        <Box sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          backgroundColor: alpha(theme.palette.warning.main, 0.1)
+                        }}>
+                          <BadgeIcon sx={{ color: theme.palette.warning.main }} />
+                        </Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          QID Information
+                        </Typography>
+                      </Box>
+                      
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                        QID Number
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, mb: 2, fontFamily: 'monospace' }}>
+                        {detailsModalEmployee?.qidNumber || 'Not provided'}
+                      </Typography>
+                      
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                        Expiry Date
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, mb: 2 }}>
+                        {detailsModalEmployee?.qidExpiry ? 
+                          new Date(detailsModalEmployee.qidExpiry).toLocaleDateString('en-QA') : 
+                          'Not provided'
+                        }
+                      </Typography>
+
+                      {detailsModalEmployee?.qidExpiry && (
+                        <Chip 
+                          label={
+                            new Date(detailsModalEmployee.qidExpiry) > new Date() ? 
+                            'Valid' : 'Expired'
+                          }
+                          color={
+                            new Date(detailsModalEmployee.qidExpiry) > new Date() ? 
+                            'success' : 'error'
+                          }
+                          size="small"
+                          sx={{ fontWeight: 600 }}
+                        />
+                      )}
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ 
+                      p: 3, 
+                      border: `2px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                      borderRadius: 2,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.info.main, 0.05)} 0%, ${alpha(theme.palette.info.light, 0.05)} 100%)`
+                    }}>
+                      <Box display="flex" alignItems="center" gap={2} mb={2}>
+                        <Box sx={{
+                          p: 1.5,
+                          borderRadius: 2,
+                          backgroundColor: alpha(theme.palette.info.main, 0.1)
+                        }}>
+                          <FlightTakeoffIcon sx={{ color: theme.palette.info.main }} />
+                        </Box>
+                        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                          Passport Information
+                        </Typography>
+                      </Box>
+                      
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                        Passport Number
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, mb: 2, fontFamily: 'monospace' }}>
+                        {detailsModalEmployee?.passportNumber || 'Not provided'}
+                      </Typography>
+                      
+                      <Typography variant="body2" sx={{ color: theme.palette.text.secondary, mb: 1 }}>
+                        Expiry Date
+                      </Typography>
+                      <Typography variant="body1" sx={{ fontWeight: 600, mb: 2 }}>
+                        {detailsModalEmployee?.passportExpiry ? 
+                          new Date(detailsModalEmployee.passportExpiry).toLocaleDateString('en-QA') : 
+                          'Not provided'
+                        }
+                      </Typography>
+
+                      {detailsModalEmployee?.passportExpiry && (
+                        <Chip 
+                          label={
+                            new Date(detailsModalEmployee.passportExpiry) > new Date() ? 
+                            'Valid' : 'Expired'
+                          }
+                          color={
+                            new Date(detailsModalEmployee.passportExpiry) > new Date() ? 
+                            'success' : 'error'
+                          }
+                          size="small"
+                          sx={{ fontWeight: 600 }}
+                        />
+                      )}
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Financial Information Section */}
+              <Box sx={{ p: 3, borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}` }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  mb: 3,
+                  color: theme.palette.primary.main,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <PaymentsIcon /> Financial Summary
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={4}>
+                    <Paper sx={{ 
+                      p: 3, 
+                      textAlign: 'center',
+                      backgroundColor: alpha(theme.palette.success.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="h4" sx={{ 
+                        fontWeight: 700, 
+                        color: theme.palette.success.main,
+                        mb: 1
+                      }}>
+                        QAR {detailsModalEmployee?.salary?.toLocaleString() || '0'}
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        color: theme.palette.text.secondary,
+                        fontWeight: 500
+                      }}>
+                        Monthly Salary
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <Paper sx={{ 
+                      p: 3, 
+                      textAlign: 'center',
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="h4" sx={{ 
+                        fontWeight: 700, 
+                        color: theme.palette.primary.main,
+                        mb: 1
+                      }}>
+                        QAR {detailsModalEmployee?.totalPaid?.toLocaleString() || '0'}
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        color: theme.palette.text.secondary,
+                        fontWeight: 500
+                      }}>
+                        Total Paid
+                      </Typography>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} sm={4}>
+                    <Paper sx={{ 
+                      p: 3, 
+                      textAlign: 'center',
+                      backgroundColor: alpha(theme.palette.warning.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                      borderRadius: 2
+                    }}>
+                      <Typography variant="h4" sx={{ 
+                        fontWeight: 700, 
+                        color: theme.palette.warning.main,
+                        mb: 1
+                      }}>
+                        {detailsModalEmployee ? calculateRemainingDays(detailsModalEmployee) : 0}
+                      </Typography>
+                      <Typography variant="body2" sx={{ 
+                        color: theme.palette.text.secondary,
+                        fontWeight: 500
+                      }}>
+                        Days Remaining
+                      </Typography>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+
+              {/* Contact Information Section */}
+              <Box sx={{ p: 3 }}>
+                <Typography variant="h6" sx={{ 
+                  fontWeight: 600, 
+                  mb: 3,
+                  color: theme.palette.primary.main,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}>
+                  <ContactMailIcon /> Contact Information
+                </Typography>
+                
+                <Grid container spacing={3}>
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ 
+                      p: 2.5, 
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                      borderRadius: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2
+                    }}>
+                      <Box sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                      }}>
+                        <EmailIcon sx={{ color: theme.palette.primary.main }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ 
+                          color: theme.palette.text.secondary, 
+                          fontWeight: 500,
+                          mb: 0.5
+                        }}>
+                          Email Address
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {detailsModalEmployee?.email || 'Not provided'}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
+
+                  <Grid item xs={12} md={6}>
+                    <Paper sx={{ 
+                      p: 2.5, 
+                      backgroundColor: alpha(theme.palette.secondary.main, 0.04),
+                      border: `1px solid ${alpha(theme.palette.secondary.main, 0.1)}`,
+                      borderRadius: 2,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2
+                    }}>
+                      <Box sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        backgroundColor: alpha(theme.palette.secondary.main, 0.1)
+                      }}>
+                        <PhoneIcon sx={{ color: theme.palette.secondary.main }} />
+                      </Box>
+                      <Box>
+                        <Typography variant="body2" sx={{ 
+                          color: theme.palette.text.secondary, 
+                          fontWeight: 500,
+                          mb: 0.5
+                        }}>
+                          Phone Number
+                        </Typography>
+                        <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                          {detailsModalEmployee?.phone || 'Not provided'}
+                        </Typography>
+                      </Box>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </Box>
+            </Box>
+          )}
+        </DialogContent>
+
+        <DialogActions sx={{ 
+          p: 3, 
+          backgroundColor: alpha(theme.palette.grey[50], 0.5),
+          borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`
+        }}>
+          <Button 
+            onClick={() => {
+              setDetailsModalEmployee(null);
+              setOpenEmployeeDetails(false);
+              setEmployeeDetailsLoading(false);
+            }}
+            variant="outlined"
+            startIcon={<CloseIcon />}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              fontWeight: 600
+            }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<EditIcon />}
+            sx={{
+              borderRadius: 2,
+              px: 3,
+              py: 1,
+              fontWeight: 600,
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}
+            onClick={() => {
+              // Store current employee and close details modal, then open edit form
+              const employeeToEdit = detailsModalEmployee;
+              setDetailsModalEmployee(null);
+              setOpenEmployeeDetails(false);
+              setEmployeeDetailsLoading(false);
+              setSelectedEmployee(employeeToEdit);
+              setShowForm(true);
+            }}
+          >
+            Edit Employee
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 };
