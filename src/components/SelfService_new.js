@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { doc, collection, getDocs, updateDoc, arrayUnion } from 'firebase/firestore';
-import { db, auth, isFirebaseConfigured } from '../firebase';
-import { mockEmployees, mockFirebaseAPI } from '../services/mockData';
+import { db, auth } from '../firebase';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
@@ -42,7 +41,7 @@ import {
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
-const SelfService = ({ userId = 'emp001' }) => { // Default to first employee for demo
+const SelfService = ({ userId }) => {
   const theme = useTheme();
   const [employee, setEmployee] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -102,22 +101,13 @@ const SelfService = ({ userId = 'emp001' }) => { // Default to first employee fo
   const fetchEmployeeData = async () => {
     try {
       setLoading(true);
-      let employees = [];
+      const employeesSnapshot = await getDocs(collection(db, 'employees'));
+      const employees = employeesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
       
-      if (isFirebaseConfigured()) {
-        const employeesSnapshot = await getDocs(collection(db, 'employees'));
-        employees = employeesSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-      } else {
-        // Use mock data for testing
-        employees = [...mockEmployees];
-        console.log('Using mock employee data for SelfService demonstration');
-      }
-      
-      // For demo purposes, use first employee if no userId provided
-      const currentEmployee = employees.find(emp => emp.id === userId) || employees[0];
+      const currentEmployee = employees.find(emp => emp.id === userId);
       if (currentEmployee) {
         setEmployee(currentEmployee);
         
@@ -127,14 +117,7 @@ const SelfService = ({ userId = 'emp001' }) => { // Default to first employee fo
       }
     } catch (error) {
       console.error('Error fetching employee data:', error);
-      // Fallback to mock data
-      const employees = [...mockEmployees];
-      const currentEmployee = employees[0]; // Use first employee for demo
-      if (currentEmployee) {
-        setEmployee(currentEmployee);
-        const mockPayslips = generatePayslips(currentEmployee);
-        setPayslips(mockPayslips);
-      }
+      toast.error('Error loading employee data');
     } finally {
       setLoading(false);
     }

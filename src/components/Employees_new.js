@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage, isFirebaseConfigured } from '../firebase';
-import { mockEmployees, mockFirebaseAPI } from '../services/mockData';
+import { db, storage } from '../firebase';
 import Dropzone from 'react-dropzone';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -163,19 +162,12 @@ const Employees = () => {
 
   const fetchEmployees = async () => {
     try {
-      if (isFirebaseConfigured()) {
-        const snapshot = await getDocs(collection(db, 'employees'));
-        const employeesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setEmployees(employeesList);
-      } else {
-        // Use mock data for testing
-        setEmployees([...mockEmployees]);
-        console.log('Using mock employee data for demonstration');
-      }
+      const snapshot = await getDocs(collection(db, 'employees'));
+      const employeesList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setEmployees(employeesList);
     } catch (error) {
-      // Fallback to mock data if Firebase fails
-      setEmployees([...mockEmployees]);
-      console.log('Firebase error, using mock data:', error.message);
+      toast.error('Error fetching employees');
+      console.error('Error fetching employees:', error);
     }
   };
 

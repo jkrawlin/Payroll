@@ -2,8 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import ReactToPrint from 'react-to-print';
 import { useFormik } from 'formik';
 import { collection, getDocs, updateDoc, doc, arrayUnion } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '../firebase';
-import { mockCustomers, mockReceipts } from '../services/mockData';
+import { db } from '../firebase';
 import { toast } from 'react-toastify';
 import * as Yup from 'yup';
 import {
@@ -42,7 +41,7 @@ import {
   ExpandMore as ExpandMoreIcon,
   Settings as SettingsIcon,
   History as HistoryIcon,
-  Dashboard as TemplateIcon,
+  Template as TemplateIcon,
   CreditCard as CardIcon,
   AccountBalance as BankIcon,
   Assignment as CheckIcon,
@@ -227,19 +226,12 @@ const Receipts = () => {
 
   const fetchCustomers = async () => {
     try {
-      if (isFirebaseConfigured()) {
-        const snapshot = await getDocs(collection(db, 'customers'));
-        const customersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setCustomers(customersList);
-      } else {
-        // Use mock data for testing
-        setCustomers([...mockCustomers]);
-        console.log('Using mock customer data for Receipts demonstration');
-      }
+      const snapshot = await getDocs(collection(db, 'customers'));
+      const customersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setCustomers(customersList);
     } catch (error) {
-      // Fallback to mock data
-      setCustomers([...mockCustomers]);
-      console.log('Firebase error, using mock data:', error.message);
+      toast.error('Error fetching customers');
+      console.error('Error fetching customers:', error);
     }
   };
 
@@ -249,9 +241,6 @@ const Receipts = () => {
     const savedReceipts = localStorage.getItem('recentReceipts');
     if (savedReceipts) {
       setRecentReceipts(JSON.parse(savedReceipts));
-    } else {
-      // Initialize with mock receipts for demo
-      setRecentReceipts([...mockReceipts]);
     }
   }, []);
 

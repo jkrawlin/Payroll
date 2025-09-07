@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, arrayUnion } from 'firebase/firestore';
-import { db, isFirebaseConfigured } from '../firebase';
-import { mockCustomers, mockFirebaseAPI } from '../services/mockData';
+import { db } from '../firebase';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
@@ -133,22 +132,15 @@ const Customers = () => {
 
   const fetchCustomers = async () => {
     try {
-      if (isFirebaseConfigured()) {
-        const customersSnapshot = await getDocs(collection(db, 'customers'));
-        const customersData = customersSnapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
-        setCustomers(customersData);
-      } else {
-        // Use mock data for testing
-        setCustomers([...mockCustomers]);
-        console.log('Using mock customer data for demonstration');
-      }
+      const customersSnapshot = await getDocs(collection(db, 'customers'));
+      const customersData = customersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setCustomers(customersData);
     } catch (error) {
-      // Fallback to mock data if Firebase fails
-      setCustomers([...mockCustomers]);
-      console.log('Firebase error, using mock data:', error.message);
+      console.error('Error fetching customers:', error);
+      toast.error('Error loading customers');
     }
   };
 

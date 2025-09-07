@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { mockAnalytics, mockEmployees, mockCustomers, mockAccounts } from '../services/mockData';
 import { 
   Box, 
   Card, 
@@ -38,18 +39,18 @@ ChartJS.register(
   ArcElement
 );
 
-const Analytics = ({ employees = [], payments = [], receipts = [] }) => {
+const Analytics = ({ 
+  employees = mockEmployees, 
+  payments = [], 
+  receipts = [],
+  customers = mockCustomers,
+  accounts = mockAccounts
+}) => {
   const theme = useTheme();
-  const [kpis, setKpis] = useState({
-    totalEmployees: 0,
-    totalPayroll: 0,
-    totalRevenue: 0,
-    totalExpenses: 0,
-    avgSalary: 0,
-    profitMargin: 0,
-    pendingAdvances: 0,
-    outstandingInvoices: 0
-  });
+  const [kpis, setKpis] = useState(mockAnalytics.kpis.reduce((acc, kpi) => ({
+    ...acc,
+    [kpi.title.toLowerCase().replace(' ', '')]: kpi.value
+  }), {}));
   
   const [payrollData, setPayrollData] = useState({ labels: [], datasets: [] });
   const [salaryDistData, setSalaryDistData] = useState({ labels: [], datasets: [] });
@@ -92,22 +93,28 @@ const Analytics = ({ employees = [], payments = [], receipts = [] }) => {
     },
   };
 
-  // Calculate KPIs
+  // Calculate KPIs using mock data
   const calculateKPIs = () => {
-    if (!employees || employees.length === 0) return;
-
     const totalEmployees = employees.length;
-    const totalPayroll = employees.reduce((sum, emp) => sum + (emp.monthlySalary || 0), 0);
+    const totalPayroll = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
     const avgSalary = totalEmployees > 0 ? totalPayroll / totalEmployees : 0;
     
-    // Mock revenue and expenses calculation
-    const totalRevenue = totalPayroll * 1.5; // Assume revenue is 1.5x of payroll
-    const totalExpenses = totalPayroll * 1.2; // Assume expenses are 1.2x of payroll
+    // Use accounts data for revenue/expenses
+    const totalRevenue = accounts?.kpis?.totalRevenue || 485000;
+    const totalExpenses = accounts?.kpis?.totalExpenses || 285000;
     const profitMargin = totalRevenue > 0 ? ((totalRevenue - totalExpenses) / totalRevenue) * 100 : 0;
     
-    // Mock other KPIs
-    const pendingAdvances = employees.reduce((sum, emp) => sum + (emp.advance || 0), 0);
-    const outstandingInvoices = Math.random() * 50000; // Mock data
+    // Calculate pending advances from employee data
+    const pendingAdvances = employees.reduce((sum, emp) => {
+      const empAdvances = emp.advances?.filter(adv => adv.status === 'pending') || [];
+      return sum + empAdvances.reduce((advSum, adv) => advSum + (adv.amount || 0), 0);
+    }, 0);
+    
+    // Calculate outstanding invoices from customer data
+    const outstandingInvoices = customers.reduce((sum, cust) => {
+      const pendingInvoices = cust.invoices?.filter(inv => inv.status === 'pending' || inv.status === 'overdue') || [];
+      return sum + pendingInvoices.reduce((invSum, inv) => invSum + (inv.amount || 0), 0);
+    }, 0);
 
     setKpis({
       totalEmployees,
@@ -121,20 +128,18 @@ const Analytics = ({ employees = [], payments = [], receipts = [] }) => {
     });
   };
 
-  // Generate chart data
+  // Generate chart data using mock data
   const generateChartData = () => {
-    if (!employees || employees.length === 0) return;
-
     // Payroll Chart Data
     const payrollChartData = {
       labels: employees.slice(0, 10).map(emp => emp.name || 'Unknown'),
       datasets: [
         {
-          label: 'Monthly Salary',
-          data: employees.slice(0, 10).map(emp => emp.monthlySalary || 0),
-          backgroundColor: 'rgba(54, 162, 235, 0.8)',
-          borderColor: 'rgba(54, 162, 235, 1)',
-          borderWidth: 1,
+          label: 'Monthly Salary (QAR)',
+          data: employees.slice(0, 10).map(emp => emp.salary || 0),
+          backgroundColor: `rgba(${theme.palette.primary.main.slice(1)}, 0.8)`.replace('#', ''),
+          borderColor: theme.palette.primary.main,
+          borderWidth: 2,
         },
       ],
     };
@@ -142,24 +147,25 @@ const Analytics = ({ employees = [], payments = [], receipts = [] }) => {
 
     // Salary Distribution
     const salaryRanges = {
-      '< 5000': 0,
-      '5000-10000': 0,
-      '10000-15000': 0,
-      '15000+': 0
+      '< 8000': 0,
+      '8000-10000': 0,
+      '10000-13000': 0,
+      '13000+': 0
     };
 
     employees.forEach(emp => {
-      const salary = emp.monthlySalary || 0;
-      if (salary < 5000) salaryRanges['< 5000']++;
-      else if (salary <= 10000) salaryRanges['5000-10000']++;
-      else if (salary <= 15000) salaryRanges['10000-15000']++;
-      else salaryRanges['15000+']++;
+      const salary = emp.salary || 0;
+      if (salary < 8000) salaryRanges['< 8000']++;
+      else if (salary <= 10000) salaryRanges['8000-10000']++;
+      else if (salary <= 13000) salaryRanges['10000-13000']++;
+      else salaryRanges['13000+']++;
     });
 
     const salaryDistChartData = {
       labels: Object.keys(salaryRanges),
       datasets: [
         {
+          label: 'Number of Employees',
           data: Object.values(salaryRanges),
           backgroundColor: [
             'rgba(255, 99, 132, 0.8)',
@@ -167,96 +173,112 @@ const Analytics = ({ employees = [], payments = [], receipts = [] }) => {
             'rgba(255, 205, 86, 0.8)',
             'rgba(75, 192, 192, 0.8)',
           ],
-          borderWidth: 1,
+          borderWidth: 2,
         },
       ],
     };
     setSalaryDistData(salaryDistChartData);
 
-    // Monthly Trends (Mock data)
-    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'];
+    // Monthly Trends using mock analytics data
     const monthlyTrendsChartData = {
-      labels: months,
+      labels: mockAnalytics.chartData.labels,
       datasets: [
         {
-          label: 'Revenue',
-          data: [65000, 70000, 68000, 75000, 78000, 82000],
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          tension: 0.1,
+          label: 'Revenue (QAR)',
+          data: mockAnalytics.chartData.revenue,
+          borderColor: theme.palette.success.main,
+          backgroundColor: alpha(theme.palette.success.main, 0.1),
+          tension: 0.4,
+          fill: true,
         },
         {
-          label: 'Expenses',
-          data: [50000, 55000, 52000, 58000, 60000, 62000],
-          borderColor: 'rgb(255, 99, 132)',
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          tension: 0.1,
+          label: 'Expenses (QAR)',
+          data: mockAnalytics.chartData.expenses,
+          borderColor: theme.palette.error.main,
+          backgroundColor: alpha(theme.palette.error.main, 0.1),
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: 'Profit (QAR)',
+          data: mockAnalytics.chartData.profit,
+          borderColor: theme.palette.primary.main,
+          backgroundColor: alpha(theme.palette.primary.main, 0.1),
+          tension: 0.4,
+          fill: true,
         },
       ],
     };
     setMonthlyTrendsData(monthlyTrendsChartData);
 
-    // Customer Data (Mock)
+    // Customer Revenue Data
     const customerChartData = {
-      labels: ['Company A', 'Company B', 'Company C', 'Company D', 'Company E'],
+      labels: customers.map(cust => cust.name),
       datasets: [
         {
-          label: 'Revenue (QAR)',
-          data: [25000, 30000, 20000, 35000, 28000],
-          backgroundColor: 'rgba(153, 102, 255, 0.8)',
-          borderColor: 'rgba(153, 102, 255, 1)',
-          borderWidth: 1,
+          label: 'Total Invoiced (QAR)',
+          data: customers.map(cust => cust.totalInvoiced || 0),
+          backgroundColor: alpha(theme.palette.info.main, 0.8),
+          borderColor: theme.palette.info.main,
+          borderWidth: 2,
         },
       ],
     };
     setCustomerData(customerChartData);
 
-    // Cash Flow (Mock)
-    const cashFlowChartData = {
-      labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
-      datasets: [
-        {
-          label: 'Income',
-          data: [18000, 22000, 20000, 25000],
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.2)',
-          tension: 0.1,
-        },
-        {
-          label: 'Expenses',
-          data: [15000, 18000, 16000, 20000],
-          borderColor: 'rgb(255, 99, 132)',
-          backgroundColor: 'rgba(255, 99, 132, 0.2)',
-          tension: 0.1,
-        },
-      ],
-    };
-    setCashFlowData(cashFlowChartData);
-
-    // Department Distribution
-    const departments = {};
+    // Department Analysis
+    const departmentCounts = {};
+    const departmentSalaries = {};
+    
     employees.forEach(emp => {
       const dept = emp.department || 'Unknown';
-      departments[dept] = (departments[dept] || 0) + 1;
+      departmentCounts[dept] = (departmentCounts[dept] || 0) + 1;
+      departmentSalaries[dept] = (departmentSalaries[dept] || 0) + (emp.salary || 0);
     });
 
     const departmentChartData = {
-      labels: Object.keys(departments),
+      labels: Object.keys(departmentCounts),
       datasets: [
         {
-          data: Object.values(departments),
+          label: 'Employee Count',
+          data: Object.values(departmentCounts),
           backgroundColor: [
-            'rgba(255, 99, 132, 0.8)',
-            'rgba(54, 162, 235, 0.8)',
-            'rgba(255, 205, 86, 0.8)',
-            'rgba(75, 192, 192, 0.8)',
-            'rgba(153, 102, 255, 0.8)',
+            alpha(theme.palette.primary.main, 0.8),
+            alpha(theme.palette.secondary.main, 0.8),
+            alpha(theme.palette.success.main, 0.8),
+            alpha(theme.palette.warning.main, 0.8),
+            alpha(theme.palette.info.main, 0.8),
           ],
-          borderWidth: 1,
+          borderWidth: 2,
         },
       ],
     };
     setDepartmentData(departmentChartData);
+
+    // Cash Flow Data using accounts ledger
+    const weekLabels = ['Week 1', 'Week 2', 'Week 3', 'Week 4'];
+    const cashFlowChartData = {
+      labels: weekLabels,
+      datasets: [
+        {
+          label: 'Income (QAR)',
+          data: [180000, 220000, 200000, 250000],
+          borderColor: theme.palette.success.main,
+          backgroundColor: alpha(theme.palette.success.main, 0.1),
+          tension: 0.4,
+          fill: true,
+        },
+        {
+          label: 'Expenses (QAR)',
+          data: [150000, 180000, 160000, 200000],
+          borderColor: theme.palette.error.main,
+          backgroundColor: alpha(theme.palette.error.main, 0.1),
+          tension: 0.4,
+          fill: true,
+        },
+      ],
+    };
+    setCashFlowData(cashFlowChartData);
   };
 
   useEffect(() => {
