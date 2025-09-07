@@ -3,6 +3,7 @@ import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc } from '
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, isFirebaseConfigured } from '../firebase';
 import { mockEmployees, mockFirebaseAPI } from '../services/mockData';
+import { useDropzone } from 'react-dropzone';
 import Dropzone from 'react-dropzone';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -63,6 +64,7 @@ import {
   Assignment as AssignmentIcon,
   AttachMoney as MoneyIcon,
   CloudUpload as CloudUploadIcon,
+  CameraAlt as CameraAltIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { DataGrid } from '@mui/x-data-grid';
@@ -89,6 +91,60 @@ const Employees = () => {
     const dailyRate = employee.salary / 30; // Assume 30-day month
     return Math.floor(employee.totalPaid / dailyRate);
   };
+
+  // Photo upload functionality
+  const [photoUploadModal, setPhotoUploadModal] = useState(false);
+  const [photoUploadEmployee, setPhotoUploadEmployee] = useState(null);
+  const [uploading, setUploading] = useState(false);
+
+  const openPhotoUploadModal = (employee) => {
+    setPhotoUploadEmployee(employee);
+    setPhotoUploadModal(true);
+  };
+
+  const onPhotoDrop = async (acceptedFiles) => {
+    if (acceptedFiles.length > 0 && photoUploadEmployee) {
+      setUploading(true);
+      try {
+        const file = acceptedFiles[0];
+        const photoRef = ref(storage, `employee-photos/${photoUploadEmployee.id}/${file.name}`);
+        
+        await uploadBytes(photoRef, file);
+        const photoUrl = await getDownloadURL(photoRef);
+        
+        // Update employee photo in database
+        if (isFirebaseConfigured) {
+          await updateDoc(doc(db, 'employees', photoUploadEmployee.id), { photoUrl });
+        } else {
+          // Mock update
+          const updatedEmployees = employees.map(emp => 
+            emp.id === photoUploadEmployee.id ? { ...emp, photoUrl } : emp
+          );
+          setEmployees(updatedEmployees);
+        }
+        
+        // Update selected employee if it's the same one
+        if (selectedEmployee?.id === photoUploadEmployee.id) {
+          setSelectedEmployee({ ...selectedEmployee, photoUrl });
+        }
+        
+        toast.success('Profile photo updated successfully');
+        setPhotoUploadModal(false);
+      } catch (error) {
+        console.error('Photo upload error:', error);
+        toast.error('Failed to upload photo');
+      } finally {
+        setUploading(false);
+      }
+    }
+  };
+
+  const { getRootProps, getInputProps } = useDropzone({ 
+    onDrop: onPhotoDrop, 
+    accept: { 'image/*': [] }, 
+    maxFiles: 1,
+    disabled: uploading
+  });
 
   const formatDate = (dateStr) => {
     if (!dateStr) return 'Not specified';
@@ -437,29 +493,29 @@ const Employees = () => {
                       {
                         field: 'employee',
                         headerName: 'Employee',
-                        width: 280,
+                        width: 250,
                         renderCell: (params) => (
-                          <Box display="flex" alignItems="center" sx={{ cursor: 'pointer', py: 1 }}>
+                          <Box display="flex" alignItems="center" sx={{ cursor: 'pointer', p: 1 }}>
                             <Avatar 
                               src={params.row.photoUrl}
                               sx={{ 
                                 bgcolor: theme.palette.primary.main,
                                 color: 'white',
-                                mr: 3,
-                                width: 44,
-                                height: 44,
-                                fontSize: '1.2rem',
+                                mr: 2,
+                                width: 40,
+                                height: 40,
+                                fontSize: '1rem',
                                 fontWeight: 600
                               }}
                             >
                               {params.row.name?.charAt(0)}
                             </Avatar>
                             <Box>
-                              <Typography variant="body1" fontWeight={600} sx={{ mb: 0.5 }}>
+                              <Typography variant="body1" fontWeight={600} noWrap sx={{ mb: 0.5 }}>
                                 {params.row.name}
                               </Typography>
                               {params.row.email && (
-                                <Typography variant="body2" color="text.secondary">
+                                <Typography variant="body2" color="text.secondary" noWrap>
                                   {params.row.email}
                                 </Typography>
                               )}
@@ -470,17 +526,35 @@ const Employees = () => {
                       {
                         field: 'department',
                         headerName: 'Department',
-                        width: 130
+                        width: 120,
+                        align: 'center',
+                        headerAlign: 'center'
                       },
                       {
                         field: 'position',
                         headerName: 'Position',
-                        width: 160
+                        width: 150,
+                        align: 'center',
+                        headerAlign: 'center'
+                      },
+                      {
+                        field: 'qidNumber',
+                        headerName: 'Qatar ID',
+                        width: 130,
+                        align: 'center',
+                        headerAlign: 'center',
+                        renderCell: (params) => (
+                          <Typography variant="body2" fontWeight={500}>
+                            {params.row.qid?.number || 'Not provided'}
+                          </Typography>
+                        )
                       },
                       {
                         field: 'qidStatus',
                         headerName: 'QID Status',
-                        width: 130,
+                        width: 100,
+                        align: 'center',
+                        headerAlign: 'center',
                         renderCell: (params) => (
                           <Chip
                             label={params.row.qidStatusObj.message}
@@ -493,7 +567,9 @@ const Employees = () => {
                       {
                         field: 'passportStatus',
                         headerName: 'Passport Status',
-                        width: 140,
+                        width: 120,
+                        align: 'center',
+                        headerAlign: 'center',
                         renderCell: (params) => (
                           <Chip
                             label={params.row.passportStatusObj.message}
@@ -506,20 +582,20 @@ const Employees = () => {
                       {
                         field: 'salary',
                         headerName: 'Salary',
-                        width: 120,
-                        renderCell: (params) => (
-                          <Typography variant="body2" fontWeight={600} color="success.main">
-                            {params.value?.toLocaleString() || 0} QAR
-                          </Typography>
-                        )
+                        width: 100,
+                        align: 'right',
+                        headerAlign: 'right',
+                        valueFormatter: (value) => `${value?.toLocaleString() || 0} QAR`
                       },
                       {
                         field: 'totalPaid',
                         headerName: 'Total Paid',
-                        width: 120,
+                        width: 100,
+                        align: 'right',
+                        headerAlign: 'right',
                         renderCell: (params) => (
-                          <Typography variant="body2" fontWeight={600} color="success.main">
-                            {(params.value || 0).toLocaleString()} QAR
+                          <Typography variant="body2" color="success.main" fontWeight={600}>
+                            {(params.row.salary * 6 || 0).toLocaleString()} QAR
                           </Typography>
                         )
                       },
@@ -527,44 +603,45 @@ const Employees = () => {
                         field: 'actions',
                         headerName: 'Actions',
                         width: 120,
+                        align: 'center',
+                        headerAlign: 'center',
                         sortable: false,
                         renderCell: (params) => (
-                          <Box display="flex" gap={1}>
-                            <IconButton
-                              size="small"
+                          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
+                            <IconButton 
+                              size="small" 
                               onClick={(e) => {
                                 e.stopPropagation();
-                                handleEdit(params.row);
+                                openPhotoUploadModal(params.row);
                               }}
-                              sx={{ 
-                                color: theme.palette.primary.main,
-                                '&:hover': {
-                                  bgcolor: alpha(theme.palette.primary.main, 0.1)
-                                }
-                              }}
+                              sx={{ color: 'primary.main' }}
                             >
-                              <EditIcon />
+                              <CameraAltIcon fontSize="small" />
                             </IconButton>
-                            <IconButton
-                              size="small"
+                            <IconButton 
+                              size="small" 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRowClick(params.row);
+                              }}
+                              sx={{ color: 'primary.main' }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton 
+                              size="small" 
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDelete(params.row.id, params.row.name);
                               }}
-                              sx={{ 
-                                color: theme.palette.error.main,
-                                '&:hover': {
-                                  bgcolor: alpha(theme.palette.error.main, 0.1)
-                                }
-                              }}
+                              sx={{ color: 'error.main' }}
                             >
-                              <DeleteIcon />
+                              <DeleteIcon fontSize="small" />
                             </IconButton>
                           </Box>
                         )
-                      }
+                      },
                     ]}
-                    onRowClick={(params) => handleRowClick(params.row)}
                     sx={{
                       '& .MuiDataGrid-root': {
                         border: 'none',
@@ -586,12 +663,19 @@ const Employees = () => {
                         fontSize: '0.95rem'
                       },
                       '& .MuiDataGrid-columnHeaders': {
-                        backgroundColor: alpha(theme.palette.grey[100], 0.8),
+                        backgroundColor: theme.palette.primary.main,
                         fontWeight: 600,
                         fontSize: '1rem',
-                        color: theme.palette.text.primary,
-                        borderBottom: `2px solid ${theme.palette.divider}`,
-                        borderRadius: 0
+                        color: 'common.white',
+                        borderBottom: 'none',
+                        borderRadius: '8px 8px 0 0',
+                        '& .MuiDataGrid-columnHeader': {
+                          color: 'common.white',
+                        },
+                        '& .MuiDataGrid-columnHeaderTitle': {
+                          color: 'common.white',
+                          fontWeight: 600,
+                        }
                       },
                       backgroundColor: 'background.paper',
                       borderRadius: 2,
@@ -1416,6 +1500,104 @@ const Employees = () => {
             }}
           >
             {loading ? 'Saving...' : editingId ? 'Update Employee' : 'Add Employee'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Photo Upload Modal */}
+      <Dialog
+        open={photoUploadModal}
+        onClose={() => setPhotoUploadModal(false)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3 }
+        }}
+      >
+        <DialogTitle sx={{ 
+          backgroundColor: 'primary.main', 
+          color: 'common.white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <Typography variant="h6" fontWeight={600}>
+            Update Profile Photo
+          </Typography>
+          <IconButton
+            onClick={() => setPhotoUploadModal(false)}
+            sx={{ color: 'common.white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        <DialogContent sx={{ p: 4 }}>
+          <Box sx={{ textAlign: 'center', mb: 3 }}>
+            <Avatar
+              src={photoUploadEmployee?.photoUrl}
+              sx={{
+                width: 120,
+                height: 120,
+                mx: 'auto',
+                mb: 2,
+                fontSize: '3rem',
+                bgcolor: 'primary.main'
+              }}
+            >
+              {photoUploadEmployee?.name?.charAt(0)}
+            </Avatar>
+            <Typography variant="h6" fontWeight={600}>
+              {photoUploadEmployee?.name}
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {photoUploadEmployee?.position} • {photoUploadEmployee?.department}
+            </Typography>
+          </Box>
+          
+          <Box 
+            {...getRootProps()} 
+            sx={{
+              border: `2px dashed ${uploading ? 'grey.400' : 'primary.main'}`,
+              borderRadius: 3,
+              p: 4,
+              textAlign: 'center',
+              cursor: uploading ? 'not-allowed' : 'pointer',
+              backgroundColor: uploading ? 'grey.50' : alpha(theme.palette.primary.main, 0.02),
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                backgroundColor: uploading ? 'grey.50' : alpha(theme.palette.primary.main, 0.05),
+                transform: uploading ? 'none' : 'scale(1.02)'
+              }
+            }}
+          >
+            <input {...getInputProps()} />
+            {uploading ? (
+              <Box>
+                <CircularProgress size={40} sx={{ mb: 2 }} />
+                <Typography variant="body1" color="text.secondary">
+                  Uploading photo...
+                </Typography>
+              </Box>
+            ) : (
+              <Box>
+                <CameraAltIcon sx={{ fontSize: 48, color: 'primary.main', mb: 2 }} />
+                <Typography variant="h6" fontWeight={600} gutterBottom>
+                  Drag & drop or click to upload
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  Supports: JPG, PNG, GIF (Max 5MB)
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        </DialogContent>
+        <DialogActions sx={{ p: 3, pt: 0 }}>
+          <Button 
+            onClick={() => setPhotoUploadModal(false)}
+            disabled={uploading}
+            sx={{ borderRadius: 2 }}
+          >
+            Cancel
           </Button>
         </DialogActions>
       </Dialog>
