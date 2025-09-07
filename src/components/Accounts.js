@@ -29,6 +29,7 @@ import {
   Tooltip,
   InputAdornment,
   Badge,
+  CircularProgress,
 } from '@mui/material';
 import {
   TrendingUp as TrendingUpIcon,
@@ -1131,173 +1132,288 @@ const Accounts = () => {
         </div>
       )}
 
-      {/* Transactions Tab */}
+      {/* Enhanced Transactions Tab */}
       {activeTab === 'transactions' && (
-        <div className="transactions-tab">
-          <div className="accounts-content">
-            {/* Add Entry Form */}
-            <div className="entry-form-section">
-              <h3>💰 Add New Transaction</h3>
-              <div className="entry-form">
-                <div className="form-grid">
-                  <div className="form-group">
-                    <label>Type *</label>
-                    <select 
-                      value={type} 
-                      onChange={e => setType(e.target.value)}
-                      className="type-select"
-                    >
-                      <option value="credit">💰 Credit (Money In)</option>
-                      <option value="debit">💸 Debit (Money Out)</option>
-                    </select>
-                  </div>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <Grid container spacing={3}>
+            {/* Transaction Form */}
+            <Grid item xs={12} lg={4}>
+              <Card sx={{ borderRadius: 3, height: 'fit-content' }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" fontWeight={600} gutterBottom>
+                    💰 Add New Transaction
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+                    Record financial transactions for your business
+                  </Typography>
 
-                  <div className="form-group">
-                    <label>Category *</label>
-                    <select 
-                      value={category} 
-                      onChange={e => setCategory(e.target.value)}
-                      className="category-select"
-                    >
-                      {categories.map(cat => (
-                        <option key={cat.value} value={cat.value}>
-                          {cat.icon} {cat.label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  <Box component="form" onSubmit={(e) => { e.preventDefault(); handleEntry(); }}>
+                    <Stack spacing={3}>
+                      <FormControl fullWidth>
+                        <InputLabel>Transaction Type</InputLabel>
+                        <Select
+                          value={type}
+                          label="Transaction Type"
+                          onChange={(e) => setType(e.target.value)}
+                          sx={{ mb: 2 }}
+                        >
+                          <MenuItem value="credit">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <TrendingUpIcon color="success" />
+                              Credit (Money In)
+                            </Box>
+                          </MenuItem>
+                          <MenuItem value="debit">
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <TrendingDownIcon color="error" />
+                              Debit (Money Out)
+                            </Box>
+                          </MenuItem>
+                        </Select>
+                      </FormControl>
 
-                  <div className="form-group">
-                    <label>Amount (QAR) *</label>
-                    <input
-                      type="number"
-                      placeholder="Enter amount"
-                      value={amount}
-                      onChange={e => setAmount(e.target.value)}
-                      min="0"
-                      step="0.01"
-                      className="amount-input"
-                    />
-                  </div>
+                      <FormControl fullWidth>
+                        <InputLabel>Category</InputLabel>
+                        <Select
+                          value={category}
+                          label="Category"
+                          onChange={(e) => setCategory(e.target.value)}
+                        >
+                          {categories.map(cat => (
+                            <MenuItem key={cat.value} value={cat.value}>
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography>{cat.icon}</Typography>
+                                <Typography>{cat.label}</Typography>
+                              </Box>
+                            </MenuItem>
+                          ))}
+                        </Select>
+                      </FormControl>
 
-                  <div className="form-group full-width">
-                    <label>Description *</label>
-                    <textarea
-                      placeholder="Enter description..."
-                      value={description}
-                      onChange={e => setDescription(e.target.value)}
-                      rows="2"
-                      className="description-input"
-                    />
-                  </div>
-                </div>
+                      <TextField
+                        fullWidth
+                        label="Amount (QAR)"
+                        type="number"
+                        value={amount}
+                        onChange={(e) => setAmount(e.target.value)}
+                        InputProps={{
+                          startAdornment: <InputAdornment position="start">QAR</InputAdornment>,
+                        }}
+                        inputProps={{ min: 0, step: 0.01 }}
+                      />
 
-                {selectedEmployee && (
-                  <div className="linked-employee-info">
-                    <p>🔗 Linked to: <strong>{selectedEmployee.name}</strong> (QID: {selectedEmployee.qid.number})</p>
-                  </div>
-                )}
+                      <TextField
+                        fullWidth
+                        label="Description"
+                        multiline
+                        rows={3}
+                        value={description}
+                        onChange={(e) => setDescription(e.target.value)}
+                        placeholder="Enter transaction details..."
+                      />
 
-                <button
-                  onClick={selectedEmployee ? () => addEmployeeTransaction({
-                    type,
-                    amount,
-                    description,
-                    category
-                  }) : handleEntry}
-                  disabled={loading || !amount || !description.trim()}
-                  className="add-entry-btn"
-                >
-                  {loading ? 'Adding...' : `Add ${type.charAt(0).toUpperCase() + type.slice(1)} Entry`}
-                </button>
-              </div>
-            </div>
+                      <Button
+                        type="submit"
+                        variant="contained"
+                        disabled={loading || !amount || !description}
+                        fullWidth
+                        startIcon={loading ? <CircularProgress size={20} /> : <AddIcon />}
+                        sx={{
+                          py: 1.5,
+                          fontWeight: 600,
+                          textTransform: 'none',
+                          borderRadius: 2,
+                        }}
+                      >
+                        {loading ? 'Adding...' : 'Add Transaction'}
+                      </Button>
+                    </Stack>
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
 
-            {/* Filters */}
-            <div className="filters-section">
-              <h3>📊 Transaction History</h3>
-              <div className="filters">
-                <select 
-                  value={filterType}
-                  onChange={e => setFilterType(e.target.value)}
-                  className="filter-select"
-                >
-                  <option value="all">All Transactions</option>
-                  <option value="credit">Credits Only</option>
-                  <option value="debit">Debits Only</option>
-                </select>
+            {/* Transactions Table */}
+            <Grid item xs={12} lg={8}>
+              <Card sx={{ borderRadius: 3 }}>
+                <CardContent sx={{ p: 0 }}>
+                  <Box sx={{ 
+                    p: 3, 
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center'
+                  }}>
+                    <Box>
+                      <Typography variant="h6" fontWeight={600}>
+                        📊 Transaction History
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Complete record of all financial transactions
+                      </Typography>
+                    </Box>
+                    <Stack direction="row" spacing={1}>
+                      <Button
+                        variant="outlined"
+                        startIcon={<FilterIcon />}
+                        size="small"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Filter
+                      </Button>
+                      <Button
+                        variant="outlined"
+                        startIcon={<ExportIcon />}
+                        onClick={exportToCSV}
+                        size="small"
+                        sx={{ textTransform: 'none' }}
+                      >
+                        Export
+                      </Button>
+                    </Stack>
+                  </Box>
 
-                <div className="date-filters">
-                  <input
-                    type="date"
-                    value={dateRange.start}
-                    onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                    className="date-input"
-                    placeholder="Start date"
-                  />
-                  <input
-                    type="date"
-                    value={dateRange.end}
-                    onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                    className="date-input"
-                    placeholder="End date"
-                  />
-                </div>
-
-                {(filterType !== 'all' || dateRange.start || dateRange.end) && (
-                  <button
-                    onClick={() => {
-                      setFilterType('all');
-                      setDateRange({ start: '', end: '' });
-                    }}
-                    className="clear-filters-btn"
-                  >
-                    Clear Filters
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Ledger Table */}
-            <div className="ledger-section">
-              <div className="ledger-list">
-                {filterLedger().length > 0 ? (
-                  filterLedger().map((entry, i) => (
-                    <div key={entry.id || i} className={`ledger-item ${entry.type}`}>
-                      <div className="ledger-info">
-                        <div className="ledger-icon">
-                          {getTransactionIcon(entry.type, entry.category)}
-                        </div>
-                        <div className="ledger-details">
-                          <div className="ledger-header">
-                            <strong>{entry.description}</strong>
-                            <span className={`category-badge ${getCategoryColor(entry.category)}`}>
-                              {categories.find(cat => cat.value === entry.category)?.label || entry.category}
-                            </span>
-                          </div>
-                          <div className="ledger-meta">
-                            <span>{new Date(entry.date).toLocaleDateString()}</span>
-                            <span>{new Date(entry.date).toLocaleTimeString()}</span>
-                            {entry.createdBy && <span>by {entry.createdBy}</span>}
-                            {entry.employeeName && <span>👤 {entry.employeeName}</span>}
-                            {entry.qidNumber && <span>🆔 {entry.qidNumber}</span>}
-                          </div>
-                        </div>
-                      </div>
-                      <div className={`ledger-amount ${entry.type}`}>
-                        {entry.type === 'credit' ? '+' : '-'}{entry.amount.toLocaleString()} QAR
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="no-data">
-                    <p>No transactions found. {(filterType !== 'all' || dateRange.start || dateRange.end) && 'Try adjusting your filters.'}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+                  {ledger.length > 0 ? (
+                    <Box sx={{ height: 500 }}>
+                      <DataGrid
+                        rows={ledger.map((entry, index) => ({ 
+                          id: index, 
+                          ...entry,
+                          formattedAmount: `${entry.amount.toLocaleString()} QAR`,
+                          categoryName: categories.find(cat => cat.value === entry.category)?.label || entry.category,
+                          categoryIcon: categories.find(cat => cat.value === entry.category)?.icon || '📊',
+                        }))}
+                        columns={[
+                          {
+                            field: 'date',
+                            headerName: 'Date',
+                            width: 120,
+                            renderCell: (params) => (
+                              <Typography variant="body2">
+                                {new Date(params.value).toLocaleDateString()}
+                              </Typography>
+                            ),
+                          },
+                          {
+                            field: 'type',
+                            headerName: 'Type',
+                            width: 100,
+                            renderCell: (params) => (
+                              <Chip
+                                label={params.value}
+                                size="small"
+                                color={params.value === 'credit' ? 'success' : 'error'}
+                                variant="outlined"
+                                icon={params.value === 'credit' ? <TrendingUpIcon /> : <TrendingDownIcon />}
+                              />
+                            ),
+                          },
+                          {
+                            field: 'categoryName',
+                            headerName: 'Category',
+                            width: 200,
+                            renderCell: (params) => (
+                              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                                <Typography>{params.row.categoryIcon}</Typography>
+                                <Typography variant="body2">{params.value}</Typography>
+                              </Box>
+                            ),
+                          },
+                          {
+                            field: 'formattedAmount',
+                            headerName: 'Amount',
+                            width: 150,
+                            renderCell: (params) => (
+                              <Typography 
+                                variant="body2" 
+                                fontWeight={600}
+                                color={params.row.type === 'credit' ? 'success.main' : 'error.main'}
+                              >
+                                {params.row.type === 'credit' ? '+' : '-'}{params.value}
+                              </Typography>
+                            ),
+                          },
+                          {
+                            field: 'description',
+                            headerName: 'Description',
+                            flex: 1,
+                            renderCell: (params) => (
+                              <Typography variant="body2" sx={{ wordBreak: 'break-word' }}>
+                                {params.value}
+                              </Typography>
+                            ),
+                          },
+                        ]}
+                        pageSize={10}
+                        rowsPerPageOptions={[10, 25, 50]}
+                        disableSelectionOnClick
+                        sx={{
+                          border: 0,
+                          '& .MuiDataGrid-cell': {
+                            borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+                            py: 1,
+                          },
+                          '& .MuiDataGrid-row': {
+                            '&:hover': {
+                              backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                            },
+                            '&:nth-of-type(even)': {
+                              backgroundColor: alpha(theme.palette.action.hover, 0.5),
+                            },
+                          },
+                          '& .MuiDataGrid-columnHeaders': {
+                            backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                            borderBottom: `2px solid ${theme.palette.primary.main}`,
+                            fontWeight: 600,
+                          },
+                        }}
+                      />
+                    </Box>
+                  ) : (
+                    <Box sx={{ 
+                      display: 'flex', 
+                      flexDirection: 'column', 
+                      alignItems: 'center', 
+                      py: 8,
+                      px: 3
+                    }}>
+                      <Avatar sx={{ 
+                        width: 80, 
+                        height: 80, 
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        mb: 2
+                      }}>
+                        <ReceiptIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+                      </Avatar>
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        No transactions found
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mb: 3, textAlign: 'center' }}>
+                        Start by adding your first transaction using the form on the left
+                      </Typography>
+                      <Button
+                        variant="contained"
+                        startIcon={<AddIcon />}
+                        onClick={() => {
+                          // Focus on amount input if it exists
+                          const amountInput = document.querySelector('input[type="number"]');
+                          if (amountInput) amountInput.focus();
+                        }}
+                        sx={{ textTransform: 'none', fontWeight: 600 }}
+                      >
+                        Add First Transaction
+                      </Button>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+        </motion.div>
       )}
 
       {/* Reports Tab */}

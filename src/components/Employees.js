@@ -19,16 +19,41 @@ import {
   useTheme,
   alpha,
   InputAdornment,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  LinearProgress,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  LinearProgress,
 } from '@mui/material';
 import {
   Person as PersonIcon,
-  ExpandMore as ExpandMoreIcon,
-  Upload as UploadIcon,
   Search as SearchIcon,
+  Upload as UploadIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Add as AddIcon,
+  Email as EmailIcon,
+  Phone as PhoneIcon,
+  Business as BusinessIcon,
+  AttachMoney as MoneyIcon,
+  Assignment as AssignmentIcon,
+  ExpandMore as ExpandMoreIcon,
+  CloudUpload as CloudUploadIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 
@@ -38,13 +63,7 @@ const Employees = () => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-
-  // Calculate form completion progress
-  const calculateProgress = (values) => {
-    const requiredFields = ['name', 'passportNumber', 'passportExpiry', 'qidNumber', 'qidExpiry', 'salary', 'department', 'position'];
-    const completedFields = requiredFields.filter(field => values[field] && values[field].toString().trim() !== '').length;
-    return (completedFields / requiredFields.length) * 100;
-  };
+  const [showForm, setShowForm] = useState(false);
 
   const validationSchema = Yup.object({
     name: Yup.string().required('Name is required'),
@@ -129,6 +148,7 @@ const Employees = () => {
         }
 
         resetForm();
+        setShowForm(false);
         fetchEmployees();
       } catch (error) {
         toast.error(`Error saving employee: ${error.message}`);
@@ -156,25 +176,26 @@ const Employees = () => {
   }, []);
 
   const checkExpiry = (expiry, type) => {
-    if (!expiry) return { status: 'unknown', message: 'No date', className: 'status-unknown' };
+    if (!expiry) return { status: 'unknown', message: 'No date', color: 'default' };
     
     const expiryDate = new Date(expiry);
     const today = new Date();
     const daysLeft = Math.ceil((expiryDate - today) / (1000 * 60 * 60 * 24));
     
     if (daysLeft < 0) {
-      return { status: 'expired', message: `Expired ${Math.abs(daysLeft)} days ago`, className: 'status-expired' };
+      return { status: 'expired', message: `Expired ${Math.abs(daysLeft)} days ago`, color: 'error' };
     } else if (daysLeft <= 30) {
-      return { status: 'critical', message: `${daysLeft} days left`, className: 'status-critical' };
+      return { status: 'critical', message: `${daysLeft} days left`, color: 'error' };
     } else if (daysLeft <= 90) {
-      return { status: 'warning', message: `${daysLeft} days left`, className: 'status-warning' };
+      return { status: 'warning', message: `${daysLeft} days left`, color: 'warning' };
     } else {
-      return { status: 'ok', message: `${daysLeft} days left`, className: 'status-ok' };
+      return { status: 'ok', message: `${daysLeft} days left`, color: 'success' };
     }
   };
 
   const handleEdit = (employee) => {
     setEditingId(employee.id);
+    setShowForm(true);
     formik.setValues({
       name: employee.name || '',
       passportNumber: employee.passport?.number || '',
@@ -204,6 +225,12 @@ const Employees = () => {
     }
   };
 
+  const handleCancel = () => {
+    setEditingId(null);
+    setShowForm(false);
+    formik.resetForm();
+  };
+
   const filteredEmployees = employees.filter(employee =>
     employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     employee.qid?.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -211,325 +238,627 @@ const Employees = () => {
     employee.department?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const calculateProgress = (values) => {
+    const requiredFields = ['name', 'passportNumber', 'passportExpiry', 'qidNumber', 'qidExpiry', 'salary', 'department', 'position'];
+    const completedFields = requiredFields.filter(field => values[field] && values[field].toString().trim() !== '').length;
+    return (completedFields / requiredFields.length) * 100;
+  };
+
+  const progress = calculateProgress(formik.values);
+
   return (
-    <div className="employees-page">
-      <div className="page-header">
-        <h2>👥 Employees</h2>
-        <div className="header-actions">
-          <input
-            type="text"
-            placeholder="Search employees..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-      </div>
-
-      {/* Employee Form */}
-      <div className="employee-form-section">
-        <h3>{editingId ? 'Edit Employee' : 'Add Employee'}</h3>
-        <form onSubmit={formik.handleSubmit} className="employee-form">
-          <div className="form-grid">
-            {/* Personal Information */}
-            <div className="form-group">
-              <label>Name *</label>
-              <input
-                name="name"
-                placeholder="Employee Name"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.name}
-                className={formik.touched.name && formik.errors.name ? 'error' : ''}
-              />
-              {formik.touched.name && formik.errors.name && (
-                <p className="error-message">{formik.errors.name}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Email</label>
-              <input
-                name="email"
-                type="email"
-                placeholder="Email"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.email}
-                className={formik.touched.email && formik.errors.email ? 'error' : ''}
-              />
-              {formik.touched.email && formik.errors.email && (
-                <p className="error-message">{formik.errors.email}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Phone</label>
-              <input
-                name="phone"
-                placeholder="Phone Number"
-                onChange={formik.handleChange}
-                value={formik.values.phone}
-              />
-            </div>
-
-            <div className="form-group">
-              <label>Department *</label>
-              <select
-                name="department"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.department}
-                className={formik.touched.department && formik.errors.department ? 'error' : ''}
-              >
-                <option value="">Select Department</option>
-                <option value="HR">Human Resources</option>
-                <option value="Finance">Finance</option>
-                <option value="IT">Information Technology</option>
-                <option value="Operations">Operations</option>
-                <option value="Sales">Sales</option>
-                <option value="Marketing">Marketing</option>
-              </select>
-              {formik.touched.department && formik.errors.department && (
-                <p className="error-message">{formik.errors.department}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Position *</label>
-              <input
-                name="position"
-                placeholder="Job Position"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.position}
-                className={formik.touched.position && formik.errors.position ? 'error' : ''}
-              />
-              {formik.touched.position && formik.errors.position && (
-                <p className="error-message">{formik.errors.position}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Salary (QAR) *</label>
-              <input
-                name="salary"
-                type="number"
-                placeholder="Monthly Salary"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.salary}
-                className={formik.touched.salary && formik.errors.salary ? 'error' : ''}
-              />
-              {formik.touched.salary && formik.errors.salary && (
-                <p className="error-message">{formik.errors.salary}</p>
-              )}
-            </div>
-
-            {/* Passport Information */}
-            <div className="form-group">
-              <label>Passport Number *</label>
-              <input
-                name="passportNumber"
-                placeholder="Passport Number"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.passportNumber}
-                className={formik.touched.passportNumber && formik.errors.passportNumber ? 'error' : ''}
-              />
-              {formik.touched.passportNumber && formik.errors.passportNumber && (
-                <p className="error-message">{formik.errors.passportNumber}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>Passport Expiry *</label>
-              <input
-                name="passportExpiry"
-                type="date"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.passportExpiry}
-                className={formik.touched.passportExpiry && formik.errors.passportExpiry ? 'error' : ''}
-              />
-              {formik.touched.passportExpiry && formik.errors.passportExpiry && (
-                <p className="error-message">{formik.errors.passportExpiry}</p>
-              )}
-            </div>
-
-            {/* QID Information */}
-            <div className="form-group">
-              <label>QID Number *</label>
-              <input
-                name="qidNumber"
-                placeholder="QID Number"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.qidNumber}
-                className={formik.touched.qidNumber && formik.errors.qidNumber ? 'error' : ''}
-              />
-              {formik.touched.qidNumber && formik.errors.qidNumber && (
-                <p className="error-message">{formik.errors.qidNumber}</p>
-              )}
-            </div>
-
-            <div className="form-group">
-              <label>QID Expiry *</label>
-              <input
-                name="qidExpiry"
-                type="date"
-                onChange={formik.handleChange}
-                onBlur={formik.handleBlur}
-                value={formik.values.qidExpiry}
-                className={formik.touched.qidExpiry && formik.errors.qidExpiry ? 'error' : ''}
-              />
-              {formik.touched.qidExpiry && formik.errors.qidExpiry && (
-                <p className="error-message">{formik.errors.qidExpiry}</p>
-              )}
-            </div>
-          </div>
-
-          {/* File Upload Sections */}
-          <div className="upload-section">
-            <div className="upload-group">
-              <label>Passport Photo</label>
-              <Dropzone
-                onDrop={acceptedFiles => formik.setFieldValue('passportPhoto', acceptedFiles[0])}
-                accept={{ 'image/*': ['.jpeg', '.jpg', '.png', '.gif'] }}
-                maxSize={5242880} // 5MB
-              >
-                {({ getRootProps, getInputProps, isDragActive }) => (
-                  <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>
-                    <input {...getInputProps()} />
-                    {formik.values.passportPhoto ? (
-                      <p>📄 {formik.values.passportPhoto.name}</p>
-                    ) : (
-                      <p>📋 Drop passport photo here or click to browse</p>
-                    )}
-                  </div>
-                )}
-              </Dropzone>
-            </div>
-
-            <div className="upload-group">
-              <label>QID Photo</label>
-              <Dropzone
-                onDrop={acceptedFiles => formik.setFieldValue('qidPhoto', acceptedFiles[0])}
-                accept={{ 'image/*': ['.jpeg', '.jpg', '.png', '.gif'] }}
-                maxSize={5242880} // 5MB
-              >
-                {({ getRootProps, getInputProps, isDragActive }) => (
-                  <div {...getRootProps()} className={`dropzone ${isDragActive ? 'active' : ''}`}>
-                    <input {...getInputProps()} />
-                    {formik.values.qidPhoto ? (
-                      <p>📄 {formik.values.qidPhoto.name}</p>
-                    ) : (
-                      <p>🆔 Drop QID photo here or click to browse</p>
-                    )}
-                  </div>
-                )}
-              </Dropzone>
-            </div>
-          </div>
-
-          <div className="form-actions">
-            <button
-              type="submit"
-              disabled={formik.isSubmitting || loading}
-              className="submit-btn"
+    <Box sx={{ 
+      backgroundColor: 'background.default', 
+      color: 'text.primary', 
+      minHeight: '100vh',
+      p: 3 
+    }}>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 3, 
+            mb: 3, 
+            borderRadius: 3,
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+            color: 'white'
+          }}
+        >
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box display="flex" alignItems="center">
+              <Avatar sx={{ 
+                bgcolor: alpha('#fff', 0.2), 
+                width: 60, 
+                height: 60,
+                mr: 3,
+                color: 'white'
+              }}>
+                <PersonIcon sx={{ fontSize: 32 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="h3" fontWeight={700} gutterBottom>
+                  Employee Management
+                </Typography>
+                <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                  Manage employee information, documents, and records
+                </Typography>
+              </Box>
+            </Box>
+            <Button
+              variant="contained"
+              size="large"
+              startIcon={<AddIcon />}
+              onClick={() => setShowForm(true)}
+              sx={{
+                bgcolor: alpha('#fff', 0.2),
+                color: 'white',
+                '&:hover': {
+                  bgcolor: alpha('#fff', 0.3)
+                },
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 600
+              }}
             >
-              {loading ? 'Saving...' : editingId ? 'Update' : 'Add'} Employee
-            </button>
-            {editingId && (
-              <button
-                type="button"
-                onClick={() => {
-                  setEditingId(null);
-                  formik.resetForm();
-                }}
-                className="cancel-btn"
-              >
-                Cancel
-              </button>
-            )}
-          </div>
-        </form>
-      </div>
+              Add Employee
+            </Button>
+          </Box>
+        </Paper>
+      </motion.div>
 
-      {/* Employees Table */}
-      <div className="employees-table-section">
-        <h3>Employee List ({filteredEmployees.length})</h3>
-        <div className="table-wrapper">
-          <table className="employees-table">
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Department</th>
-                <th>Position</th>
-                <th>QID Status</th>
-                <th>Passport Status</th>
-                <th>Salary</th>
-                <th>Total Paid</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredEmployees.map(employee => {
-                const qidStatus = checkExpiry(employee.qid?.expiry, 'QID');
-                const passportStatus = checkExpiry(employee.passport?.expiry, 'Passport');
+      <Grid container spacing={3}>
+        {/* Search and Filters */}
+        <Grid item xs={12}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card elevation={3} sx={{ borderRadius: 3 }}>
+              <CardContent sx={{ p: 3 }}>
+                <TextField
+                  fullWidth
+                  placeholder="Search employees by name, department, QID, or passport..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon color="action" />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{ mb: 2 }}
+                />
                 
-                return (
-                  <tr key={employee.id}>
-                    <td>
-                      <div className="employee-name">
-                        <strong>{employee.name}</strong>
-                        {employee.email && <div className="employee-email">{employee.email}</div>}
-                      </div>
-                    </td>
-                    <td>{employee.department}</td>
-                    <td>{employee.position}</td>
-                    <td>
-                      <span className={`status-badge ${qidStatus.className}`}>
-                        {qidStatus.message}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`status-badge ${passportStatus.className}`}>
-                        {passportStatus.message}
-                      </span>
-                    </td>
-                    <td>{employee.salary?.toLocaleString()} QAR</td>
-                    <td>{(employee.totalPaid || 0).toLocaleString()} QAR</td>
-                    <td className="actions">
-                      <button
-                        onClick={() => handleEdit(employee)}
-                        className="edit-btn"
-                        title="Edit Employee"
+                <Typography variant="body2" color="text.secondary">
+                  {filteredEmployees.length} of {employees.length} employees found
+                </Typography>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+
+        {/* Employees Table */}
+        <Grid item xs={12}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card elevation={3} sx={{ borderRadius: 3 }}>
+              <CardContent sx={{ p: 3 }}>
+                <Typography variant="h5" fontWeight={700} color="text.primary" gutterBottom>
+                  Employee List
+                </Typography>
+
+                <TableContainer component={Paper} elevation={0}>
+                  <Table>
+                    <TableHead>
+                      <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
+                        <TableCell><strong>Employee</strong></TableCell>
+                        <TableCell><strong>Department</strong></TableCell>
+                        <TableCell><strong>Position</strong></TableCell>
+                        <TableCell><strong>QID Status</strong></TableCell>
+                        <TableCell><strong>Passport Status</strong></TableCell>
+                        <TableCell><strong>Salary</strong></TableCell>
+                        <TableCell><strong>Total Paid</strong></TableCell>
+                        <TableCell><strong>Actions</strong></TableCell>
+                      </TableRow>
+                    </TableHead>
+                    <TableBody>
+                      {filteredEmployees.map((employee, index) => {
+                        const qidStatus = checkExpiry(employee.qid?.expiry, 'QID');
+                        const passportStatus = checkExpiry(employee.passport?.expiry, 'Passport');
+                        
+                        return (
+                          <motion.tr
+                            key={employee.id}
+                            component={TableRow}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ duration: 0.3, delay: index * 0.1 }}
+                            sx={{ 
+                              '&:nth-of-type(odd)': { 
+                                bgcolor: alpha(theme.palette.action.hover, 0.5) 
+                              },
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.primary.main, 0.1)
+                              }
+                            }}
+                          >
+                            <TableCell>
+                              <Box display="flex" alignItems="center">
+                                <Avatar sx={{ 
+                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                  color: theme.palette.primary.main,
+                                  mr: 2
+                                }}>
+                                  <PersonIcon />
+                                </Avatar>
+                                <Box>
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {employee.name}
+                                  </Typography>
+                                  {employee.email && (
+                                    <Typography variant="body2" color="text.secondary">
+                                      {employee.email}
+                                    </Typography>
+                                  )}
+                                </Box>
+                              </Box>
+                            </TableCell>
+                            <TableCell>{employee.department}</TableCell>
+                            <TableCell>{employee.position}</TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={qidStatus.message}
+                                color={qidStatus.color}
+                                size="small"
+                                variant={qidStatus.color === 'default' ? 'outlined' : 'filled'}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Chip 
+                                label={passportStatus.message}
+                                color={passportStatus.color}
+                                size="small"
+                                variant={passportStatus.color === 'default' ? 'outlined' : 'filled'}
+                              />
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight={600} color="success.main">
+                                {employee.salary?.toLocaleString()} QAR
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Typography variant="body2" fontWeight={600} color="success.main">
+                                {(employee.totalPaid || 0).toLocaleString()} QAR
+                              </Typography>
+                            </TableCell>
+                            <TableCell>
+                              <Box display="flex" gap={1}>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleEdit(employee)}
+                                  sx={{ 
+                                    color: theme.palette.primary.main,
+                                    '&:hover': {
+                                      bgcolor: alpha(theme.palette.primary.main, 0.1)
+                                    }
+                                  }}
+                                >
+                                  <EditIcon />
+                                </IconButton>
+                                <IconButton
+                                  size="small"
+                                  onClick={() => handleDelete(employee.id, employee.name)}
+                                  sx={{ 
+                                    color: theme.palette.error.main,
+                                    '&:hover': {
+                                      bgcolor: alpha(theme.palette.error.main, 0.1)
+                                    }
+                                  }}
+                                >
+                                  <DeleteIcon />
+                                </IconButton>
+                              </Box>
+                            </TableCell>
+                          </motion.tr>
+                        );
+                      })}
+                    </TableBody>
+                  </Table>
+                  
+                  {filteredEmployees.length === 0 && (
+                    <Box sx={{ p: 4, textAlign: 'center' }}>
+                      <Typography variant="h6" color="text.secondary" gutterBottom>
+                        No employees found
+                      </Typography>
+                      {searchTerm && (
+                        <Typography variant="body2" color="text.secondary">
+                          Try adjusting your search terms
+                        </Typography>
+                      )}
+                    </Box>
+                  )}
+                </TableContainer>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+      </Grid>
+
+      {/* Employee Form Dialog */}
+      <Dialog 
+        open={showForm} 
+        onClose={handleCancel}
+        maxWidth="md"
+        fullWidth
+        PaperProps={{
+          sx: { borderRadius: 3 }
+        }}
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box display="flex" alignItems="center">
+              <Avatar sx={{ 
+                bgcolor: alpha(theme.palette.primary.main, 0.1), 
+                color: theme.palette.primary.main,
+                mr: 2
+              }}>
+                <PersonIcon />
+              </Avatar>
+              <Typography variant="h6" fontWeight={600}>
+                {editingId ? 'Edit Employee' : 'Add New Employee'}
+              </Typography>
+            </Box>
+            {progress > 0 && (
+              <Box sx={{ minWidth: 150 }}>
+                <Typography variant="body2" color="text.secondary" gutterBottom>
+                  Progress: {Math.round(progress)}%
+                </Typography>
+                <LinearProgress variant="determinate" value={progress} />
+              </Box>
+            )}
+          </Box>
+        </DialogTitle>
+
+        <DialogContent>
+          <Box component="form" onSubmit={formik.handleSubmit} sx={{ mt: 2 }}>
+            <Accordion defaultExpanded>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" fontWeight={600}>Personal Information</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="name"
+                      label="Full Name *"
+                      value={formik.values.name}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.name && Boolean(formik.errors.name)}
+                      helperText={formik.touched.name && formik.errors.name}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PersonIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="email"
+                      label="Email Address"
+                      type="email"
+                      value={formik.values.email}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.email && Boolean(formik.errors.email)}
+                      helperText={formik.touched.email && formik.errors.email}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <EmailIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="phone"
+                      label="Phone Number"
+                      value={formik.values.phone}
+                      onChange={formik.handleChange}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <PhoneIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <FormControl fullWidth>
+                      <InputLabel>Department *</InputLabel>
+                      <Select
+                        name="department"
+                        value={formik.values.department}
+                        onChange={formik.handleChange}
+                        onBlur={formik.handleBlur}
+                        error={formik.touched.department && Boolean(formik.errors.department)}
+                        startAdornment={
+                          <InputAdornment position="start">
+                            <BusinessIcon />
+                          </InputAdornment>
+                        }
                       >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={() => handleDelete(employee.id, employee.name)}
-                        className="delete-btn"
-                        title="Delete Employee"
+                        <MenuItem value="HR">Human Resources</MenuItem>
+                        <MenuItem value="Finance">Finance</MenuItem>
+                        <MenuItem value="IT">Information Technology</MenuItem>
+                        <MenuItem value="Operations">Operations</MenuItem>
+                        <MenuItem value="Sales">Sales</MenuItem>
+                        <MenuItem value="Marketing">Marketing</MenuItem>
+                      </Select>
+                      {formik.touched.department && formik.errors.department && (
+                        <Typography variant="caption" color="error">
+                          {formik.errors.department}
+                        </Typography>
+                      )}
+                    </FormControl>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="position"
+                      label="Job Position *"
+                      value={formik.values.position}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.position && Boolean(formik.errors.position)}
+                      helperText={formik.touched.position && formik.errors.position}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <AssignmentIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="salary"
+                      label="Monthly Salary (QAR) *"
+                      type="number"
+                      value={formik.values.salary}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.salary && Boolean(formik.errors.salary)}
+                      helperText={formik.touched.salary && formik.errors.salary}
+                      InputProps={{
+                        startAdornment: (
+                          <InputAdornment position="start">
+                            <MoneyIcon />
+                          </InputAdornment>
+                        ),
+                      }}
+                    />
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" fontWeight={600}>Document Information</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="passportNumber"
+                      label="Passport Number *"
+                      value={formik.values.passportNumber}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.passportNumber && Boolean(formik.errors.passportNumber)}
+                      helperText={formik.touched.passportNumber && formik.errors.passportNumber}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="passportExpiry"
+                      label="Passport Expiry *"
+                      type="date"
+                      value={formik.values.passportExpiry}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.passportExpiry && Boolean(formik.errors.passportExpiry)}
+                      helperText={formik.touched.passportExpiry && formik.errors.passportExpiry}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="qidNumber"
+                      label="QID Number *"
+                      value={formik.values.qidNumber}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.qidNumber && Boolean(formik.errors.qidNumber)}
+                      helperText={formik.touched.qidNumber && formik.errors.qidNumber}
+                    />
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <TextField
+                      fullWidth
+                      name="qidExpiry"
+                      label="QID Expiry *"
+                      type="date"
+                      value={formik.values.qidExpiry}
+                      onChange={formik.handleChange}
+                      onBlur={formik.handleBlur}
+                      error={formik.touched.qidExpiry && Boolean(formik.errors.qidExpiry)}
+                      helperText={formik.touched.qidExpiry && formik.errors.qidExpiry}
+                      InputLabelProps={{ shrink: true }}
+                    />
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+
+            <Accordion>
+              <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+                <Typography variant="h6" fontWeight={600}>Document Uploads</Typography>
+              </AccordionSummary>
+              <AccordionDetails>
+                <Grid container spacing={3}>
+                  <Grid item xs={12} sm={6}>
+                    <Paper
+                      elevation={1}
+                      sx={{ 
+                        p: 2, 
+                        border: `2px dashed ${theme.palette.divider}`,
+                        borderRadius: 2,
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        Passport Photo
+                      </Typography>
+                      <Dropzone
+                        onDrop={acceptedFiles => formik.setFieldValue('passportPhoto', acceptedFiles[0])}
+                        accept={{ 'image/*': ['.jpeg', '.jpg', '.png', '.gif'] }}
+                        maxSize={5242880} // 5MB
                       >
-                        🗑️
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          
-          {filteredEmployees.length === 0 && (
-            <div className="no-data">
-              <p>No employees found. {searchTerm && 'Try adjusting your search terms.'}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
+                        {({ getRootProps, getInputProps, isDragActive }) => (
+                          <Box 
+                            {...getRootProps()} 
+                            sx={{ 
+                              p: 2, 
+                              cursor: 'pointer',
+                              borderRadius: 1,
+                              bgcolor: isDragActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.primary.main, 0.05)
+                              }
+                            }}
+                          >
+                            <input {...getInputProps()} />
+                            <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+                            {formik.values.passportPhoto ? (
+                              <Typography variant="body2" color="primary">
+                                {formik.values.passportPhoto.name}
+                              </Typography>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                Drop passport photo here or click to browse
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Dropzone>
+                    </Paper>
+                  </Grid>
+                  <Grid item xs={12} sm={6}>
+                    <Paper
+                      elevation={1}
+                      sx={{ 
+                        p: 2, 
+                        border: `2px dashed ${theme.palette.divider}`,
+                        borderRadius: 2,
+                        textAlign: 'center'
+                      }}
+                    >
+                      <Typography variant="body2" fontWeight={600} gutterBottom>
+                        QID Photo
+                      </Typography>
+                      <Dropzone
+                        onDrop={acceptedFiles => formik.setFieldValue('qidPhoto', acceptedFiles[0])}
+                        accept={{ 'image/*': ['.jpeg', '.jpg', '.png', '.gif'] }}
+                        maxSize={5242880} // 5MB
+                      >
+                        {({ getRootProps, getInputProps, isDragActive }) => (
+                          <Box 
+                            {...getRootProps()} 
+                            sx={{ 
+                              p: 2, 
+                              cursor: 'pointer',
+                              borderRadius: 1,
+                              bgcolor: isDragActive ? alpha(theme.palette.primary.main, 0.1) : 'transparent',
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.primary.main, 0.05)
+                              }
+                            }}
+                          >
+                            <input {...getInputProps()} />
+                            <CloudUploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 1 }} />
+                            {formik.values.qidPhoto ? (
+                              <Typography variant="body2" color="primary">
+                                {formik.values.qidPhoto.name}
+                              </Typography>
+                            ) : (
+                              <Typography variant="body2" color="text.secondary">
+                                Drop QID photo here or click to browse
+                              </Typography>
+                            )}
+                          </Box>
+                        )}
+                      </Dropzone>
+                    </Paper>
+                  </Grid>
+                </Grid>
+              </AccordionDetails>
+            </Accordion>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, pt: 1 }}>
+          <Button 
+            onClick={handleCancel}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600
+            }}
+          >
+            Cancel
+          </Button>
+          <Button 
+            onClick={formik.handleSubmit}
+            variant="contained" 
+            disabled={formik.isSubmitting || loading}
+            startIcon={loading ? <LinearProgress size={20} /> : <PersonIcon />}
+            sx={{ 
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600
+            }}
+          >
+            {loading ? 'Saving...' : editingId ? 'Update Employee' : 'Add Employee'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
   );
 };
 

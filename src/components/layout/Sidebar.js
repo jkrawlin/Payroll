@@ -61,18 +61,7 @@ const menuItems = [
       { title: 'Receipts', path: '/receipts', icon: <ReceiptIcon /> },
     ],
   },
-  {
-    title: 'Insights',
-    path: '/analytics',
-    icon: <AnalyticsIcon />,
-    roles: ['admin'],
-  },
-  {
-    title: 'Self Service',
-    path: '/self-service',
-    icon: <PersonIcon />,
-    roles: ['admin', 'hr', 'accountant', 'employee'],
-  },
+  // Removed "Insights" and "Self Service" for streamlined navigation
 ];
 
 const Sidebar = ({ open, onClose, role = 'admin' }) => {

@@ -155,6 +155,87 @@ const createAppTheme = (mode) => createTheme({
               color: mode === 'light' ? '#6a1b9a' : '#ab47bc',
             },
           },
+          '& .MuiInputBase-input': {
+            color: mode === 'light' ? '#1e293b' : '#ffffff',
+            '&::placeholder': {
+              color: mode === 'light' ? '#6b7280' : '#9ca3af',
+              opacity: 1,
+            },
+          },
+        },
+      },
+    },
+    MuiTableContainer: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+        },
+      },
+    },
+    MuiTable: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+        },
+      },
+    },
+    MuiTableHead: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#f8fafc' : '#262626',
+        },
+      },
+    },
+    MuiTableBody: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+          '& .MuiTableRow-root': {
+            '&:nth-of-type(even)': {
+              backgroundColor: mode === 'light' ? '#f8fafc' : '#262626',
+            },
+            '&:hover': {
+              backgroundColor: mode === 'light' ? '#f1f5f9' : '#333333',
+            },
+          },
+        },
+      },
+    },
+    MuiFormControl: {
+      styleOverrides: {
+        root: {
+          '& .MuiInputLabel-root': {
+            color: mode === 'light' ? '#6b7280' : '#9ca3af',
+          },
+          '& .MuiSelect-select': {
+            backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+            color: mode === 'light' ? '#1e293b' : '#ffffff',
+          },
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        select: {
+          backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+          color: mode === 'light' ? '#1e293b' : '#ffffff',
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          backgroundColor: mode === 'light' ? '#ffffff' : '#1a1a1a',
+          color: mode === 'light' ? '#1e293b' : '#ffffff',
+          '&:hover': {
+            backgroundColor: mode === 'light' ? '#f1f5f9' : '#333333',
+          },
+          '&.Mui-selected': {
+            backgroundColor: mode === 'light' ? '#f1f5f9' : '#333333',
+            '&:hover': {
+              backgroundColor: mode === 'light' ? '#e2e8f0' : '#404040',
+            },
+          },
         },
       },
     },

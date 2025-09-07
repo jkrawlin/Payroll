@@ -4,8 +4,39 @@ import { db } from '../firebase';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
+import { 
+  Box, 
+  Card, 
+  CardContent, 
+  Typography, 
+  Grid, 
+  Paper, 
+  Avatar,
+  useTheme,
+  alpha,
+  TextField,
+  Button,
+  IconButton,
+  Chip,
+  InputAdornment,
+  Divider
+} from '@mui/material';
+import {
+  Business as BusinessIcon,
+  Person as PersonIcon,
+  Email as EmailIcon,
+  Phone as PhoneIcon,
+  LocationOn as LocationIcon,
+  Search as SearchIcon,
+  Add as AddIcon,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Receipt as ReceiptIcon
+} from '@mui/icons-material';
+import { motion } from 'framer-motion';
 
 const Customers = () => {
+  const theme = useTheme();
   const [customers, setCustomers] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [selectedCustomer, setSelectedCustomer] = useState(null);
@@ -35,36 +66,33 @@ const Customers = () => {
       phone: '',
       address: '',
       taxId: '',
-      notes: ''
+      notes: '',
     },
     validationSchema: customerValidationSchema,
-    onSubmit: async (values, { resetForm, setSubmitting }) => {
+    onSubmit: async (values) => {
       try {
-        const customerData = {
-          ...values,
-          invoices: editingId ? customers.find(c => c.id === editingId)?.invoices || [] : [],
-          totalInvoiced: editingId ? customers.find(c => c.id === editingId)?.totalInvoiced || 0 : 0,
-          totalPaid: editingId ? customers.find(c => c.id === editingId)?.totalPaid || 0 : 0,
-          createdAt: editingId ? customers.find(c => c.id === editingId)?.createdAt : new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        };
-
         if (editingId) {
-          await updateDoc(doc(db, 'customers', editingId), customerData);
+          await updateDoc(doc(db, 'customers', editingId), {
+            ...values,
+            updatedAt: new Date(),
+          });
           toast.success('Customer updated successfully');
           setEditingId(null);
         } else {
-          await addDoc(collection(db, 'customers'), customerData);
+          await addDoc(collection(db, 'customers'), {
+            ...values,
+            createdAt: new Date(),
+            totalOrders: 0,
+            totalPaid: 0,
+            invoices: [],
+          });
           toast.success('Customer added successfully');
         }
-
-        resetForm();
+        customerFormik.resetForm();
         fetchCustomers();
       } catch (error) {
-        toast.error(`Error saving customer: ${error.message}`);
+        toast.error('Error saving customer');
         console.error('Error saving customer:', error);
-      } finally {
-        setSubmitting(false);
       }
     },
   });
@@ -74,64 +102,51 @@ const Customers = () => {
       amount: '',
       description: '',
       dueDate: '',
-      notes: ''
     },
     validationSchema: invoiceValidationSchema,
-    onSubmit: async (values, { resetForm, setSubmitting }) => {
-      if (!selectedCustomer) return;
-
+    onSubmit: async (values) => {
       try {
-        const invoiceData = {
-          id: Date.now().toString(),
+        const invoice = {
+          ...values,
           amount: parseFloat(values.amount),
-          description: values.description,
-          dueDate: values.dueDate,
-          notes: values.notes,
+          createdAt: new Date(),
           status: 'pending',
-          createdAt: new Date().toISOString(),
-          createdBy: 'Admin' // In real app, get from auth context
+          id: Date.now().toString(),
         };
 
         await updateDoc(doc(db, 'customers', selectedCustomer.id), {
-          invoices: arrayUnion(invoiceData),
-          totalInvoiced: (selectedCustomer.totalInvoiced || 0) + parseFloat(values.amount)
+          invoices: arrayUnion(invoice),
+          totalOrders: (selectedCustomer.totalOrders || 0) + 1,
         });
 
         toast.success('Invoice created successfully');
-        resetForm();
         setShowInvoiceForm(false);
+        invoiceFormik.resetForm();
         fetchCustomers();
-        
-        // Update selected customer
-        const updatedCustomer = { 
-          ...selectedCustomer, 
-          invoices: [...(selectedCustomer.invoices || []), invoiceData],
-          totalInvoiced: (selectedCustomer.totalInvoiced || 0) + parseFloat(values.amount)
-        };
-        setSelectedCustomer(updatedCustomer);
       } catch (error) {
-        toast.error(`Error creating invoice: ${error.message}`);
+        toast.error('Error creating invoice');
         console.error('Error creating invoice:', error);
-      } finally {
-        setSubmitting(false);
       }
     },
   });
 
+  const fetchCustomers = async () => {
+    try {
+      const customersSnapshot = await getDocs(collection(db, 'customers'));
+      const customersData = customersSnapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      setCustomers(customersData);
+    } catch (error) {
+      console.error('Error fetching customers:', error);
+      toast.error('Error loading customers');
+    }
+  };
+
   useEffect(() => {
     fetchCustomers();
   }, []);
-
-  const fetchCustomers = async () => {
-    try {
-      const snapshot = await getDocs(collection(db, 'customers'));
-      const customersList = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setCustomers(customersList);
-    } catch (error) {
-      toast.error('Error fetching customers');
-      console.error('Error fetching customers:', error);
-    }
-  };
 
   const handleEdit = (customer) => {
     setEditingId(customer.id);
@@ -142,17 +157,17 @@ const Customers = () => {
       phone: customer.phone || '',
       address: customer.address || '',
       taxId: customer.taxId || '',
-      notes: customer.notes || ''
+      notes: customer.notes || '',
     });
   };
 
-  const handleDelete = async (customerId, customerName) => {
-    if (window.confirm(`Are you sure you want to delete ${customerName}? This will also delete all associated invoices.`)) {
+  const handleDelete = async (id, name) => {
+    if (window.confirm(`Are you sure you want to delete ${name}?`)) {
       try {
-        await deleteDoc(doc(db, 'customers', customerId));
+        await deleteDoc(doc(db, 'customers', id));
         toast.success('Customer deleted successfully');
         fetchCustomers();
-        if (selectedCustomer?.id === customerId) {
+        if (selectedCustomer?.id === id) {
           setSelectedCustomer(null);
         }
       } catch (error) {
@@ -160,73 +175,6 @@ const Customers = () => {
         console.error('Error deleting customer:', error);
       }
     }
-  };
-
-  const markInvoicePaid = async (customerId, invoiceId) => {
-    try {
-      const customer = customers.find(c => c.id === customerId);
-      if (!customer) return;
-
-      const updatedInvoices = customer.invoices.map(invoice => 
-        invoice.id === invoiceId 
-          ? { ...invoice, status: 'paid', paidDate: new Date().toISOString() }
-          : invoice
-      );
-
-      const paidInvoice = customer.invoices.find(inv => inv.id === invoiceId);
-      const newTotalPaid = (customer.totalPaid || 0) + (paidInvoice?.amount || 0);
-
-      await updateDoc(doc(db, 'customers', customerId), {
-        invoices: updatedInvoices,
-        totalPaid: newTotalPaid
-      });
-
-      // Update accounts ledger
-      try {
-        const accountsRef = doc(db, 'accounts', 'main');
-        await updateDoc(accountsRef, {
-          ledger: arrayUnion({
-            date: new Date().toISOString(),
-            type: 'credit',
-            amount: paidInvoice?.amount || 0,
-            description: `Payment from ${customer.name} - ${paidInvoice?.description}`,
-            category: 'revenue'
-          })
-        });
-      } catch (error) {
-        console.log('Accounts collection may not exist yet');
-      }
-
-      toast.success('Invoice marked as paid');
-      fetchCustomers();
-      
-      // Update selected customer if it's the current one
-      if (selectedCustomer?.id === customerId) {
-        const updatedCustomer = { 
-          ...customer, 
-          invoices: updatedInvoices, 
-          totalPaid: newTotalPaid 
-        };
-        setSelectedCustomer(updatedCustomer);
-      }
-    } catch (error) {
-      toast.error('Error updating invoice status');
-      console.error('Error updating invoice:', error);
-    }
-  };
-
-  const getInvoiceStatusColor = (status) => {
-    switch (status) {
-      case 'paid': return 'status-paid';
-      case 'pending': return 'status-pending';
-      case 'overdue': return 'status-overdue';
-      default: return 'status-pending';
-    }
-  };
-
-  const isInvoiceOverdue = (dueDate) => {
-    if (!dueDate) return false;
-    return new Date(dueDate) < new Date();
   };
 
   const filteredCustomers = customers.filter(customer =>
@@ -237,346 +185,614 @@ const Customers = () => {
   );
 
   return (
-    <div className="customers-page">
-      <div className="page-header">
-        <h2>🏢 Customers</h2>
-        <div className="header-actions">
-          <input
-            type="text"
-            placeholder="Search customers..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="search-input"
-          />
-        </div>
-      </div>
+    <Box sx={{ 
+      backgroundColor: 'background.default', 
+      color: 'text.primary', 
+      minHeight: '100vh',
+      p: 3 
+    }}>
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <Paper 
+          elevation={3} 
+          sx={{ 
+            p: 3, 
+            mb: 3, 
+            borderRadius: 3,
+            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+            color: 'white'
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center" flexWrap="wrap">
+            <Box display="flex" alignItems="center">
+              <Avatar sx={{ 
+                bgcolor: alpha('#fff', 0.2), 
+                width: 60, 
+                height: 60,
+                mr: 3,
+                color: 'white'
+              }}>
+                <BusinessIcon sx={{ fontSize: 32 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="h3" fontWeight={700} gutterBottom>
+                  Customer Management
+                </Typography>
+                <Typography variant="body1" sx={{ opacity: 0.9 }}>
+                  Manage your business relationships and invoicing
+                </Typography>
+              </Box>
+            </Box>
+            <Box>
+              <TextField
+                placeholder="Search customers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                size="small"
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <SearchIcon sx={{ color: alpha('#fff', 0.7) }} />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    backgroundColor: alpha('#fff', 0.1),
+                    borderRadius: 2,
+                    '& fieldset': {
+                      borderColor: alpha('#fff', 0.3),
+                    },
+                    '&:hover fieldset': {
+                      borderColor: alpha('#fff', 0.5),
+                    },
+                    '&.Mui-focused fieldset': {
+                      borderColor: '#fff',
+                    },
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    color: 'white',
+                    '&::placeholder': {
+                      color: alpha('#fff', 0.7),
+                      opacity: 1,
+                    },
+                  },
+                }}
+              />
+            </Box>
+          </Box>
+        </Paper>
+      </motion.div>
 
-      <div className="customers-content">
+      <Grid container spacing={3}>
         {/* Customer Form */}
-        <div className="customer-form-section">
-          <h3>{editingId ? 'Edit Customer' : 'Add New Customer'}</h3>
-          <form onSubmit={customerFormik.handleSubmit} className="customer-form">
-            <div className="form-grid">
-              <div className="form-group">
-                <label>Company Name *</label>
-                <input
-                  name="name"
-                  placeholder="Company Name"
-                  onChange={customerFormik.handleChange}
-                  onBlur={customerFormik.handleBlur}
-                  value={customerFormik.values.name}
-                  className={customerFormik.touched.name && customerFormik.errors.name ? 'error' : ''}
-                />
-                {customerFormik.touched.name && customerFormik.errors.name && (
-                  <p className="error-message">{customerFormik.errors.name}</p>
-                )}
-              </div>
+        <Grid item xs={12} md={6}>
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+          >
+            <Card elevation={3} sx={{ borderRadius: 3 }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" mb={3}>
+                  <Avatar sx={{ 
+                    bgcolor: alpha(theme.palette.primary.main, 0.1), 
+                    color: theme.palette.primary.main,
+                    mr: 2
+                  }}>
+                    <AddIcon />
+                  </Avatar>
+                  <Typography variant="h5" fontWeight={700} color="text.primary">
+                    {editingId ? 'Edit Customer' : 'Add New Customer'}
+                  </Typography>
+                </Box>
 
-              <div className="form-group">
-                <label>Contact Person *</label>
-                <input
-                  name="contactPerson"
-                  placeholder="Contact Person Name"
-                  onChange={customerFormik.handleChange}
-                  onBlur={customerFormik.handleBlur}
-                  value={customerFormik.values.contactPerson}
-                  className={customerFormik.touched.contactPerson && customerFormik.errors.contactPerson ? 'error' : ''}
-                />
-                {customerFormik.touched.contactPerson && customerFormik.errors.contactPerson && (
-                  <p className="error-message">{customerFormik.errors.contactPerson}</p>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>Email</label>
-                <input
-                  name="email"
-                  type="email"
-                  placeholder="Email"
-                  onChange={customerFormik.handleChange}
-                  onBlur={customerFormik.handleBlur}
-                  value={customerFormik.values.email}
-                  className={customerFormik.touched.email && customerFormik.errors.email ? 'error' : ''}
-                />
-                {customerFormik.touched.email && customerFormik.errors.email && (
-                  <p className="error-message">{customerFormik.errors.email}</p>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>Phone *</label>
-                <input
-                  name="phone"
-                  placeholder="Phone Number"
-                  onChange={customerFormik.handleChange}
-                  onBlur={customerFormik.handleBlur}
-                  value={customerFormik.values.phone}
-                  className={customerFormik.touched.phone && customerFormik.errors.phone ? 'error' : ''}
-                />
-                {customerFormik.touched.phone && customerFormik.errors.phone && (
-                  <p className="error-message">{customerFormik.errors.phone}</p>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label>Tax ID</label>
-                <input
-                  name="taxId"
-                  placeholder="Tax ID"
-                  onChange={customerFormik.handleChange}
-                  value={customerFormik.values.taxId}
-                />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Address</label>
-                <textarea
-                  name="address"
-                  placeholder="Company Address"
-                  onChange={customerFormik.handleChange}
-                  value={customerFormik.values.address}
-                  rows="2"
-                />
-              </div>
-
-              <div className="form-group full-width">
-                <label>Notes</label>
-                <textarea
-                  name="notes"
-                  placeholder="Additional notes"
-                  onChange={customerFormik.handleChange}
-                  value={customerFormik.values.notes}
-                  rows="2"
-                />
-              </div>
-            </div>
-
-            <div className="form-actions">
-              <button
-                type="submit"
-                disabled={customerFormik.isSubmitting}
-                className="submit-btn"
-              >
-                {customerFormik.isSubmitting ? 'Saving...' : editingId ? 'Update' : 'Add'} Customer
-              </button>
-              {editingId && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setEditingId(null);
-                    customerFormik.resetForm();
-                  }}
-                  className="cancel-btn"
-                >
-                  Cancel
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-
-        {/* Customers List */}
-        <div className="customers-list-section">
-          <h3>Customer List ({filteredCustomers.length})</h3>
-          <div className="customers-grid">
-            {filteredCustomers.map(customer => {
-              const outstandingAmount = (customer.totalInvoiced || 0) - (customer.totalPaid || 0);
-              return (
-                <div 
-                  key={customer.id} 
-                  className={`customer-card ${selectedCustomer?.id === customer.id ? 'selected' : ''}`}
-                  onClick={() => setSelectedCustomer(customer)}
-                >
-                  <div className="customer-header">
-                    <h4>{customer.name}</h4>
-                    <div className="customer-actions">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleEdit(customer);
+                <Box component="form" onSubmit={customerFormik.handleSubmit}>
+                  <Grid container spacing={3}>
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="name"
+                        label="Company Name *"
+                        value={customerFormik.values.name}
+                        onChange={customerFormik.handleChange}
+                        onBlur={customerFormik.handleBlur}
+                        error={customerFormik.touched.name && Boolean(customerFormik.errors.name)}
+                        helperText={customerFormik.touched.name && customerFormik.errors.name}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <BusinessIcon />
+                            </InputAdornment>
+                          ),
                         }}
-                        className="edit-btn"
-                        title="Edit Customer"
-                      >
-                        ✏️
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDelete(customer.id, customer.name);
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="contactPerson"
+                        label="Contact Person *"
+                        value={customerFormik.values.contactPerson}
+                        onChange={customerFormik.handleChange}
+                        onBlur={customerFormik.handleBlur}
+                        error={customerFormik.touched.contactPerson && Boolean(customerFormik.errors.contactPerson)}
+                        helperText={customerFormik.touched.contactPerson && customerFormik.errors.contactPerson}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <PersonIcon />
+                            </InputAdornment>
+                          ),
                         }}
-                        className="delete-btn"
-                        title="Delete Customer"
-                      >
-                        🗑️
-                      </button>
-                    </div>
-                  </div>
-                  
-                  <div className="customer-info">
-                    <p><strong>Contact:</strong> {customer.contactPerson}</p>
-                    <p><strong>Phone:</strong> {customer.phone}</p>
-                    {customer.email && <p><strong>Email:</strong> {customer.email}</p>}
-                    <div className="customer-stats">
-                      <p><strong>Total Invoiced:</strong> {(customer.totalInvoiced || 0).toLocaleString()} QAR</p>
-                      <p><strong>Total Paid:</strong> {(customer.totalPaid || 0).toLocaleString()} QAR</p>
-                      <p className={outstandingAmount > 0 ? 'outstanding-positive' : 'outstanding-zero'}>
-                        <strong>Outstanding:</strong> {outstandingAmount.toLocaleString()} QAR
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-
-          {filteredCustomers.length === 0 && (
-            <div className="no-data">
-              <p>No customers found. {searchTerm && 'Try adjusting your search terms.'}</p>
-            </div>
-          )}
-        </div>
-
-        {/* Customer Details and Invoices */}
-        {selectedCustomer && (
-          <div className="customer-details-section">
-            <div className="section-header">
-              <h3>📋 {selectedCustomer.name} - Invoices</h3>
-              <button
-                onClick={() => setShowInvoiceForm(!showInvoiceForm)}
-                className="add-invoice-btn"
-              >
-                {showInvoiceForm ? '✖️ Cancel' : '➕ Add Invoice'}
-              </button>
-            </div>
-
-            {/* Invoice Form */}
-            {showInvoiceForm && (
-              <div className="invoice-form-section">
-                <h4>Create New Invoice</h4>
-                <form onSubmit={invoiceFormik.handleSubmit} className="invoice-form">
-                  <div className="form-grid">
-                    <div className="form-group">
-                      <label>Amount (QAR) *</label>
-                      <input
-                        name="amount"
-                        type="number"
-                        placeholder="Invoice Amount"
-                        onChange={invoiceFormik.handleChange}
-                        onBlur={invoiceFormik.handleBlur}
-                        value={invoiceFormik.values.amount}
-                        className={invoiceFormik.touched.amount && invoiceFormik.errors.amount ? 'error' : ''}
                       />
-                      {invoiceFormik.touched.amount && invoiceFormik.errors.amount && (
-                        <p className="error-message">{invoiceFormik.errors.amount}</p>
-                      )}
-                    </div>
+                    </Grid>
 
-                    <div className="form-group">
-                      <label>Due Date</label>
-                      <input
-                        name="dueDate"
-                        type="date"
-                        onChange={invoiceFormik.handleChange}
-                        onBlur={invoiceFormik.handleBlur}
-                        value={invoiceFormik.values.dueDate}
-                        className={invoiceFormik.touched.dueDate && invoiceFormik.errors.dueDate ? 'error' : ''}
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="email"
+                        label="Email"
+                        type="email"
+                        value={customerFormik.values.email}
+                        onChange={customerFormik.handleChange}
+                        onBlur={customerFormik.handleBlur}
+                        error={customerFormik.touched.email && Boolean(customerFormik.errors.email)}
+                        helperText={customerFormik.touched.email && customerFormik.errors.email}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <EmailIcon />
+                            </InputAdornment>
+                          ),
+                        }}
                       />
-                      {invoiceFormik.touched.dueDate && invoiceFormik.errors.dueDate && (
-                        <p className="error-message">{invoiceFormik.errors.dueDate}</p>
-                      )}
-                    </div>
+                    </Grid>
 
-                    <div className="form-group full-width">
-                      <label>Description *</label>
-                      <textarea
-                        name="description"
-                        placeholder="Invoice description"
-                        onChange={invoiceFormik.handleChange}
-                        onBlur={invoiceFormik.handleBlur}
-                        value={invoiceFormik.values.description}
-                        rows="3"
-                        className={invoiceFormik.touched.description && invoiceFormik.errors.description ? 'error' : ''}
+                    <Grid item xs={12} sm={6}>
+                      <TextField
+                        fullWidth
+                        name="phone"
+                        label="Phone *"
+                        value={customerFormik.values.phone}
+                        onChange={customerFormik.handleChange}
+                        onBlur={customerFormik.handleBlur}
+                        error={customerFormik.touched.phone && Boolean(customerFormik.errors.phone)}
+                        helperText={customerFormik.touched.phone && customerFormik.errors.phone}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <PhoneIcon />
+                            </InputAdornment>
+                          ),
+                        }}
                       />
-                      {invoiceFormik.touched.description && invoiceFormik.errors.description && (
-                        <p className="error-message">{invoiceFormik.errors.description}</p>
-                      )}
-                    </div>
+                    </Grid>
 
-                    <div className="form-group full-width">
-                      <label>Notes</label>
-                      <textarea
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="taxId"
+                        label="Tax ID"
+                        value={customerFormik.values.taxId}
+                        onChange={customerFormik.handleChange}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
+                        name="address"
+                        label="Address"
+                        multiline
+                        rows={2}
+                        value={customerFormik.values.address}
+                        onChange={customerFormik.handleChange}
+                        InputProps={{
+                          startAdornment: (
+                            <InputAdornment position="start">
+                              <LocationIcon />
+                            </InputAdornment>
+                          ),
+                        }}
+                      />
+                    </Grid>
+
+                    <Grid item xs={12}>
+                      <TextField
+                        fullWidth
                         name="notes"
-                        placeholder="Additional notes"
-                        onChange={invoiceFormik.handleChange}
-                        value={invoiceFormik.values.notes}
-                        rows="2"
+                        label="Notes"
+                        multiline
+                        rows={2}
+                        value={customerFormik.values.notes}
+                        onChange={customerFormik.handleChange}
                       />
-                    </div>
-                  </div>
+                    </Grid>
 
-                  <button
-                    type="submit"
-                    disabled={invoiceFormik.isSubmitting}
-                    className="submit-btn"
-                  >
-                    {invoiceFormik.isSubmitting ? 'Creating...' : 'Create Invoice'}
-                  </button>
-                </form>
-              </div>
-            )}
+                    <Grid item xs={12}>
+                      <Box display="flex" gap={2}>
+                        <Button
+                          type="submit"
+                          variant="contained"
+                          disabled={customerFormik.isSubmitting}
+                          size="large"
+                          startIcon={editingId ? <EditIcon /> : <AddIcon />}
+                          sx={{ 
+                            py: 1.5, 
+                            px: 4,
+                            borderRadius: 2,
+                            textTransform: 'none',
+                            fontWeight: 600
+                          }}
+                        >
+                          {customerFormik.isSubmitting 
+                            ? (editingId ? 'Updating...' : 'Adding...') 
+                            : (editingId ? 'Update Customer' : 'Add Customer')
+                          }
+                        </Button>
+                        {editingId && (
+                          <Button
+                            variant="outlined"
+                            onClick={() => {
+                              setEditingId(null);
+                              customerFormik.resetForm();
+                            }}
+                            size="large"
+                            sx={{ 
+                              py: 1.5, 
+                              px: 3,
+                              borderRadius: 2,
+                              textTransform: 'none',
+                              fontWeight: 600
+                            }}
+                          >
+                            Cancel
+                          </Button>
+                        )}
+                      </Box>
+                    </Grid>
+                  </Grid>
+                </Box>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
 
-            {/* Invoices List */}
-            <div className="invoices-list">
-              {selectedCustomer.invoices && selectedCustomer.invoices.length > 0 ? (
-                selectedCustomer.invoices
-                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                  .map((invoice) => {
-                    const overdue = invoice.status === 'pending' && invoice.dueDate && isInvoiceOverdue(invoice.dueDate);
-                    return (
-                      <div key={invoice.id} className={`invoice-item ${overdue ? 'overdue' : ''}`}>
-                        <div className="invoice-info">
-                          <div className="invoice-header">
-                            <strong>Invoice #{invoice.id}</strong>
-                            <span className={`status-badge ${getInvoiceStatusColor(overdue ? 'overdue' : invoice.status)}`}>
-                              {overdue ? 'Overdue' : invoice.status.charAt(0).toUpperCase() + invoice.status.slice(1)}
-                            </span>
-                          </div>
-                          <p>{invoice.description}</p>
-                          <div className="invoice-details">
-                            <small>Created: {new Date(invoice.createdAt).toLocaleDateString()}</small>
-                            {invoice.dueDate && (
-                              <small>Due: {new Date(invoice.dueDate).toLocaleDateString()}</small>
-                            )}
-                            {invoice.paidDate && (
-                              <small>Paid: {new Date(invoice.paidDate).toLocaleDateString()}</small>
-                            )}
-                          </div>
-                        </div>
-                        <div className="invoice-actions">
-                          <div className="invoice-amount">
-                            {invoice.amount.toLocaleString()} QAR
-                          </div>
-                          {invoice.status === 'pending' && (
-                            <button
-                              onClick={() => markInvoicePaid(selectedCustomer.id, invoice.id)}
-                              className="pay-btn"
+        {/* Customer List */}
+        <Grid item xs={12} md={6}>
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+          >
+            <Card elevation={3} sx={{ borderRadius: 3, height: '100%' }}>
+              <CardContent sx={{ p: 3 }}>
+                <Box display="flex" alignItems="center" mb={3}>
+                  <Avatar sx={{ 
+                    bgcolor: alpha(theme.palette.success.main, 0.1), 
+                    color: theme.palette.success.main,
+                    mr: 2
+                  }}>
+                    <BusinessIcon />
+                  </Avatar>
+                  <Typography variant="h5" fontWeight={700} color="text.primary">
+                    Customer List ({filteredCustomers.length})
+                  </Typography>
+                </Box>
+
+                <Box sx={{ maxHeight: 600, overflowY: 'auto' }}>
+                  {filteredCustomers.length === 0 ? (
+                    <Box textAlign="center" py={4}>
+                      <Typography variant="body1" color="text.secondary">
+                        No customers found
+                      </Typography>
+                    </Box>
+                  ) : (
+                    <Grid container spacing={2}>
+                      {filteredCustomers.map((customer) => (
+                        <Grid item xs={12} key={customer.id}>
+                          <motion.div
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            <Card 
+                              elevation={selectedCustomer?.id === customer.id ? 4 : 1} 
+                              onClick={() => setSelectedCustomer(customer)}
+                              sx={{
+                                borderRadius: 2,
+                                cursor: 'pointer',
+                                border: selectedCustomer?.id === customer.id ? 
+                                  `2px solid ${theme.palette.primary.main}` : 
+                                  `1px solid ${alpha(theme.palette.primary.main, 0.1)}`,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  elevation: 3,
+                                  transform: 'translateY(-2px)'
+                                }
+                              }}
                             >
-                              💰 Mark Paid
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })
-              ) : (
-                <p className="no-data">No invoices for this customer yet</p>
-              )}
-            </div>
-          </div>
+                              <CardContent sx={{ p: 2 }}>
+                                <Box display="flex" justifyContent="space-between" alignItems="start">
+                                  <Box flex={1}>
+                                    <Typography variant="h6" fontWeight={600} color="primary" gutterBottom>
+                                      {customer.name}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                                      <PersonIcon sx={{ fontSize: 14, mr: 0.5 }} />
+                                      {customer.contactPerson}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary" gutterBottom>
+                                      <PhoneIcon sx={{ fontSize: 14, mr: 0.5 }} />
+                                      {customer.phone}
+                                    </Typography>
+                                    {customer.email && (
+                                      <Typography variant="body2" color="text.secondary">
+                                        <EmailIcon sx={{ fontSize: 14, mr: 0.5 }} />
+                                        {customer.email}
+                                      </Typography>
+                                    )}
+
+                                    <Box mt={2} display="flex" gap={1} flexWrap="wrap">
+                                      <Chip 
+                                        label={`Orders: ${customer.totalOrders || 0}`} 
+                                        size="small" 
+                                        color="primary"
+                                        variant="outlined"
+                                      />
+                                      <Chip 
+                                        label={`Paid: ${(customer.totalPaid || 0).toLocaleString()} QAR`} 
+                                        size="small" 
+                                        color="success"
+                                        variant="outlined"
+                                      />
+                                      {customer.invoices?.length > 0 && (
+                                        <Chip 
+                                          label={`Invoices: ${customer.invoices.length}`} 
+                                          size="small" 
+                                          color="info"
+                                          variant="outlined"
+                                        />
+                                      )}
+                                    </Box>
+                                  </Box>
+
+                                  <Box display="flex" flexDirection="column" gap={1}>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleEdit(customer);
+                                      }}
+                                      sx={{ 
+                                        bgcolor: alpha(theme.palette.warning.main, 0.1),
+                                        color: theme.palette.warning.main,
+                                        '&:hover': {
+                                          bgcolor: alpha(theme.palette.warning.main, 0.2),
+                                        }
+                                      }}
+                                    >
+                                      <EditIcon fontSize="small" />
+                                    </IconButton>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDelete(customer.id, customer.name);
+                                      }}
+                                      sx={{ 
+                                        bgcolor: alpha(theme.palette.error.main, 0.1),
+                                        color: theme.palette.error.main,
+                                        '&:hover': {
+                                          bgcolor: alpha(theme.palette.error.main, 0.2),
+                                        }
+                                      }}
+                                    >
+                                      <DeleteIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                </Box>
+                              </CardContent>
+                            </Card>
+                          </motion.div>
+                        </Grid>
+                      ))}
+                    </Grid>
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </motion.div>
+        </Grid>
+
+        {/* Selected Customer Details */}
+        {selectedCustomer && (
+          <Grid item xs={12}>
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.3 }}
+            >
+              <Card elevation={3} sx={{ borderRadius: 3 }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={3}>
+                    <Box display="flex" alignItems="center">
+                      <Avatar sx={{ 
+                        bgcolor: alpha(theme.palette.info.main, 0.1), 
+                        color: theme.palette.info.main,
+                        mr: 2,
+                        width: 48,
+                        height: 48
+                      }}>
+                        <ReceiptIcon />
+                      </Avatar>
+                      <Box>
+                        <Typography variant="h5" fontWeight={700} color="text.primary">
+                          {selectedCustomer.name} - Details
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          Customer relationship management
+                        </Typography>
+                      </Box>
+                    </Box>
+                    <Button
+                      variant="contained"
+                      startIcon={<ReceiptIcon />}
+                      onClick={() => setShowInvoiceForm(!showInvoiceForm)}
+                      sx={{ 
+                        borderRadius: 2,
+                        textTransform: 'none',
+                        fontWeight: 600
+                      }}
+                    >
+                      Create Invoice
+                    </Button>
+                  </Box>
+
+                  <Divider sx={{ mb: 3 }} />
+
+                  <Grid container spacing={3}>
+                    <Grid item xs={12} md={6}>
+                      <Typography variant="h6" gutterBottom>
+                        Contact Information
+                      </Typography>
+                      <Box sx={{ ml: 2 }}>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Contact Person:</strong> {selectedCustomer.contactPerson}
+                        </Typography>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Phone:</strong> {selectedCustomer.phone}
+                        </Typography>
+                        {selectedCustomer.email && (
+                          <Typography variant="body2" gutterBottom>
+                            <strong>Email:</strong> {selectedCustomer.email}
+                          </Typography>
+                        )}
+                        {selectedCustomer.address && (
+                          <Typography variant="body2" gutterBottom>
+                            <strong>Address:</strong> {selectedCustomer.address}
+                          </Typography>
+                        )}
+                        {selectedCustomer.taxId && (
+                          <Typography variant="body2" gutterBottom>
+                            <strong>Tax ID:</strong> {selectedCustomer.taxId}
+                          </Typography>
+                        )}
+                      </Box>
+                    </Grid>
+
+                    <Grid item xs={12} md={6}>
+                      <Typography variant="h6" gutterBottom>
+                        Business Statistics
+                      </Typography>
+                      <Box sx={{ ml: 2 }}>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Total Orders:</strong> {selectedCustomer.totalOrders || 0}
+                        </Typography>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Total Paid:</strong> {(selectedCustomer.totalPaid || 0).toLocaleString()} QAR
+                        </Typography>
+                        <Typography variant="body2" gutterBottom>
+                          <strong>Outstanding Invoices:</strong> {selectedCustomer.invoices?.filter(inv => inv.status === 'pending').length || 0}
+                        </Typography>
+                      </Box>
+                    </Grid>
+                  </Grid>
+
+                  {/* Invoice Creation Form */}
+                  {showInvoiceForm && (
+                    <Box mt={3}>
+                      <Divider sx={{ mb: 3 }} />
+                      <Typography variant="h6" gutterBottom>
+                        Create New Invoice
+                      </Typography>
+                      <Box component="form" onSubmit={invoiceFormik.handleSubmit}>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              name="amount"
+                              label="Amount (QAR) *"
+                              type="number"
+                              value={invoiceFormik.values.amount}
+                              onChange={invoiceFormik.handleChange}
+                              error={invoiceFormik.touched.amount && Boolean(invoiceFormik.errors.amount)}
+                              helperText={invoiceFormik.touched.amount && invoiceFormik.errors.amount}
+                            />
+                          </Grid>
+                          <Grid item xs={12} sm={6}>
+                            <TextField
+                              fullWidth
+                              name="dueDate"
+                              label="Due Date *"
+                              type="date"
+                              InputLabelProps={{ shrink: true }}
+                              value={invoiceFormik.values.dueDate}
+                              onChange={invoiceFormik.handleChange}
+                              error={invoiceFormik.touched.dueDate && Boolean(invoiceFormik.errors.dueDate)}
+                              helperText={invoiceFormik.touched.dueDate && invoiceFormik.errors.dueDate}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <TextField
+                              fullWidth
+                              name="description"
+                              label="Description *"
+                              multiline
+                              rows={2}
+                              value={invoiceFormik.values.description}
+                              onChange={invoiceFormik.handleChange}
+                              error={invoiceFormik.touched.description && Boolean(invoiceFormik.errors.description)}
+                              helperText={invoiceFormik.touched.description && invoiceFormik.errors.description}
+                            />
+                          </Grid>
+                          <Grid item xs={12}>
+                            <Box display="flex" gap={2}>
+                              <Button
+                                type="submit"
+                                variant="contained"
+                                disabled={invoiceFormik.isSubmitting}
+                                startIcon={<ReceiptIcon />}
+                                sx={{ 
+                                  borderRadius: 2,
+                                  textTransform: 'none',
+                                  fontWeight: 600
+                                }}
+                              >
+                                {invoiceFormik.isSubmitting ? 'Creating...' : 'Create Invoice'}
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                onClick={() => {
+                                  setShowInvoiceForm(false);
+                                  invoiceFormik.resetForm();
+                                }}
+                                sx={{ 
+                                  borderRadius: 2,
+                                  textTransform: 'none',
+                                  fontWeight: 600
+                                }}
+                              >
+                                Cancel
+                              </Button>
+                            </Box>
+                          </Grid>
+                        </Grid>
+                      </Box>
+                    </Box>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          </Grid>
         )}
-      </div>
-    </div>
+      </Grid>
+    </Box>
   );
 };
 
