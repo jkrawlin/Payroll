@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { mockAnalytics, mockEmployees, mockCustomers, mockAccounts } from '../services/mockData';
+import { mockEmployees, mockCustomers, mockAccountsLedger, mockPayrollData } from '../services/mockData';
 import { 
   Box, 
   Card, 
@@ -44,13 +44,15 @@ const Analytics = ({
   payments = [], 
   receipts = [],
   customers = mockCustomers,
-  accounts = mockAccounts
+  accounts = mockAccountsLedger
 }) => {
   const theme = useTheme();
-  const [kpis, setKpis] = useState(mockAnalytics.kpis.reduce((acc, kpi) => ({
-    ...acc,
-    [kpi.title.toLowerCase().replace(' ', '')]: kpi.value
-  }), {}));
+  const [kpis, setKpis] = useState({
+    totalEmployees: mockEmployees.length,
+    totalPayroll: mockPayrollData.totalPayroll,
+    averageSalary: mockPayrollData.totalPayroll / mockEmployees.length,
+    pendingPayments: mockPayrollData.pendingPayments
+  });
   
   const [payrollData, setPayrollData] = useState({ labels: [], datasets: [] });
   const [salaryDistData, setSalaryDistData] = useState({ labels: [], datasets: [] });
@@ -179,34 +181,18 @@ const Analytics = ({
     };
     setSalaryDistData(salaryDistChartData);
 
-    // Monthly Trends using mock analytics data
+    // Monthly Trends using payroll data
     const monthlyTrendsChartData = {
-      labels: mockAnalytics.chartData.labels,
+      labels: mockPayrollData.monthlyBreakdown.map(item => item.month),
       datasets: [
         {
-          label: 'Revenue (QAR)',
-          data: mockAnalytics.chartData.revenue,
-          borderColor: theme.palette.success.main,
-          backgroundColor: alpha(theme.palette.success.main, 0.1),
-          tension: 0.4,
-          fill: true,
-        },
-        {
-          label: 'Expenses (QAR)',
-          data: mockAnalytics.chartData.expenses,
-          borderColor: theme.palette.error.main,
-          backgroundColor: alpha(theme.palette.error.main, 0.1),
-          tension: 0.4,
-          fill: true,
-        },
-        {
-          label: 'Profit (QAR)',
-          data: mockAnalytics.chartData.profit,
+          label: 'Payroll (QAR)',
+          data: mockPayrollData.monthlyBreakdown.map(item => item.amount),
           borderColor: theme.palette.primary.main,
           backgroundColor: alpha(theme.palette.primary.main, 0.1),
           tension: 0.4,
           fill: true,
-        },
+        }
       ],
     };
     setMonthlyTrendsData(monthlyTrendsChartData);

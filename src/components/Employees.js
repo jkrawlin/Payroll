@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
+import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, isFirebaseConfigured } from '../firebase';
 import { mockEmployees, mockFirebaseAPI } from '../services/mockData';
@@ -40,6 +40,15 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  Tabs,
+  Tab,
+  List,
+  ListItem,
+  ListItemText,
+  Divider,
+  useMediaQuery,
+  CircularProgress,
+  Backdrop,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -55,16 +64,82 @@ import {
   Assignment as AssignmentIcon,
   ExpandMore as ExpandMoreIcon,
   CloudUpload as CloudUploadIcon,
+  Close as CloseIcon,
+  Work as WorkIcon,
+  Description as DescriptionIcon,
+  DateRange as DateRangeIcon,
+  AccountBalance as AccountBalanceIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
+import { DataGrid } from '@mui/x-data-grid';
 
 const Employees = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [employees, setEmployees] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
+  
+  // Employee Details Modal States
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
+  const [openDetailsModal, setOpenDetailsModal] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+
+  // Helper functions for calculations and formatting
+  const calculateDaysPaid = (employee) => {
+    if (!employee?.totalPaid || !employee?.salary) return 0;
+    const dailyRate = employee.salary / 30; // Assume 30-day month
+    return Math.floor(employee.totalPaid / dailyRate);
+  };
+
+  const formatDate = (dateStr) => {
+    if (!dateStr) return 'Not specified';
+    return new Date(dateStr).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
+  };
+
+  // TabPanel Component
+  const TabPanel = ({ children, value, index }) => {
+    return (
+      <Box role="tabpanel" hidden={value !== index} sx={{ pt: 3 }}>
+        {value === index && children}
+      </Box>
+    );
+  };
+
+  // Enhanced employee row click handler
+  const handleRowClick = async (employee) => {
+    setSelectedEmployee(employee);
+    setOpenDetailsModal(true);
+    setTabValue(0); // Reset to first tab
+    
+    // Fetch additional details if using Firebase
+    if (isFirebaseConfigured() && employee.id) {
+      setDetailsLoading(true);
+      try {
+        const docSnap = await getDoc(doc(db, 'employees', employee.id));
+        if (docSnap.exists()) {
+          const fullData = { id: employee.id, ...docSnap.data() };
+          setSelectedEmployee(fullData);
+        }
+      } catch (error) {
+        console.error('Error fetching employee details:', error);
+      } finally {
+        setDetailsLoading(false);
+      }
+    }
+  };
 
   const validationSchema = Yup.object({
     name: Yup.string().required('Name is required'),
@@ -352,7 +427,7 @@ const Employees = () => {
           </motion.div>
         </Grid>
 
-        {/* Employees Table */}
+        {/* Enhanced Employees DataGrid */}
         <Grid item xs={12}>
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -362,145 +437,634 @@ const Employees = () => {
             <Card elevation={3} sx={{ borderRadius: 3 }}>
               <CardContent sx={{ p: 3 }}>
                 <Typography variant="h5" fontWeight={700} color="text.primary" gutterBottom>
-                  Employee List
+                  Employee List - Click on any row for details
                 </Typography>
 
-                <TableContainer component={Paper} elevation={0}>
-                  <Table>
-                    <TableHead>
-                      <TableRow sx={{ bgcolor: alpha(theme.palette.primary.main, 0.1) }}>
-                        <TableCell><strong>Employee</strong></TableCell>
-                        <TableCell><strong>Department</strong></TableCell>
-                        <TableCell><strong>Position</strong></TableCell>
-                        <TableCell><strong>QID Status</strong></TableCell>
-                        <TableCell><strong>Passport Status</strong></TableCell>
-                        <TableCell><strong>Salary</strong></TableCell>
-                        <TableCell><strong>Total Paid</strong></TableCell>
-                        <TableCell><strong>Actions</strong></TableCell>
-                      </TableRow>
-                    </TableHead>
-                    <TableBody>
-                      {filteredEmployees.map((employee, index) => {
-                        const qidStatus = checkExpiry(employee.qid?.expiry, 'QID');
-                        const passportStatus = checkExpiry(employee.passport?.expiry, 'Passport');
-                        
-                        return (
-                          <motion.tr
-                            key={employee.id}
-                            component={TableRow}
-                            initial={{ opacity: 0, x: -20 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            transition={{ duration: 0.3, delay: index * 0.1 }}
-                            sx={{ 
-                              '&:nth-of-type(odd)': { 
-                                bgcolor: alpha(theme.palette.action.hover, 0.5) 
-                              },
-                              '&:hover': {
-                                bgcolor: alpha(theme.palette.primary.main, 0.1)
-                              }
-                            }}
-                          >
-                            <TableCell>
-                              <Box display="flex" alignItems="center">
-                                <Avatar sx={{ 
-                                  bgcolor: alpha(theme.palette.primary.main, 0.1),
-                                  color: theme.palette.primary.main,
-                                  mr: 2
-                                }}>
-                                  <PersonIcon />
-                                </Avatar>
-                                <Box>
-                                  <Typography variant="body2" fontWeight={600}>
-                                    {employee.name}
-                                  </Typography>
-                                  {employee.email && (
-                                    <Typography variant="body2" color="text.secondary">
-                                      {employee.email}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              </Box>
-                            </TableCell>
-                            <TableCell>{employee.department}</TableCell>
-                            <TableCell>{employee.position}</TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={qidStatus.message}
-                                color={qidStatus.color}
-                                size="small"
-                                variant={qidStatus.color === 'default' ? 'outlined' : 'filled'}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Chip 
-                                label={passportStatus.message}
-                                color={passportStatus.color}
-                                size="small"
-                                variant={passportStatus.color === 'default' ? 'outlined' : 'filled'}
-                              />
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" fontWeight={600} color="success.main">
-                                {employee.salary?.toLocaleString()} QAR
+                <Box sx={{ height: 500, width: '100%' }}>
+                  <DataGrid
+                    rows={filteredEmployees.map((emp, index) => ({ 
+                      ...emp, 
+                      id: emp.id || `employee-${index}`,
+                      qidStatusObj: checkExpiry(emp.qid?.expiry, 'QID'),
+                      passportStatusObj: checkExpiry(emp.passport?.expiry, 'Passport')
+                    }))}
+                    columns={[
+                      {
+                        field: 'employee',
+                        headerName: 'Employee',
+                        width: 250,
+                        renderCell: (params) => (
+                          <Box display="flex" alignItems="center" sx={{ cursor: 'pointer' }}>
+                            <Avatar 
+                              src={params.row.photoUrl}
+                              sx={{ 
+                                bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                color: theme.palette.primary.main,
+                                mr: 2,
+                                width: 40,
+                                height: 40
+                              }}
+                            >
+                              <PersonIcon />
+                            </Avatar>
+                            <Box>
+                              <Typography variant="body2" fontWeight={600}>
+                                {params.row.name}
                               </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Typography variant="body2" fontWeight={600} color="success.main">
-                                {(employee.totalPaid || 0).toLocaleString()} QAR
-                              </Typography>
-                            </TableCell>
-                            <TableCell>
-                              <Box display="flex" gap={1}>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleEdit(employee)}
-                                  sx={{ 
-                                    color: theme.palette.primary.main,
-                                    '&:hover': {
-                                      bgcolor: alpha(theme.palette.primary.main, 0.1)
-                                    }
-                                  }}
-                                >
-                                  <EditIcon />
-                                </IconButton>
-                                <IconButton
-                                  size="small"
-                                  onClick={() => handleDelete(employee.id, employee.name)}
-                                  sx={{ 
-                                    color: theme.palette.error.main,
-                                    '&:hover': {
-                                      bgcolor: alpha(theme.palette.error.main, 0.1)
-                                    }
-                                  }}
-                                >
-                                  <DeleteIcon />
-                                </IconButton>
-                              </Box>
-                            </TableCell>
-                          </motion.tr>
-                        );
-                      })}
-                    </TableBody>
-                  </Table>
-                  
-                  {filteredEmployees.length === 0 && (
-                    <Box sx={{ p: 4, textAlign: 'center' }}>
-                      <Typography variant="h6" color="text.secondary" gutterBottom>
-                        No employees found
+                              {params.row.email && (
+                                <Typography variant="caption" color="text.secondary">
+                                  {params.row.email}
+                                </Typography>
+                              )}
+                            </Box>
+                          </Box>
+                        )
+                      },
+                      {
+                        field: 'department',
+                        headerName: 'Department',
+                        width: 130
+                      },
+                      {
+                        field: 'position',
+                        headerName: 'Position',
+                        width: 160
+                      },
+                      {
+                        field: 'qidStatus',
+                        headerName: 'QID Status',
+                        width: 130,
+                        renderCell: (params) => (
+                          <Chip
+                            label={params.row.qidStatusObj.message}
+                            color={params.row.qidStatusObj.color}
+                            size="small"
+                            variant={params.row.qidStatusObj.color === 'default' ? 'outlined' : 'filled'}
+                          />
+                        )
+                      },
+                      {
+                        field: 'passportStatus',
+                        headerName: 'Passport Status',
+                        width: 140,
+                        renderCell: (params) => (
+                          <Chip
+                            label={params.row.passportStatusObj.message}
+                            color={params.row.passportStatusObj.color}
+                            size="small"
+                            variant={params.row.passportStatusObj.color === 'default' ? 'outlined' : 'filled'}
+                          />
+                        )
+                      },
+                      {
+                        field: 'salary',
+                        headerName: 'Salary',
+                        width: 120,
+                        renderCell: (params) => (
+                          <Typography variant="body2" fontWeight={600} color="success.main">
+                            {params.value?.toLocaleString() || 0} QAR
+                          </Typography>
+                        )
+                      },
+                      {
+                        field: 'totalPaid',
+                        headerName: 'Total Paid',
+                        width: 120,
+                        renderCell: (params) => (
+                          <Typography variant="body2" fontWeight={600} color="success.main">
+                            {(params.value || 0).toLocaleString()} QAR
+                          </Typography>
+                        )
+                      },
+                      {
+                        field: 'actions',
+                        headerName: 'Actions',
+                        width: 120,
+                        sortable: false,
+                        renderCell: (params) => (
+                          <Box display="flex" gap={1}>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleEdit(params.row);
+                              }}
+                              sx={{ 
+                                color: theme.palette.primary.main,
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.primary.main, 0.1)
+                                }
+                              }}
+                            >
+                              <EditIcon />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDelete(params.row.id, params.row.name);
+                              }}
+                              sx={{ 
+                                color: theme.palette.error.main,
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.error.main, 0.1)
+                                }
+                              }}
+                            >
+                              <DeleteIcon />
+                            </IconButton>
+                          </Box>
+                        )
+                      }
+                    ]}
+                    onRowClick={(params) => handleRowClick(params.row)}
+                    sx={{
+                      '& .MuiDataGrid-row': {
+                        cursor: 'pointer',
+                        '&:hover': {
+                          backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                          boxShadow: `0 0 15px ${alpha(theme.palette.primary.main, 0.2)}`,
+                          transform: 'translateY(-1px)',
+                          transition: 'all 0.2s ease-in-out'
+                        }
+                      },
+                      '& .MuiDataGrid-cell': {
+                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.5)}`,
+                      },
+                      '& .MuiDataGrid-columnHeaders': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                        fontWeight: 700,
+                        fontSize: '0.9rem'
+                      },
+                      backgroundColor: 'background.paper',
+                      borderRadius: 2,
+                      border: 'none',
+                      '& .MuiDataGrid-footerContainer': {
+                        backgroundColor: alpha(theme.palette.background.paper, 0.8)
+                      }
+                    }}
+                    pageSize={10}
+                    rowsPerPageOptions={[5, 10, 25]}
+                    checkboxSelection={false}
+                    disableSelectionOnClick={false}
+                    autoHeight={false}
+                    initialState={{
+                      pagination: {
+                        paginationModel: { pageSize: 10, page: 0 }
+                      }
+                    }}
+                  />
+                </Box>
+                
+                {filteredEmployees.length === 0 && (
+                  <Box sx={{ p: 4, textAlign: 'center' }}>
+                    <Typography variant="h6" color="text.secondary" gutterBottom>
+                      No employees found
+                    </Typography>
+                    {searchTerm && (
+                      <Typography variant="body2" color="text.secondary">
+                        Try adjusting your search terms
                       </Typography>
-                      {searchTerm && (
-                        <Typography variant="body2" color="text.secondary">
-                          Try adjusting your search terms
-                        </Typography>
-                      )}
-                    </Box>
-                  )}
-                </TableContainer>
+                    )}
+                  </Box>
+                )}
               </CardContent>
             </Card>
           </motion.div>
         </Grid>
       </Grid>
+
+      {/* Comprehensive Employee Details Modal */}
+      <Dialog
+        open={openDetailsModal}
+        onClose={() => setOpenDetailsModal(false)}
+        maxWidth="lg"
+        fullWidth
+        fullScreen={isMobile}
+        PaperProps={{
+          sx: { 
+            borderRadius: isMobile ? 0 : 3,
+            minHeight: isMobile ? '100vh' : '600px'
+          }
+        }}
+      >
+        <DialogTitle>
+          <Box display="flex" alignItems="center" justifyContent="space-between">
+            <Box display="flex" alignItems="center">
+              <Avatar
+                src={selectedEmployee?.photoUrl}
+                sx={{
+                  width: 50,
+                  height: 50,
+                  mr: 2,
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main
+                }}
+              >
+                <PersonIcon sx={{ fontSize: 28 }} />
+              </Avatar>
+              <Box>
+                <Typography variant="h5" fontWeight={700}>
+                  {selectedEmployee?.name}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {selectedEmployee?.position} • {selectedEmployee?.department}
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton 
+              onClick={() => setOpenDetailsModal(false)}
+              sx={{ 
+                color: 'text.secondary',
+                '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 0 }}>
+          {/* Loading Backdrop */}
+          <Backdrop 
+            open={detailsLoading} 
+            sx={{ 
+              position: 'absolute', 
+              zIndex: 1, 
+              backgroundColor: alpha(theme.palette.background.paper, 0.8) 
+            }}
+          >
+            <CircularProgress />
+          </Backdrop>
+
+          {/* Tabs Navigation */}
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3 }}>
+            <Tabs 
+              value={tabValue} 
+              onChange={handleTabChange}
+              variant={isMobile ? "scrollable" : "centered"}
+              scrollButtons={isMobile ? "auto" : false}
+              sx={{
+                '& .MuiTab-root': {
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  minWidth: 120
+                }
+              }}
+            >
+              <Tab 
+                icon={<PersonIcon />} 
+                label="Personal Details" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<DescriptionIcon />} 
+                label="Documents" 
+                iconPosition="start"
+              />
+              <Tab 
+                icon={<AccountBalanceIcon />} 
+                label="Payroll History" 
+                iconPosition="start"
+              />
+            </Tabs>
+          </Box>
+
+          {/* Tab Panels */}
+          <Box sx={{ p: 3 }}>
+            {/* Personal Details Tab */}
+            <TabPanel value={tabValue} index={0}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Paper elevation={2} sx={{ p: 3, textAlign: 'center', borderRadius: 2 }}>
+                    <Avatar
+                      src={selectedEmployee?.photoUrl}
+                      sx={{
+                        width: 120,
+                        height: 120,
+                        mx: 'auto',
+                        mb: 2,
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        color: theme.palette.primary.main
+                      }}
+                    >
+                      <PersonIcon sx={{ fontSize: 60 }} />
+                    </Avatar>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      {selectedEmployee?.name}
+                    </Typography>
+                    <Chip
+                      label={`Employee ID: ${selectedEmployee?.id || 'N/A'}`}
+                      color="primary"
+                      variant="outlined"
+                      size="small"
+                    />
+                  </Paper>
+                </Grid>
+                
+                <Grid item xs={12} md={8}>
+                  <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center' }}>
+                      <WorkIcon sx={{ mr: 1, color: 'primary.main' }} />
+                      Employment Information
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    
+                    <Grid container spacing={2}>
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Join Date
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            <DateRangeIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            {formatDate(selectedEmployee?.joinDate || selectedEmployee?.createdAt)}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Department
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            <BusinessIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            {selectedEmployee?.department}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Position
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            <AssignmentIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            {selectedEmployee?.position}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Monthly Salary
+                          </Typography>
+                          <Typography variant="body1" fontWeight={700} color="success.main">
+                            <MoneyIcon sx={{ fontSize: 16, mr: 1 }} />
+                            {selectedEmployee?.salary?.toLocaleString() || 0} QAR
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Email Address
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            <EmailIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            {selectedEmployee?.email || 'Not provided'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      
+                      <Grid item xs={12} sm={6}>
+                        <Box sx={{ mb: 2 }}>
+                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                            Phone Number
+                          </Typography>
+                          <Typography variant="body1" fontWeight={600}>
+                            <PhoneIcon sx={{ fontSize: 16, mr: 1, color: 'text.secondary' }} />
+                            {selectedEmployee?.phone || 'Not provided'}
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </TabPanel>
+
+            {/* Documents Tab */}
+            <TabPanel value={tabValue} index={1}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h6" fontWeight={700} gutterBottom color="primary.main">
+                      Qatar ID (QID)
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    
+                    {selectedEmployee?.qid?.photoUrl && (
+                      <Box sx={{ mb: 2, textAlign: 'center' }}>
+                        <img
+                          src={selectedEmployee.qid.photoUrl}
+                          alt="Qatar ID"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '200px',
+                            borderRadius: 8,
+                            border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                          }}
+                        />
+                      </Box>
+                    )}
+                    
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">QID Number</Typography>
+                      <Typography variant="body1" fontWeight={600}>
+                        {selectedEmployee?.qid?.number || 'Not provided'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Expiry Date</Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body1" fontWeight={600}>
+                          {formatDate(selectedEmployee?.qid?.expiry)}
+                        </Typography>
+                        {selectedEmployee?.qid?.expiry && (
+                          <Chip
+                            label={checkExpiry(selectedEmployee.qid.expiry, 'QID').message}
+                            color={checkExpiry(selectedEmployee.qid.expiry, 'QID').color}
+                            size="small"
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+                
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h6" fontWeight={700} gutterBottom color="secondary.main">
+                      Passport
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    
+                    {selectedEmployee?.passport?.photoUrl && (
+                      <Box sx={{ mb: 2, textAlign: 'center' }}>
+                        <img
+                          src={selectedEmployee.passport.photoUrl}
+                          alt="Passport"
+                          style={{
+                            maxWidth: '100%',
+                            maxHeight: '200px',
+                            borderRadius: 8,
+                            border: `2px solid ${alpha(theme.palette.secondary.main, 0.2)}`
+                          }}
+                        />
+                      </Box>
+                    )}
+                    
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Passport Number</Typography>
+                      <Typography variant="body1" fontWeight={600}>
+                        {selectedEmployee?.passport?.number || 'Not provided'}
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ mb: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Expiry Date</Typography>
+                      <Box display="flex" alignItems="center" gap={1}>
+                        <Typography variant="body1" fontWeight={600}>
+                          {formatDate(selectedEmployee?.passport?.expiry)}
+                        </Typography>
+                        {selectedEmployee?.passport?.expiry && (
+                          <Chip
+                            label={checkExpiry(selectedEmployee.passport.expiry, 'Passport').message}
+                            color={checkExpiry(selectedEmployee.passport.expiry, 'Passport').color}
+                            size="small"
+                          />
+                        )}
+                      </Box>
+                    </Box>
+                  </Paper>
+                </Grid>
+              </Grid>
+            </TabPanel>
+
+            {/* Payroll History Tab */}
+            <TabPanel value={tabValue} index={2}>
+              <Grid container spacing={3}>
+                <Grid item xs={12} md={4}>
+                  <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h6" fontWeight={700} gutterBottom color="success.main">
+                      Salary Overview
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Base Monthly Salary
+                      </Typography>
+                      <Typography variant="h5" fontWeight={700} color="success.main">
+                        {selectedEmployee?.salary?.toLocaleString() || 0} QAR
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Total Amount Paid
+                      </Typography>
+                      <Typography variant="h5" fontWeight={700} color="primary.main">
+                        {(selectedEmployee?.totalPaid || 0).toLocaleString()} QAR
+                      </Typography>
+                    </Box>
+                    
+                    <Box sx={{ mb: 2 }}>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Equivalent Days Paid
+                      </Typography>
+                      <Typography variant="h6" fontWeight={600}>
+                        {calculateDaysPaid(selectedEmployee)} days
+                      </Typography>
+                    </Box>
+                    
+                    <Box>
+                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                        Outstanding Advances
+                      </Typography>
+                      <Typography variant="h6" fontWeight={600} color="warning.main">
+                        {selectedEmployee?.advances?.length || 0} advance(s)
+                      </Typography>
+                    </Box>
+                  </Paper>
+                </Grid>
+                
+                <Grid item xs={12} md={8}>
+                  <Paper elevation={2} sx={{ p: 3, borderRadius: 2 }}>
+                    <Typography variant="h6" fontWeight={700} gutterBottom>
+                      Recent Transactions
+                    </Typography>
+                    <Divider sx={{ mb: 2 }} />
+                    
+                    {selectedEmployee?.transactions && selectedEmployee.transactions.length > 0 ? (
+                      <List>
+                        {selectedEmployee.transactions.slice(0, 5).map((transaction, index) => (
+                          <ListItem key={index} sx={{ px: 0 }}>
+                            <ListItemText
+                              primary={
+                                <Box display="flex" justifyContent="space-between" alignItems="center">
+                                  <Typography variant="body2" fontWeight={600}>
+                                    {transaction.type || 'Payment'}
+                                  </Typography>
+                                  <Typography 
+                                    variant="body2" 
+                                    fontWeight={700}
+                                    color={transaction.type === 'advance' ? 'warning.main' : 'success.main'}
+                                  >
+                                    {transaction.amount?.toLocaleString()} QAR
+                                  </Typography>
+                                </Box>
+                              }
+                              secondary={
+                                <Typography variant="body2" color="text.secondary">
+                                  {formatDate(transaction.date)} • {transaction.description || 'Monthly salary payment'}
+                                </Typography>
+                              }
+                            />
+                            {index < selectedEmployee.transactions.slice(0, 5).length - 1 && <Divider />}
+                          </ListItem>
+                        ))}
+                      </List>
+                    ) : (
+                      <Box sx={{ textAlign: 'center', py: 4 }}>
+                        <Typography variant="body1" color="text.secondary">
+                          No transaction history available
+                        </Typography>
+                      </Box>
+                    )}
+                  </Paper>
+                </Grid>
+              </Grid>
+            </TabPanel>
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3, borderTop: 1, borderColor: 'divider' }}>
+          <Button 
+            onClick={() => setOpenDetailsModal(false)}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            Close
+          </Button>
+          <Button
+            variant="contained"
+            startIcon={<EditIcon />}
+            onClick={() => {
+              setOpenDetailsModal(false);
+              handleEdit(selectedEmployee);
+            }}
+            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+          >
+            Edit Employee
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Employee Form Dialog */}
       <Dialog 
