@@ -78,21 +78,21 @@ const Accounts = () => {
   });
 
   const categories = [
-    { value: 'general', label: 'General Ledger', icon: '📊' },
-    { value: 'payroll', label: 'Payroll & Salaries', icon: '💰' },
-    { value: 'employee-advance', label: 'Employee Advances', icon: '🏧' },
-    { value: 'employee-deduction', label: 'Employee Deductions', icon: '➖' },
-    { value: 'revenue', label: 'Revenue & Income', icon: '📈' },
-    { value: 'customer-payment', label: 'Customer Payments', icon: '💳' },
-    { value: 'expenses', label: 'Operating Expenses', icon: '💸' },
-    { value: 'office', label: 'Office Expenses', icon: '🏢' },
-    { value: 'utilities', label: 'Utilities & Bills', icon: '⚡' },
-    { value: 'transport', label: 'Transport & Travel', icon: '🚗' },
-    { value: 'supplies', label: 'Supplies & Materials', icon: '📦' },
-    { value: 'maintenance', label: 'Maintenance & Repairs', icon: '🔧' },
-    { value: 'insurance', label: 'Insurance & Benefits', icon: '🛡️' },
-    { value: 'tax-gov', label: 'Tax & Government Fees', icon: '🏛️' },
-    { value: 'bank-charges', label: 'Bank Charges & Fees', icon: '🏦' }
+    { value: 'general', label: 'General Ledger', icon: <AccountBalanceIcon /> },
+    { value: 'payroll', label: 'Payroll & Salaries', icon: <AttachMoneyIcon /> },
+    { value: 'employee-advance', label: 'Employee Advances', icon: <AccountBalanceIcon /> },
+    { value: 'employee-deduction', label: 'Employee Deductions', icon: <TrendingDownIcon /> },
+    { value: 'revenue', label: 'Revenue & Income', icon: <TrendingUpIcon /> },
+    { value: 'customer-payment', label: 'Customer Payments', icon: <AttachMoneyIcon /> },
+    { value: 'expenses', label: 'Operating Expenses', icon: <TrendingDownIcon /> },
+    { value: 'office', label: 'Office Expenses', icon: <AccountBalanceIcon /> },
+    { value: 'utilities', label: 'Utilities & Bills', icon: <AccountBalanceIcon /> },
+    { value: 'transport', label: 'Transport & Travel', icon: <TrendingDownIcon /> },
+    { value: 'supplies', label: 'Supplies & Materials', icon: <AccountBalanceIcon /> },
+    { value: 'maintenance', label: 'Maintenance & Repairs', icon: <TrendingDownIcon /> },
+    { value: 'insurance', label: 'Insurance & Benefits', icon: <AccountBalanceIcon /> },
+    { value: 'tax-gov', label: 'Tax & Government Fees', icon: <TrendingDownIcon /> },
+    { value: 'bank-charges', label: 'Bank Charges & Fees', icon: <AccountBalanceIcon /> }
   ];
 
   // Helper functions for enhanced UI
@@ -150,7 +150,7 @@ const Accounts = () => {
         value: `${balance.toLocaleString()} QAR`,
         change: balance >= 0 ? '+' + Math.abs(balance * 0.05).toFixed(0) : '-' + Math.abs(balance * 0.05).toFixed(0),
         trend: 'up',
-        icon: '💰'
+        icon: <AccountBalanceIcon sx={{ color: 'primary.main' }} />
       },
       {
         id: 2,
@@ -158,7 +158,7 @@ const Accounts = () => {
         value: `${outstanding.toLocaleString()} QAR`,
         change: '-' + Math.abs(outstanding * 0.1).toFixed(0),
         trend: 'down',
-        icon: '⏰'
+        icon: <PieChartIcon sx={{ color: 'warning.main' }} />
       },
       {
         id: 3,
@@ -166,7 +166,7 @@ const Accounts = () => {
         value: `${totalCredits.toLocaleString()} QAR`,
         change: '+' + Math.abs(totalCredits * 0.15).toFixed(0),
         trend: 'up',
-        icon: '📈'
+        icon: <TrendingUpIcon sx={{ color: 'success.main' }} />
       },
       {
         id: 4,
@@ -174,7 +174,7 @@ const Accounts = () => {
         value: `${totalDebits.toLocaleString()} QAR`,
         change: '-' + Math.abs(totalDebits * 0.08).toFixed(0),
         trend: 'down',
-        icon: '📉'
+        icon: <TrendingDownIcon sx={{ color: 'error.main' }} />
       },
       {
         id: 5,
@@ -182,7 +182,7 @@ const Accounts = () => {
         value: `${employeeAdvances.toLocaleString()} QAR`,
         change: '+' + Math.abs(employeeAdvances * 0.05).toFixed(0),
         trend: 'neutral',
-        icon: '🏧'
+        icon: <AttachMoneyIcon sx={{ color: 'info.main' }} />
       },
       {
         id: 6,
@@ -190,7 +190,7 @@ const Accounts = () => {
         value: `${employees.length}`,
         change: '+2',
         trend: 'up',
-        icon: '👥'
+        icon: <AccountBalanceIcon sx={{ color: 'secondary.main' }} />
       }
     ];
   };
@@ -232,7 +232,9 @@ const Accounts = () => {
       headerName: '',
       width: 60,
       renderCell: (params) => (
-        <Typography variant="h5">{params.value}</Typography>
+        <Box sx={{ display: 'flex', justifyContent: 'center' }}>
+          {params.value}
+        </Box>
       ),
       sortable: false,
     },
@@ -520,32 +522,32 @@ const Accounts = () => {
   };
 
   const getTransactionIcon = (type, category) => {
-    const categoryIcon = categories.find(cat => cat.value === category)?.icon;
-    if (categoryIcon) return categoryIcon;
+    const categoryItem = categories.find(cat => cat.value === category);
+    if (categoryItem) return categoryItem.icon;
     
     // Fallback icons
     if (type === 'credit') {
       switch (category) {
-        case 'revenue': return '💰';
-        case 'customer-payment': return '💳';
-        case 'payroll': return '↩️';
-        default: return '📈';
+        case 'revenue': return <AttachMoneyIcon sx={{ color: 'success.main' }} />;
+        case 'customer-payment': return <AttachMoneyIcon sx={{ color: 'primary.main' }} />;
+        case 'payroll': return <AccountBalanceIcon sx={{ color: 'info.main' }} />;
+        default: return <TrendingUpIcon sx={{ color: 'success.main' }} />;
       }
     } else {
       switch (category) {
-        case 'payroll': return '👥';
-        case 'employee-advance': return '🏧';
-        case 'employee-deduction': return '➖';
-        case 'expenses': return '💸';
-        case 'office': return '🏢';
-        case 'utilities': return '⚡';
-        case 'transport': return '🚗';
-        case 'supplies': return '📦';
-        case 'maintenance': return '🔧';
-        case 'insurance': return '🛡️';
-        case 'tax-gov': return '🏛️';
-        case 'bank-charges': return '🏦';
-        default: return '📉';
+        case 'payroll': return <AccountBalanceIcon sx={{ color: 'primary.main' }} />;
+        case 'employee-advance': return <AttachMoneyIcon sx={{ color: 'warning.main' }} />;
+        case 'employee-deduction': return <TrendingDownIcon sx={{ color: 'error.main' }} />;
+        case 'expenses': return <TrendingDownIcon sx={{ color: 'error.main' }} />;
+        case 'office': return <AccountBalanceIcon sx={{ color: 'secondary.main' }} />;
+        case 'utilities': return <AccountBalanceIcon sx={{ color: 'info.main' }} />;
+        case 'transport': return <TrendingDownIcon sx={{ color: 'warning.main' }} />;
+        case 'supplies': return <AccountBalanceIcon sx={{ color: 'secondary.main' }} />;
+        case 'maintenance': return <TrendingDownIcon sx={{ color: 'warning.main' }} />;
+        case 'insurance': return <AccountBalanceIcon sx={{ color: 'primary.main' }} />;
+        case 'tax-gov': return <TrendingDownIcon sx={{ color: 'error.main' }} />;
+        case 'bank-charges': return <AccountBalanceIcon sx={{ color: 'warning.main' }} />;
+        default: return <TrendingDownIcon sx={{ color: 'error.main' }} />;
       }
     }
   };
@@ -633,8 +635,9 @@ const Accounts = () => {
     <Box sx={{ p: { xs: 2, md: 3 } }}>
       {/* Enhanced Header */}
       <Box sx={{ mb: 4 }}>
-        <Typography variant="h3" fontWeight={700} gutterBottom>
-          💼 Accounts Management
+        <Typography variant="h3" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <AccountBalanceIcon sx={{ fontSize: 40, color: 'primary.main' }} />
+          Accounts Management
         </Typography>
         <Typography variant="body1" color="text.secondary">
           Comprehensive financial management and reporting system
@@ -715,8 +718,9 @@ const Accounts = () => {
               gap: 2
             }}>
               <Box>
-                <Typography variant="h4" fontWeight={700} gutterBottom>
-                  📊 Financial Overview
+                <Typography variant="h4" fontWeight={700} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <PieChartIcon sx={{ color: 'primary.main' }} />
+                  Financial Overview
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   Real-time insights into your financial performance and trends
@@ -848,9 +852,11 @@ const Accounts = () => {
                     width: 80, 
                     height: 80, 
                     backgroundColor: cashFlow.netFlow >= 0 ? 'success.main' : 'error.main',
-                    fontSize: '2rem'
                   }}>
-                    {cashFlow.netFlow >= 0 ? '📈' : '📉'}
+                    {cashFlow.netFlow >= 0 ? 
+                      <TrendingUpIcon sx={{ fontSize: '2rem' }} /> : 
+                      <TrendingDownIcon sx={{ fontSize: '2rem' }} />
+                    }
                   </Avatar>
                 </Box>
               </CardContent>
@@ -861,26 +867,27 @@ const Accounts = () => {
               <Grid item xs={12} lg={8}>
                 <Card sx={{ borderRadius: 3, height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
-                    <Box sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
-                      mb: 3
-                    }}>
-                      <Box>
-                        <Typography variant="h6" fontWeight={600}>
-                          📊 Category Performance
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary">
-                          Transaction breakdown by account categories
-                        </Typography>
-                      </Box>
-                      <Chip 
-                        label={`${categories.length} Categories`} 
-                        color="primary" 
-                        variant="outlined"
-                      />
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'space-between',
+                    mb: 3
+                  }}>
+                    <Box>
+                      <Typography variant="h6" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PieChartIcon sx={{ color: 'primary.main' }} />
+                        Category Performance
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        Transaction breakdown by account categories
+                      </Typography>
                     </Box>
+                    <Chip 
+                      label={`${categories.length} Categories`} 
+                      color="primary" 
+                      variant="outlined"
+                    />
+                  </Box>
                     
                     {/* Enhanced Category Grid */}
                     <Grid container spacing={2}>
@@ -909,9 +916,9 @@ const Accounts = () => {
                               }
                             }}>
                               <Box sx={{ textAlign: 'center' }}>
-                                <Typography variant="h4" sx={{ mb: 1 }}>
+                                <Box sx={{ mb: 1, display: 'flex', justifyContent: 'center' }}>
                                   {category.icon}
-                                </Typography>
+                                </Box>
                                 <Typography variant="subtitle2" fontWeight={600} gutterBottom>
                                   {category.label}
                                 </Typography>
@@ -938,8 +945,9 @@ const Accounts = () => {
               <Grid item xs={12} lg={4}>
                 <Card sx={{ borderRadius: 3, height: '100%' }}>
                   <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" fontWeight={600} gutterBottom>
-                      🥧 Category Distribution
+                    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PieChartIcon sx={{ color: 'primary.main' }} />
+                      Category Distribution
                     </Typography>
                     <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                       Visual breakdown of account categories
@@ -982,7 +990,10 @@ const Accounts = () => {
       {activeTab === 'employee-lookup' && (
         <div className="employee-lookup-tab">
           <div className="qatar-id-search">
-            <h3>🆔 Employee Lookup by Qatar ID</h3>
+            <Typography variant="h4" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+              <SearchIcon sx={{ color: 'primary.main' }} />
+              Employee Lookup by Qatar ID
+            </Typography>
             <div className="search-section">
               <div className="search-input-group">
                 <input
@@ -998,7 +1009,7 @@ const Accounts = () => {
                   disabled={employeeSearching || !qatarId.trim()}
                   className="search-btn"
                 >
-                  {employeeSearching ? '🔍 Searching...' : '🔍 Search'}
+                  {employeeSearching ? <><SearchIcon /> Searching...</> : <><SearchIcon /> Search</>}
                 </button>
               </div>
               <p className="search-help">Enter the 11-digit Qatar ID number to view employee profile and account details</p>
@@ -1026,29 +1037,59 @@ const Accounts = () => {
                 <div className="profile-details">
                   <div className="detail-grid">
                     <div className="detail-item">
-                      <span className="detail-label">📧 Email:</span>
+                      <span className="detail-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AttachMoneyIcon sx={{ fontSize: 16 }} />
+                          Email:
+                        </Box>
+                      </span>
                       <span className="detail-value">{selectedEmployee.email || 'Not provided'}</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">📱 Phone:</span>
+                      <span className="detail-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AccountBalanceIcon sx={{ fontSize: 16 }} />
+                          Phone:
+                        </Box>
+                      </span>
                       <span className="detail-value">{selectedEmployee.phone || 'Not provided'}</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">💰 Basic Salary:</span>
+                      <span className="detail-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AttachMoneyIcon sx={{ fontSize: 16 }} />
+                          Basic Salary:
+                        </Box>
+                      </span>
                       <span className="detail-value">{selectedEmployee.salary?.toLocaleString()} QAR</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">🛂 Passport:</span>
+                      <span className="detail-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AccountBalanceIcon sx={{ fontSize: 16 }} />
+                          Passport:
+                        </Box>
+                      </span>
                       <span className="detail-value">{selectedEmployee.passport?.number}</span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">📅 QID Expiry:</span>
+                      <span className="detail-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PieChartIcon sx={{ fontSize: 16 }} />
+                          QID Expiry:
+                        </Box>
+                      </span>
                       <span className="detail-value">
                         {selectedEmployee.qid?.expiry ? new Date(selectedEmployee.qid.expiry).toLocaleDateString() : 'Not provided'}
                       </span>
                     </div>
                     <div className="detail-item">
-                      <span className="detail-label">📅 Join Date:</span>
+                      <span className="detail-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PieChartIcon sx={{ fontSize: 16 }} />
+                          Join Date:
+                        </Box>
+                      </span>
                       <span className="detail-value">
                         {selectedEmployee.createdAt ? new Date(selectedEmployee.createdAt).toLocaleDateString() : 'Not available'}
                       </span>
@@ -1058,22 +1099,45 @@ const Accounts = () => {
 
                 {/* Account Summary */}
                 <div className="employee-account-summary">
-                  <h4>💳 Account Summary</h4>
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AccountBalanceIcon sx={{ color: 'primary.main' }} />
+                    Account Summary
+                  </Typography>
                   <div className="account-summary-grid">
                     <div className="account-summary-card">
-                      <span className="summary-label">💰 Total Salaries Paid</span>
+                      <span className="summary-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AttachMoneyIcon sx={{ fontSize: 16 }} />
+                          Total Salaries Paid
+                        </Box>
+                      </span>
                       <span className="summary-value positive">{selectedEmployee.totalSalariesPaid?.toLocaleString()} QAR</span>
                     </div>
                     <div className="account-summary-card">
-                      <span className="summary-label">🏧 Total Advances</span>
+                      <span className="summary-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <AccountBalanceIcon sx={{ fontSize: 16 }} />
+                          Total Advances
+                        </Box>
+                      </span>
                       <span className="summary-value warning">{selectedEmployee.totalAdvances?.toLocaleString()} QAR</span>
                     </div>
                     <div className="account-summary-card">
-                      <span className="summary-label">➖ Total Deductions</span>
+                      <span className="summary-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <TrendingDownIcon sx={{ fontSize: 16 }} />
+                          Total Deductions
+                        </Box>
+                      </span>
                       <span className="summary-value negative">{selectedEmployee.totalDeductions?.toLocaleString()} QAR</span>
                     </div>
                     <div className="account-summary-card">
-                      <span className="summary-label">📊 Outstanding Balance</span>
+                      <span className="summary-label">
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <PieChartIcon sx={{ fontSize: 16 }} />
+                          Outstanding Balance
+                        </Box>
+                      </span>
                       <span className={`summary-value ${selectedEmployee.outstandingBalance >= 0 ? 'warning' : 'positive'}`}>
                         {selectedEmployee.outstandingBalance?.toLocaleString()} QAR
                       </span>
@@ -1083,7 +1147,10 @@ const Accounts = () => {
 
                 {/* Quick Actions */}
                 <div className="employee-quick-actions">
-                  <h4>⚡ Quick Actions</h4>
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AttachMoneyIcon sx={{ color: 'primary.main' }} />
+                    Quick Actions
+                  </Typography>
                   <div className="quick-actions-grid">
                     <button className="quick-action-btn advance" onClick={() => {
                       setDescription(`Advance payment for ${selectedEmployee.name}`);
@@ -1091,7 +1158,8 @@ const Accounts = () => {
                       setType('debit');
                       setActiveTab('transactions');
                     }}>
-                      🏧 Add Advance
+                      <AccountBalanceIcon sx={{ mr: 1 }} />
+                      Add Advance
                     </button>
                     <button className="quick-action-btn deduction" onClick={() => {
                       setDescription(`Deduction for ${selectedEmployee.name}`);
@@ -1099,7 +1167,8 @@ const Accounts = () => {
                       setType('debit');
                       setActiveTab('transactions');
                     }}>
-                      ➖ Add Deduction
+                      <TrendingDownIcon sx={{ mr: 1 }} />
+                      Add Deduction
                     </button>
                     <button className="quick-action-btn salary" onClick={() => {
                       setDescription(`Salary payment for ${selectedEmployee.name}`);
@@ -1108,14 +1177,16 @@ const Accounts = () => {
                       setAmount(selectedEmployee.salary?.toString() || '');
                       setActiveTab('transactions');
                     }}>
-                      💰 Pay Salary
+                      <AttachMoneyIcon sx={{ mr: 1 }} />
+                      Pay Salary
                     </button>
                     <button className="quick-action-btn view-history" onClick={() => {
                       setFilterType('all');
                       setSearchTerm(selectedEmployee.name);
                       setActiveTab('transactions');
                     }}>
-                      📊 View History
+                      <PieChartIcon sx={{ mr: 1 }} />
+                      View History
                     </button>
                   </div>
                 </div>
@@ -1123,7 +1194,10 @@ const Accounts = () => {
                 {/* Recent Transactions */}
                 {selectedEmployee.accountHistory && selectedEmployee.accountHistory.length > 0 && (
                   <div className="employee-recent-transactions">
-                    <h4>📋 Recent Transactions</h4>
+                    <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <PieChartIcon sx={{ color: 'primary.main' }} />
+                      Recent Transactions
+                    </Typography>
                     <div className="transaction-list">
                       {selectedEmployee.accountHistory.slice(-5).reverse().map((transaction, index) => (
                         <div key={index} className={`transaction-item ${transaction.type}`}>
@@ -1165,8 +1239,9 @@ const Accounts = () => {
             <Grid item xs={12} lg={4}>
               <Card sx={{ borderRadius: 3, height: 'fit-content' }}>
                 <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" fontWeight={600} gutterBottom>
-                    💰 Add New Transaction
+                  <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <AttachMoneyIcon sx={{ color: 'primary.main' }} />
+                    Add New Transaction
                   </Typography>
                   <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
                     Record financial transactions for your business
@@ -1270,8 +1345,9 @@ const Accounts = () => {
                     alignItems: 'center'
                   }}>
                     <Box>
-                      <Typography variant="h6" fontWeight={600}>
-                        📊 Transaction History
+                      <Typography variant="h6" fontWeight={600} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <PieChartIcon sx={{ color: 'primary.main' }} />
+                        Transaction History
                       </Typography>
                       <Typography variant="body2" color="text.secondary">
                         Complete record of all financial transactions
@@ -1306,7 +1382,7 @@ const Accounts = () => {
                           ...entry,
                           formattedAmount: `${entry.amount.toLocaleString()} QAR`,
                           categoryName: categories.find(cat => cat.value === entry.category)?.label || entry.category,
-                          categoryIcon: categories.find(cat => cat.value === entry.category)?.icon || '📊',
+                          categoryIcon: categories.find(cat => cat.value === entry.category)?.icon || <AccountBalanceIcon />,
                         }))}
                         columns={[
                           {
@@ -1339,7 +1415,7 @@ const Accounts = () => {
                             width: 200,
                             renderCell: (params) => (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Typography>{params.row.categoryIcon}</Typography>
+                                {params.row.categoryIcon}
                                 <Typography variant="body2">{params.value}</Typography>
                               </Box>
                             ),
@@ -1440,12 +1516,18 @@ const Accounts = () => {
       {/* Reports Tab */}
       {activeTab === 'reports' && (
         <div className="reports-tab">
-          <h3>📈 Financial Reports</h3>
+          <Typography variant="h4" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 3 }}>
+            <PieChartIcon sx={{ color: 'primary.main' }} />
+            Financial Reports
+          </Typography>
           
           {/* Category Breakdown */}
           {ledger.length > 0 && (
             <div className="category-breakdown-section">
-              <h4>📊 Category Breakdown (Last 30 Days)</h4>
+              <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+                <PieChartIcon sx={{ color: 'primary.main' }} />
+                Category Breakdown (Last 30 Days)
+              </Typography>
               <div className="category-grid">
                 {categories.map(category => {
                   const categoryEntries = ledger.filter(entry => 
@@ -1466,7 +1548,9 @@ const Accounts = () => {
                   return (
                     <div key={category.value} className={`category-summary ${getCategoryColor(category.value)}`}>
                       <div className="category-header">
-                        <span className="category-icon">{category.icon}</span>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          {category.icon}
+                        </Box>
                         <h4>{category.label}</h4>
                       </div>
                       {totalCredits > 0 && (
@@ -1492,7 +1576,10 @@ const Accounts = () => {
 
           {/* Employee Financial Summary */}
           <div className="employee-financial-summary">
-            <h4>👥 Employee Financial Summary</h4>
+            <Typography variant="h6" fontWeight={600} gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              <AccountBalanceIcon sx={{ color: 'primary.main' }} />
+              Employee Financial Summary
+            </Typography>
             <div className="employee-summary-grid">
               {employees.map(employee => {
                 const employeeTransactions = ledger.filter(entry => 
