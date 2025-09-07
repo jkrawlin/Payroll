@@ -301,11 +301,11 @@ const Payroll = () => {
 
   const getTransactionIcon = (transactionType) => {
     switch (transactionType) {
-      case 'salary': return '💰';
-      case 'advance': return '💳';
-      case 'bonus': return '🎉';
-      case 'deduction': return '📉';
-      default: return '📝';
+      case 'salary': return <MoneyIcon sx={{ color: 'success.main' }} />;
+      case 'advance': return <MoneyIcon sx={{ color: 'warning.main' }} />;
+      case 'bonus': return <MoneyIcon sx={{ color: 'primary.main' }} />;
+      case 'deduction': return <HistoryIcon sx={{ color: 'error.main' }} />;
+      default: return <PersonIcon sx={{ color: 'primary.main' }} />;
     }
   };
 
@@ -322,7 +322,7 @@ const Payroll = () => {
             <MoneyIcon />
           </Avatar>
           <Typography variant="h4" fontWeight={700} color="text.primary">
-            💰 Payroll Management
+            Payroll Management
           </Typography>
         </Box>
       </motion.div>
@@ -473,10 +473,30 @@ const Payroll = () => {
                     onChange={(e) => setType(e.target.value)}
                     label="Transaction Type *"
                   >
-                    <MenuItem value="salary">💰 Salary Payment</MenuItem>
-                    <MenuItem value="advance">💳 Advance</MenuItem>
-                    <MenuItem value="bonus">🎉 Bonus</MenuItem>
-                    <MenuItem value="deduction">📉 Deduction</MenuItem>
+                    <MenuItem value="salary">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MoneyIcon sx={{ color: 'success.main' }} />
+                        Salary Payment
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="advance">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MoneyIcon sx={{ color: 'warning.main' }} />
+                        Advance
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="bonus">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <MoneyIcon sx={{ color: 'primary.main' }} />
+                        Bonus
+                      </Box>
+                    </MenuItem>
+                    <MenuItem value="deduction">
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <HistoryIcon sx={{ color: 'error.main' }} />
+                        Deduction
+                      </Box>
+                    </MenuItem>
                   </Select>
                 </FormControl>
 
@@ -586,8 +606,9 @@ const Payroll = () => {
 
                   {/* Recent Transactions */}
                   <Box sx={{ mb: 3 }}>
-                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2 }}>
-                      💰 Recent Payments
+                    <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <MoneyIcon sx={{ color: 'primary.main' }} />
+                      Recent Payments
                     </Typography>
                     <Box sx={{ maxHeight: 300, overflowY: 'auto' }}>
                       {selectedEmp.transactions && selectedEmp.transactions.length > 0 ? (
@@ -743,8 +764,9 @@ const Payroll = () => {
           >
             <Card>
               <CardContent sx={{ p: 3 }}>
-                <Typography variant="h6" fontWeight={600} sx={{ mb: 3 }}>
-                  📊 Recent Payroll Activity
+                <Typography variant="h6" fontWeight={600} sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <HistoryIcon sx={{ color: 'primary.main' }} />
+                  Recent Payroll Activity
                 </Typography>
                 <Box sx={{ maxHeight: 400, overflowY: 'auto' }}>
                   {payrollHistory.length > 0 ? (

@@ -26,6 +26,7 @@ import {
   NotificationsActive as NotificationIcon,
   AccountCircle,
   Close as CloseIcon,
+  Business as BusinessIcon,
 } from '@mui/icons-material';
 import { useTheme as useCustomTheme } from '../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
@@ -139,7 +140,7 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
                   fontSize: '1.5rem',
                 }}
               >
-                🏢
+                <BusinessIcon sx={{ fontSize: 24, color: 'white' }} />
               </Box>
               {!isMobile && (
                 <Box>

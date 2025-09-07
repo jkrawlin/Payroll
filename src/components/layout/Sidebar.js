@@ -128,7 +128,7 @@ const Sidebar = ({ open, onClose, role = 'admin' }) => {
               fontSize: '1.5rem'
             }}
           >
-            🏢
+            <BusinessIcon sx={{ fontSize: 32, color: 'white' }} />
           </Avatar>
         </motion.div>
         

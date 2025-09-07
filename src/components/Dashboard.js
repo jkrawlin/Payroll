@@ -649,8 +649,9 @@ const Dashboard = ({ role = 'admin' }) => {
       >
         <Card elevation={3} sx={{ borderRadius: 3 }}>
           <CardContent sx={{ p: 4 }}>
-            <Typography variant="h5" fontWeight={600} gutterBottom sx={{ mb: 3 }}>
-              ⚡ Quick Actions
+            <Typography variant="h5" fontWeight={600} gutterBottom sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <TrendingUpIcon sx={{ color: 'primary.main' }} />
+              Quick Actions
             </Typography>
             <Grid container spacing={2}>
               {(role === 'admin' || role === 'hr') && (
