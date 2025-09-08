@@ -43,10 +43,8 @@ import {
   Divider,
   useMediaQuery,
   CircularProgress,
-  Backdrop,
   AppBar,
   Toolbar,
-  Slide,
   Container,
   Alert,
   AlertTitle,
@@ -69,13 +67,9 @@ import {
   FlightTakeoff as FlightTakeoffIcon,
   Payments as PaymentsIcon,
 } from '@mui/icons-material';
-import { motion } from 'framer-motion';
 import { DataGrid } from '@mui/x-data-grid';
 
-// Transition component for modal slide animation
-const Transition = React.forwardRef(function Transition(props, ref) {
-  return <Slide direction="up" ref={ref} {...props} />;
-});
+// Removed animation imports and transition components for better performance
 
 // TabPanel component for organized content sections
 function TabPanel({ children, value, index, ...other }) {
@@ -585,100 +579,104 @@ const Employees = () => {
       minHeight: '100vh',
       p: 3 
     }}>
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
+      {/* Header - Optimized without animations */}
+      <Paper 
+        elevation={2} 
+        sx={{ 
+          p: { xs: 3, md: 4 }, 
+          mb: 3, 
+          borderRadius: 2,
+          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+          color: 'white'
+        }}
       >
-        <Paper 
-          elevation={3} 
-          sx={{ 
-            p: { xs: 3, md: 4 }, 
-            mb: 4, 
-            borderRadius: 3,
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-            color: 'white'
-          }}
-        >
-          <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={3}>
-            <Box>
-              <Typography variant="h3" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '2rem', md: '3rem' } }}>
-                Employee Management
-              </Typography>
-              <Typography variant="body1" sx={{ opacity: 0.9, fontSize: '1.1rem' }}>
-                Manage employee information, documents, and records
-              </Typography>
-            </Box>
-            <Button
-              variant="contained"
-              size="large"
-              startIcon={<AddIcon />}
-              onClick={() => setShowForm(true)}
-              sx={{
-                bgcolor: alpha('#fff', 0.2),
-                color: 'white',
-                '&:hover': {
-                  bgcolor: alpha('#fff', 0.3)
-                },
-                borderRadius: 2,
-                textTransform: 'none',
-                fontWeight: 600,
-                px: 3,
-                py: 1.5,
-                minWidth: { xs: '100%', sm: 'auto' }
-              }}
-            >
-              Add Employee
-            </Button>
+        <Box display="flex" alignItems="center" justifyContent="space-between" flexWrap="wrap" gap={2}>
+          <Box>
+            <Typography variant="h4" fontWeight={700} gutterBottom sx={{ fontSize: { xs: '1.75rem', md: '2.25rem' } }}>
+              Employee Management
+            </Typography>
+            <Typography variant="body1" sx={{ opacity: 0.9, fontSize: '1rem' }}>
+              Manage employee information, documents, and records efficiently
+            </Typography>
           </Box>
-        </Paper>
-      </motion.div>
+          <Button
+            variant="contained"
+            size="large"
+            startIcon={<AddIcon />}
+            onClick={() => setShowForm(true)}
+            sx={{
+              bgcolor: alpha('#fff', 0.15),
+              color: 'white',
+              '&:hover': {
+                bgcolor: alpha('#fff', 0.25)
+              },
+              borderRadius: 2,
+              textTransform: 'none',
+              fontWeight: 600,
+              px: 3,
+              py: 1.5,
+              minWidth: { xs: '100%', sm: 'auto' },
+              boxShadow: 3
+            }}
+          >
+            Add New Employee
+          </Button>
+        </Box>
+      </Paper>
 
       <Grid container spacing={3}>
-        {/* Search and Filters */}
+        {/* Search and Filters - Optimized */}
         <Grid item xs={12}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-          >
-            <Card elevation={2} sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
-                <TextField
-                  fullWidth
-                  placeholder="Search employees by name, department, QID, or passport..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  sx={{ 
-                    mb: 3,
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                      backgroundColor: alpha(theme.palette.background.paper, 0.5)
+          <Card elevation={1} sx={{ borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.12)}` }}>
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <TextField
+                fullWidth
+                placeholder="Search employees by name, department, QID, or passport..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                sx={{ 
+                  mb: 2,
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                    backgroundColor: alpha(theme.palette.background.paper, 0.7),
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.background.paper, 0.9)
                     }
-                  }}
-                />
-                
-                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '1rem' }}>
-                  {filteredEmployees.length} of {employees.length} employees found
-                </Typography>
-              </CardContent>
-            </Card>
-          </motion.div>
+                  }
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonIcon color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+              />
+              
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
+                Showing {filteredEmployees.length} of {employees.length} employees
+              </Typography>
+            </CardContent>
+          </Card>
         </Grid>
 
-        {/* Enhanced Employees DataGrid */}
+        {/* Enhanced Employees DataGrid - Performance Optimized */}
         <Grid item xs={12}>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            <Card elevation={2} sx={{ borderRadius: 3 }}>
-              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-                <Typography variant="h5" fontWeight={600} color="text.primary" gutterBottom sx={{ mb: 3 }}>
+          <Card elevation={1} sx={{ borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.12)}` }}>
+            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
+                <Typography variant="h6" fontWeight={600} color="text.primary">
                   Employee Directory
                 </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ 
+                  px: 2, 
+                  py: 0.5, 
+                  borderRadius: 1, 
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08)
+                }}>
+                  {filteredEmployees.length} records
+                </Typography>
+              </Box>
 
                 <Box sx={{ height: 600, width: '100%' }}>
                   <DataGrid
@@ -848,37 +846,34 @@ const Employees = () => {
                         border: 'none',
                       },
                       '& .MuiDataGrid-row': {
-                        minHeight: 72,  // Increased from default ~52px for better spacing
+                        minHeight: 68,
                         cursor: 'pointer',
                         borderRadius: 1,
                         mb: 0.5,
-                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
                         '&:hover': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                          transform: 'translateY(-1px)',
-                          transition: 'all 0.2s ease-in-out',
-                          boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.1)}`,
+                          backgroundColor: alpha(theme.palette.primary.main, 0.03),
                         },
                         '&:last-child': {
                           borderBottom: 'none'
                         }
                       },
                       '& .MuiDataGrid-cell': {
-                        borderBottom: 'none',  // Remove cell borders in favor of row borders
-                        py: 2,  // 16px vertical padding for breathing room
-                        px: 2,  // 16px horizontal padding
-                        fontSize: '0.95rem',
+                        borderBottom: 'none',
+                        py: 1.5,
+                        px: 2,
+                        fontSize: '0.9rem',
                         display: 'flex',
                         alignItems: 'center'
                       },
                       '& .MuiDataGrid-columnHeaders': {
                         backgroundColor: theme.palette.primary.main,
                         fontWeight: 600,
-                        fontSize: '1rem',
+                        fontSize: '0.95rem',
                         color: 'common.white',
                         borderBottom: 'none',
                         borderRadius: '8px 8px 0 0',
-                        minHeight: 56,  // Taller headers for proportion
+                        minHeight: 52,
                         '& .MuiDataGrid-columnHeader': {
                           color: 'common.white',
                         },
@@ -887,20 +882,16 @@ const Employees = () => {
                           fontWeight: 600,
                         }
                       },
-                      backgroundColor: 'background.paper',
+                      backgroundColor: '#ffffff',
                       borderRadius: 2,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
                       '& .MuiDataGrid-footerContainer': {
-                        backgroundColor: alpha(theme.palette.grey[50], 0.5),
-                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                        minHeight: 56
+                        backgroundColor: alpha(theme.palette.grey[50], 0.3),
+                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                        minHeight: 52
                       },
                       '& .MuiDataGrid-virtualScroller': {
-                        backgroundColor: 'background.paper'
-                      },
-                      '& .MuiDataGrid-selectedRowCount': {
-                        fontWeight: 600,
-                        color: theme.palette.primary.main
+                        backgroundColor: '#ffffff'
                       }
                     }}
                     pageSize={10}
@@ -934,7 +925,6 @@ const Employees = () => {
                 )}
               </CardContent>
             </Card>
-          </motion.div>
         </Grid>
       </Grid>
 
@@ -1821,7 +1811,7 @@ const Employees = () => {
         </DialogActions>
       </Dialog>
 
-      {/* Comprehensive Employee Details Modal - Fully Overhauled */}
+      {/* High-Performance Employee Details Modal - Optimized for Speed */}
       <Dialog
         open={Boolean(detailsModalEmployee)}
         onClose={() => {
@@ -1831,74 +1821,73 @@ const Employees = () => {
           setModalTabValue(0);
           setRetryCount(0);
         }}
-        TransitionComponent={Transition}
         maxWidth="lg"
         fullWidth
         fullScreen={isMobile}
+        disableEnforceFocus
+        disableAutoFocus
+        disableScrollLock={false}
         PaperProps={{
           sx: {
-            backgroundColor: 'background.paper',
-            opacity: 1, // Force full opacity
-            borderRadius: isMobile ? 0 : 3,
-            boxShadow: 24,
-            backdropFilter: 'blur(10px)',
-            border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-            minHeight: isMobile ? '100vh' : '80vh',
+            backgroundColor: '#ffffff', // Solid white background
+            borderRadius: isMobile ? 0 : 2,
+            boxShadow: isMobile ? 'none' : '0 8px 32px rgba(0,0,0,0.08)',
+            border: isMobile ? 'none' : `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+            minHeight: isMobile ? '100vh' : '75vh',
             maxHeight: isMobile ? '100vh' : '90vh',
+            transition: 'none', // Remove all transitions for instant modal
           }
         }}
         BackdropProps={{
           sx: {
-            backgroundColor: alpha(theme.palette.common.black, 0.8),
-            backdropFilter: 'blur(4px)',
+            backgroundColor: 'rgba(0, 0, 0, 0.5)', // Solid backdrop
+            backdropFilter: 'none', // Remove blur for performance
           }
         }}
         aria-labelledby="employee-details-title"
         aria-describedby="employee-details-content"
       >
-        {/* Professional Header with AppBar - Solid Background */}
+        {/* Streamlined Header - No Heavy Gradients */}
         <AppBar 
           position="static" 
-          color="primary" 
           elevation={0}
           sx={{ 
-            borderRadius: isMobile ? 0 : '12px 12px 0 0',
-            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+            borderRadius: isMobile ? 0 : '8px 8px 0 0',
+            backgroundColor: theme.palette.primary.main,
+            color: 'white'
           }}
         >
-          <Toolbar sx={{ py: 2 }}>
+          <Toolbar sx={{ py: 2, minHeight: 64 }}>
             <Avatar
               src={detailsModalEmployee?.photoURL}
               alt={detailsModalEmployee?.name}
               sx={{
-                width: 56,
-                height: 56,
-                mr: 3,
-                border: '3px solid rgba(255,255,255,0.2)',
-                fontSize: '1.5rem',
-                fontWeight: 700,
-                backgroundColor: alpha(theme.palette.common.white, 0.1)
+                width: 48,
+                height: 48,
+                mr: 2,
+                backgroundColor: alpha(theme.palette.common.white, 0.1),
+                fontSize: '1.3rem',
+                fontWeight: 600,
               }}
             >
               {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
             </Avatar>
             <Box flexGrow={1}>
               <Typography 
-                variant="h4" 
+                variant="h5" 
                 color="white" 
                 sx={{ 
-                  fontWeight: 700, 
-                  mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '2rem' }
+                  fontWeight: 600, 
+                  fontSize: { xs: '1.25rem', sm: '1.5rem' }
                 }}
               >
                 {detailsModalEmployee?.name}
               </Typography>
               <Typography 
-                variant="subtitle1" 
+                variant="body2" 
                 sx={{ 
-                  color: 'rgba(255,255,255,0.9)',
-                  fontWeight: 500
+                  color: 'rgba(255,255,255,0.8)',
+                  fontSize: '0.875rem'
                 }}
               >
                 {detailsModalEmployee?.position} • {detailsModalEmployee?.department}
@@ -1913,10 +1902,9 @@ const Employees = () => {
                 setRetryCount(0);
               }}
               sx={{
-                color: 'rgba(255,255,255,0.8)',
+                color: 'white',
                 '&:hover': {
-                  color: 'white',
-                  backgroundColor: 'rgba(255,255,255,0.1)'
+                  backgroundColor: 'rgba(255,255,255,0.08)'
                 }
               }}
               aria-label="Close employee details"
@@ -1929,11 +1917,10 @@ const Employees = () => {
         <DialogContent 
           sx={{ 
             p: 0, 
-            backgroundColor: 'background.paper !important', // Force solid opaque background
-            color: 'text.primary !important',
-            opacity: 1, // Ensure no transparency
+            backgroundColor: '#ffffff', // Pure white background
+            color: 'text.primary',
             overflowY: 'auto',
-            minHeight: isMobile ? '60vh' : '500px' // Prevent collapse during loading
+            minHeight: isMobile ? '60vh' : '400px' // Prevent collapse during loading
           }}
         >
           {employeeDetailsLoading ? (
@@ -1942,34 +1929,24 @@ const Employees = () => {
               flexDirection="column"
               justifyContent="center" 
               alignItems="center" 
-              py={8}
-              gap={3}
+              py={6}
+              gap={2}
               sx={{
-                backgroundColor: 'background.paper',
-                minHeight: '400px'
+                backgroundColor: '#ffffff',
+                minHeight: '350px'
               }}
             >
               <CircularProgress 
-                size={56} 
-                thickness={4}
-                sx={{
-                  color: 'primary.main',
-                  '& .MuiCircularProgress-circle': {
-                    strokeLinecap: 'round',
-                  },
-                }}
+                size={40} 
+                thickness={3.6}
+                sx={{ color: 'primary.main' }}
               />
-              <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
-                Loading employee details...
+              <Typography variant="h6" color="text.primary" sx={{ fontWeight: 500 }}>
+                Loading details...
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: '300px' }}>
-                Fetching comprehensive employee information, documents, and financial data
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: '280px' }}>
+                Fetching employee information and records
               </Typography>
-              {retryCount > 0 && (
-                <Typography variant="caption" color="text.secondary">
-                  Attempt {retryCount + 1}
-                </Typography>
-              )}
             </Box>
           ) : employeeDetailsError ? (
             <Box 
@@ -2034,11 +2011,11 @@ const Employees = () => {
             </Box>
           ) : (
             <Box>
-              {/* Navigation Tabs - Solid Background */}
+              {/* Clean Navigation Tabs */}
               <Box sx={{ 
                 borderBottom: 1, 
                 borderColor: 'divider', 
-                backgroundColor: 'background.paper !important' // Force solid background for tabs
+                backgroundColor: '#ffffff' 
               }}>
                 <Tabs 
                   value={modalTabValue} 
@@ -2047,97 +2024,121 @@ const Employees = () => {
                   textColor="primary"
                   indicatorColor="primary"
                   sx={{
-                    backgroundColor: 'background.paper !important', // Ensure solid background
+                    backgroundColor: '#ffffff',
                     '& .MuiTab-root': {
                       textTransform: 'none',
-                      fontWeight: 600,
-                      fontSize: '1rem',
-                      py: 3,
-                      color: 'text.primary !important'
+                      fontWeight: 500,
+                      fontSize: '0.95rem',
+                      py: 2,
+                      minHeight: 48,
+                      color: 'text.primary'
+                    },
+                    '& .MuiTabs-indicator': {
+                      height: 3,
+                      borderRadius: '2px 2px 0 0'
                     }
                   }}
                 >
-                  <Tab label="Personal Information" {...a11yProps(0)} />
-                  <Tab label="Official Documents" {...a11yProps(1)} />
-                  <Tab label="Payroll & Financial" {...a11yProps(2)} />
+                  <Tab label="Personal Info" {...a11yProps(0)} />
+                  <Tab label="Documents" {...a11yProps(1)} />
+                  <Tab label="Payroll" {...a11yProps(2)} />
                 </Tabs>
               </Box>
 
-              {/* Tab Content - All with solid backgrounds */}
+              {/* Clean Tab Content */}
               <Container maxWidth="lg" sx={{ 
                 px: { xs: 2, sm: 3 },
-                backgroundColor: 'background.paper !important', // Force solid background for content
+                backgroundColor: '#ffffff',
                 py: 2
               }}>
-                {/* Personal Information Tab */}
+                {/* Personal Information Tab - Enhanced */}
                 <TabPanel value={modalTabValue} index={0}>
-                  <Grid container spacing={4}>
-                    {/* Employee Photo Section */}
+                  <Grid container spacing={3}>
+                    {/* Employee Photo & Quick Info */}
                     <Grid item xs={12} md={4}>
                       <Paper 
-                        elevation={3}
+                        elevation={2}
                         sx={{ 
                           p: 3, 
                           textAlign: 'center',
-                          backgroundColor: 'background.paper', // Solid background
-                          border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                          backgroundColor: '#ffffff',
+                          border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                          borderRadius: 2
                         }}
                       >
                         <Avatar
                           src={detailsModalEmployee?.photoURL}
                           alt={detailsModalEmployee?.name}
                           sx={{
-                            width: 120,
-                            height: 120,
+                            width: 100,
+                            height: 100,
                             mx: 'auto',
                             mb: 2,
                             fontSize: '2rem',
-                            fontWeight: 700,
-                            boxShadow: 4
+                            fontWeight: 600,
+                            border: `3px solid ${alpha(theme.palette.primary.main, 0.1)}`
                           }}
                         >
                           {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
                         </Avatar>
-                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 1 }}>
                           {detailsModalEmployee?.name}
                         </Typography>
-                        <Chip 
-                          label={`Employee ID: ${detailsModalEmployee?.id || 'N/A'}`}
-                          color="primary"
-                          variant="outlined"
-                          size="small"
-                        />
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                          {detailsModalEmployee?.position}
+                        </Typography>
+                        <Box display="flex" flexDirection="column" gap={1}>
+                          <Chip 
+                            label={`ID: ${detailsModalEmployee?.id || 'N/A'}`}
+                            size="small"
+                            variant="outlined"
+                            sx={{ fontWeight: 500 }}
+                          />
+                          <Chip 
+                            label={detailsModalEmployee?.department || 'No Department'}
+                            size="small"
+                            color="primary"
+                            sx={{ fontWeight: 500 }}
+                          />
+                        </Box>
                       </Paper>
                     </Grid>
 
-                    {/* Basic Information Section */}
+                    {/* Enhanced Information Cards */}
                     <Grid item xs={12} md={8}>
-                      <Typography 
-                        variant="h5" 
-                        gutterBottom 
-                        sx={{ 
-                          fontWeight: 600,
-                          color: 'primary.main',
-                          mb: 3
-                        }}
-                      >
-                        Basic Information
-                      </Typography>
-                      
-                      <Grid container spacing={3}>
+                      <Grid container spacing={2}>
+                        {/* Employment Details Row */}
+                        <Grid item xs={12}>
+                          <Typography 
+                            variant="h6" 
+                            gutterBottom 
+                            sx={{ 
+                              fontWeight: 600,
+                              color: 'primary.main',
+                              mb: 2,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 1
+                            }}
+                          >
+                            <BusinessIcon />
+                            Employment Details
+                          </Typography>
+                        </Grid>
+
                         <Grid item xs={12} sm={6}>
                           <Paper sx={{ 
                             p: 2.5, 
-                            backgroundColor: 'background.paper !important',
-                            border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                            borderLeft: `4px solid ${theme.palette.info.main}`,
-                            boxShadow: 1
+                            backgroundColor: '#fafafa',
+                            border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                            borderLeft: `4px solid ${theme.palette.success.main}`,
+                            borderRadius: 1
                           }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                              Department
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
+                              Join Date
                             </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                              {detailsModalEmployee?.department || 'Not assigned'}
+                            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '1.1rem' }}>
+                              {formatDate(detailsModalEmployee?.joinDate)}
                             </Typography>
                           </Paper>
                         </Grid>
@@ -2145,56 +2146,30 @@ const Employees = () => {
                         <Grid item xs={12} sm={6}>
                           <Paper sx={{ 
                             p: 2.5, 
-                            backgroundColor: 'background.paper !important',
-                            border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
-                            borderLeft: `4px solid ${theme.palette.secondary.main}`,
-                            boxShadow: 1
-                          }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                              Position
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                              {detailsModalEmployee?.position || 'Not specified'}
-                            </Typography>
-                          </Paper>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                          <Paper sx={{ 
-                            p: 2.5, 
-                            backgroundColor: 'background.paper !important',
-                            border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
-                            borderLeft: `4px solid ${theme.palette.success.main}`,
-                            boxShadow: 1
-                          }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                              Join Date
-                            </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
-                              {formatDate(detailsModalEmployee?.joinDate)}
-                            </Typography>
-                          </Paper>
-                        </Grid>
-
-                        <Grid item xs={12} sm={6}>
-                          <Paper sx={{ 
-                            p: 2.5, 
-                            backgroundColor: 'background.paper !important',
+                            backgroundColor: '#fafafa',
                             border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
                             borderLeft: `4px solid ${theme.palette.warning.main}`,
-                            boxShadow: 1
+                            borderRadius: 1
                           }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                            <Typography variant="body2" color="text.secondary" sx={{ mb: 0.5, fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: 0.5 }}>
                               Monthly Salary
                             </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main' }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'success.main', fontSize: '1.1rem' }}>
                               QAR {detailsModalEmployee?.salary?.toLocaleString() || 'Not set'}
                             </Typography>
                           </Paper>
                         </Grid>
 
-                        <Grid item xs={12}>
-                          <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mt: 2 }}>
+                        {/* Contact Information Row */}
+                        <Grid item xs={12} sx={{ mt: 2 }}>
+                          <Typography variant="h6" gutterBottom sx={{ 
+                            fontWeight: 600, 
+                            mb: 2,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1
+                          }}>
+                            <EmailIcon />
                             Contact Information
                           </Typography>
                         </Grid>
@@ -2205,15 +2180,20 @@ const Employees = () => {
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: 2,
-                            backgroundColor: 'background.paper',
-                            border: `1px solid ${alpha(theme.palette.divider, 0.3)}`
+                            backgroundColor: '#ffffff',
+                            border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                            borderRadius: 1,
+                            '&:hover': {
+                              backgroundColor: '#fafafa',
+                              borderColor: theme.palette.primary.main
+                            }
                           }}>
-                            <EmailIcon color="primary" />
+                            <EmailIcon color="primary" sx={{ fontSize: 20 }} />
                             <Box>
-                              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                                 Email Address
                               </Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                              <Typography variant="body1" sx={{ fontWeight: 500 }}>
                                 {detailsModalEmployee?.email || 'Not provided'}
                               </Typography>
                             </Box>
@@ -2226,504 +2206,698 @@ const Employees = () => {
                             display: 'flex', 
                             alignItems: 'center', 
                             gap: 2,
-                            backgroundColor: 'background.paper',
-                            border: `1px solid ${alpha(theme.palette.divider, 0.3)}`
+                            backgroundColor: '#ffffff',
+                            border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                            borderRadius: 1,
+                            '&:hover': {
+                              backgroundColor: '#fafafa',
+                              borderColor: theme.palette.primary.main
+                            }
                           }}>
-                            <PhoneIcon color="primary" />
+                            <PhoneIcon color="primary" sx={{ fontSize: 20 }} />
                             <Box>
-                              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
                                 Phone Number
                               </Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                              <Typography variant="body1" sx={{ fontWeight: 500 }}>
                                 {detailsModalEmployee?.phone || 'Not provided'}
                               </Typography>
                             </Box>
                           </Paper>
                         </Grid>
 
-                        <Grid item xs={12}>
-                          <Paper sx={{ 
-                            p: 2.5, 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: 2,
-                            backgroundColor: 'background.paper',
-                            border: `1px solid ${alpha(theme.palette.divider, 0.3)}`
-                          }}>
-                            <BusinessIcon color="primary" />
-                            <Box>
-                              <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                                Address
-                              </Typography>
-                              <Typography variant="body1" sx={{ fontWeight: 600 }}>
-                                {detailsModalEmployee?.address || 'Not provided'}
-                              </Typography>
-                            </Box>
-                          </Paper>
-                        </Grid>
+                        {detailsModalEmployee?.address && (
+                          <Grid item xs={12}>
+                            <Paper sx={{ 
+                              p: 2.5, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 2,
+                              backgroundColor: '#ffffff',
+                              border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                              borderRadius: 1,
+                              '&:hover': {
+                                backgroundColor: '#fafafa',
+                                borderColor: theme.palette.primary.main
+                              }
+                            }}>
+                              <BusinessIcon color="primary" sx={{ fontSize: 20 }} />
+                              <Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                  Address
+                                </Typography>
+                                <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                                  {detailsModalEmployee?.address}
+                                </Typography>
+                              </Box>
+                            </Paper>
+                          </Grid>
+                        )}
                       </Grid>
                     </Grid>
                   </Grid>
                 </TabPanel>
 
-                {/* Official Documents Tab */}
+                {/* Documents Tab - Enhanced with Status Indicators */}
                 <TabPanel value={modalTabValue} index={1}>
                   <Typography 
-                    variant="h5" 
+                    variant="h6" 
                     gutterBottom 
                     sx={{ 
                       fontWeight: 600,
                       color: 'primary.main',
-                      mb: 3
+                      mb: 3,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
                     }}
                   >
+                    <AssignmentIcon />
                     Official Documents & Status
                   </Typography>
                   
-                  <Grid container spacing={4}>
-                    {/* Qatar ID Section */}
-                    <Grid item xs={12} md={6}>
-                      <Paper 
-                        elevation={3}
+                  <Grid container spacing={3}>
+                    {/* Qatar ID Section - Improved */}
+                    <Grid item xs={12} lg={6}>
+                      <Card 
+                        elevation={1}
                         sx={{ 
-                          p: 3,
-                          backgroundColor: 'background.paper !important',
-                          border: `2px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                          height: '100%',
+                          backgroundColor: '#ffffff',
+                          border: `2px solid ${alpha(theme.palette.warning.main, 0.15)}`,
                           borderRadius: 2,
+                          overflow: 'hidden',
                           '&:hover': {
-                            boxShadow: 6,
-                            transform: 'translateY(-2px)',
-                            transition: 'all 0.3s ease'
+                            boxShadow: 3,
+                            borderColor: theme.palette.warning.main
                           }
                         }}
                       >
-                        <Box display="flex" alignItems="center" gap={2} mb={3}>
-                          <Box sx={{
-                            p: 1.5,
-                            borderRadius: 2,
-                            backgroundColor: alpha(theme.palette.warning.main, 0.1)
-                          }}>
-                            <BadgeIcon sx={{ color: 'warning.main', fontSize: 28 }} />
+                        <Box sx={{ 
+                          p: 2, 
+                          backgroundColor: alpha(theme.palette.warning.main, 0.08),
+                          borderBottom: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`
+                        }}>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Box sx={{
+                              p: 1,
+                              borderRadius: 1,
+                              backgroundColor: alpha(theme.palette.warning.main, 0.15)
+                            }}>
+                              <BadgeIcon sx={{ color: 'warning.main', fontSize: 24 }} />
+                            </Box>
+                            <Box>
+                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Qatar ID
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                National Identity Document
+                              </Typography>
+                            </Box>
                           </Box>
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            Qatar ID Information
-                          </Typography>
-                        </Box>
-                        
-                        <Box mb={2}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 1 }}>
-                            QID Number
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'monospace', mb: 2 }}>
-                            {detailsModalEmployee?.qidNumber || 'Not provided'}
-                          </Typography>
-                        </Box>
-                        
-                        <Box mb={2}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 1 }}>
-                            Expiry Date
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 600, mb: 2 }}>
-                            {formatDate(detailsModalEmployee?.qidExpiry)}
-                          </Typography>
                         </Box>
 
-                        {detailsModalEmployee?.qidExpiry && (
-                          <Box>
-                            {(() => {
-                              const daysToExpiry = calculateDaysToExpiry(detailsModalEmployee.qidExpiry);
-                              if (daysToExpiry === null) return null;
-                              
-                              let chipColor = 'success';
-                              let chipLabel = 'Valid';
-                              
-                              if (daysToExpiry < 0) {
-                                chipColor = 'error';
-                                chipLabel = `Expired ${Math.abs(daysToExpiry)} days ago`;
-                              } else if (daysToExpiry < 30) {
-                                chipColor = 'warning';
-                                chipLabel = `Expires in ${daysToExpiry} days`;
-                              } else {
-                                chipLabel = `Valid (${daysToExpiry} days remaining)`;
-                              }
-
-                              return (
-                                <Chip 
-                                  label={chipLabel}
-                                  color={chipColor}
-                                  sx={{ fontWeight: 600 }}
-                                />
-                              );
-                            })()}
-                          </Box>
-                        )}
-
-                        {detailsModalEmployee?.qid?.photoUrl && (
-                          <Box sx={{ mt: 3 }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                              Document Copy
+                        <CardContent sx={{ p: 2.5 }}>
+                          <Box mb={2}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
+                              QID Number
                             </Typography>
-                            <img 
-                              src={detailsModalEmployee.qid.photoUrl} 
-                              alt="Qatar ID Copy" 
-                              style={{ 
-                                maxWidth: '100%', 
-                                height: 'auto', 
-                                borderRadius: 8, 
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                border: `1px solid ${theme.palette.divider}`
-                              }} 
-                              onClick={() => window.open(detailsModalEmployee.qid.photoUrl, '_blank')}
-                            />
+                            <Typography variant="h6" sx={{ 
+                              fontWeight: 600, 
+                              fontFamily: 'monospace', 
+                              backgroundColor: '#f5f5f5',
+                              p: 1,
+                              borderRadius: 1,
+                              fontSize: '1rem'
+                            }}>
+                              {detailsModalEmployee?.qidNumber || 'Not provided'}
+                            </Typography>
                           </Box>
-                        )}
-                      </Paper>
+                          
+                          <Box mb={2}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
+                              Expiry Date
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 500, mb: 1 }}>
+                              {formatDate(detailsModalEmployee?.qidExpiry)}
+                            </Typography>
+
+                            {detailsModalEmployee?.qidExpiry && (
+                              <Box>
+                                {(() => {
+                                  const daysToExpiry = calculateDaysToExpiry(detailsModalEmployee.qidExpiry);
+                                  if (daysToExpiry === null) return null;
+                                  
+                                  let chipColor = 'success';
+                                  let chipLabel = 'Valid';
+                                  let chipIcon = null;
+                                  
+                                  if (daysToExpiry < 0) {
+                                    chipColor = 'error';
+                                    chipLabel = `Expired ${Math.abs(daysToExpiry)} days ago`;
+                                  } else if (daysToExpiry < 30) {
+                                    chipColor = 'warning';
+                                    chipLabel = `Expires in ${daysToExpiry} days`;
+                                  } else {
+                                    chipLabel = `${daysToExpiry} days remaining`;
+                                  }
+
+                                  return (
+                                    <Chip 
+                                      label={chipLabel}
+                                      color={chipColor}
+                                      size="small"
+                                      sx={{ fontWeight: 500 }}
+                                    />
+                                  );
+                                })()}
+                              </Box>
+                            )}
+                          </Box>
+
+                          {detailsModalEmployee?.qid?.photoUrl && (
+                            <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.8rem' }}>
+                                Document Copy
+                              </Typography>
+                              <Box sx={{ 
+                                border: `1px solid ${theme.palette.divider}`, 
+                                borderRadius: 1, 
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  boxShadow: 2
+                                }
+                              }}>
+                                <img 
+                                  src={detailsModalEmployee.qid.photoUrl} 
+                                  alt="Qatar ID Copy" 
+                                  style={{ 
+                                    width: '100%', 
+                                    height: 'auto', 
+                                    display: 'block'
+                                  }} 
+                                  onClick={() => window.open(detailsModalEmployee.qid.photoUrl, '_blank')}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
                     </Grid>
 
-                    {/* Passport Section */}
-                    <Grid item xs={12} md={6}>
-                      <Paper 
-                        elevation={3}
+                    {/* Passport Section - Improved */}
+                    <Grid item xs={12} lg={6}>
+                      <Card 
+                        elevation={1}
                         sx={{ 
-                          p: 3, 
-                          backgroundColor: 'background.paper !important',
-                          border: `2px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                          height: '100%',
+                          backgroundColor: '#ffffff',
+                          border: `2px solid ${alpha(theme.palette.info.main, 0.15)}`,
                           borderRadius: 2,
+                          overflow: 'hidden',
                           '&:hover': {
-                            boxShadow: 6,
-                            transform: 'translateY(-2px)',
-                            transition: 'all 0.3s ease'
+                            boxShadow: 3,
+                            borderColor: theme.palette.info.main
                           }
                         }}
                       >
-                        <Box display="flex" alignItems="center" gap={2} mb={3}>
-                          <Box sx={{
-                            p: 1.5,
-                            borderRadius: 2,
-                            backgroundColor: alpha(theme.palette.info.main, 0.1)
-                          }}>
-                            <FlightTakeoffIcon sx={{ color: 'info.main', fontSize: 28 }} />
+                        <Box sx={{ 
+                          p: 2, 
+                          backgroundColor: alpha(theme.palette.info.main, 0.08),
+                          borderBottom: `1px solid ${alpha(theme.palette.info.main, 0.2)}`
+                        }}>
+                          <Box display="flex" alignItems="center" gap={2}>
+                            <Box sx={{
+                              p: 1,
+                              borderRadius: 1,
+                              backgroundColor: alpha(theme.palette.info.main, 0.15)
+                            }}>
+                              <FlightTakeoffIcon sx={{ color: 'info.main', fontSize: 24 }} />
+                            </Box>
+                            <Box>
+                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
+                                Passport
+                              </Typography>
+                              <Typography variant="body2" color="text.secondary">
+                                International Travel Document
+                              </Typography>
+                            </Box>
                           </Box>
-                          <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                            Passport Information
-                          </Typography>
-                        </Box>
-                        
-                        <Box mb={2}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 1 }}>
-                            Passport Number
-                          </Typography>
-                          <Typography variant="h6" sx={{ fontWeight: 600, fontFamily: 'monospace', mb: 2 }}>
-                            {detailsModalEmployee?.passportNumber || 'Not provided'}
-                          </Typography>
-                        </Box>
-                        
-                        <Box mb={2}>
-                          <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500, mb: 1 }}>
-                            Expiry Date
-                          </Typography>
-                          <Typography variant="body1" sx={{ fontWeight: 600, mb: 2 }}>
-                            {formatDate(detailsModalEmployee?.passportExpiry)}
-                          </Typography>
                         </Box>
 
-                        {detailsModalEmployee?.passportExpiry && (
-                          <Box>
-                            {(() => {
-                              const daysToExpiry = calculateDaysToExpiry(detailsModalEmployee.passportExpiry);
-                              if (daysToExpiry === null) return null;
-                              
-                              let chipColor = 'success';
-                              let chipLabel = 'Valid';
-                              
-                              if (daysToExpiry < 0) {
-                                chipColor = 'error';
-                                chipLabel = `Expired ${Math.abs(daysToExpiry)} days ago`;
-                              } else if (daysToExpiry < 90) {
-                                chipColor = 'warning';
-                                chipLabel = `Expires in ${daysToExpiry} days`;
-                              } else {
-                                chipLabel = `Valid (${daysToExpiry} days remaining)`;
-                              }
-
-                              return (
-                                <Chip 
-                                  label={chipLabel}
-                                  color={chipColor}
-                                  sx={{ fontWeight: 600 }}
-                                />
-                              );
-                            })()}
-                          </Box>
-                        )}
-
-                        {detailsModalEmployee?.passport?.photoUrl && (
-                          <Box sx={{ mt: 3 }}>
-                            <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-                              Document Copy
+                        <CardContent sx={{ p: 2.5 }}>
+                          <Box mb={2}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
+                              Passport Number
                             </Typography>
-                            <img 
-                              src={detailsModalEmployee.passport.photoUrl} 
-                              alt="Passport Copy" 
-                              style={{ 
-                                maxWidth: '100%', 
-                                height: 'auto', 
-                                borderRadius: 8, 
-                                cursor: 'pointer',
-                                boxShadow: '0 4px 8px rgba(0,0,0,0.1)',
-                                border: `1px solid ${theme.palette.divider}`
-                              }} 
-                              onClick={() => window.open(detailsModalEmployee.passport.photoUrl, '_blank')}
-                            />
+                            <Typography variant="h6" sx={{ 
+                              fontWeight: 600, 
+                              fontFamily: 'monospace',
+                              backgroundColor: '#f5f5f5',
+                              p: 1,
+                              borderRadius: 1,
+                              fontSize: '1rem'
+                            }}>
+                              {detailsModalEmployee?.passportNumber || 'Not provided'}
+                            </Typography>
                           </Box>
-                        )}
+                          
+                          <Box mb={2}>
+                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
+                              Expiry Date
+                            </Typography>
+                            <Typography variant="body1" sx={{ fontWeight: 500, mb: 1 }}>
+                              {formatDate(detailsModalEmployee?.passportExpiry)}
+                            </Typography>
+
+                            {detailsModalEmployee?.passportExpiry && (
+                              <Box>
+                                {(() => {
+                                  const daysToExpiry = calculateDaysToExpiry(detailsModalEmployee.passportExpiry);
+                                  if (daysToExpiry === null) return null;
+                                  
+                                  let chipColor = 'success';
+                                  let chipLabel = 'Valid';
+                                  
+                                  if (daysToExpiry < 0) {
+                                    chipColor = 'error';
+                                    chipLabel = `Expired ${Math.abs(daysToExpiry)} days ago`;
+                                  } else if (daysToExpiry < 90) {
+                                    chipColor = 'warning';
+                                    chipLabel = `Expires in ${daysToExpiry} days`;
+                                  } else {
+                                    chipLabel = `${daysToExpiry} days remaining`;
+                                  }
+
+                                  return (
+                                    <Chip 
+                                      label={chipLabel}
+                                      color={chipColor}
+                                      size="small"
+                                      sx={{ fontWeight: 500 }}
+                                    />
+                                  );
+                                })()}
+                              </Box>
+                            )}
+                          </Box>
+
+                          {detailsModalEmployee?.passport?.photoUrl && (
+                            <Box>
+                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.8rem' }}>
+                                Document Copy
+                              </Typography>
+                              <Box sx={{ 
+                                border: `1px solid ${theme.palette.divider}`, 
+                                borderRadius: 1, 
+                                overflow: 'hidden',
+                                cursor: 'pointer',
+                                '&:hover': {
+                                  boxShadow: 2
+                                }
+                              }}>
+                                <img 
+                                  src={detailsModalEmployee.passport.photoUrl} 
+                                  alt="Passport Copy" 
+                                  style={{ 
+                                    width: '100%', 
+                                    height: 'auto', 
+                                    display: 'block'
+                                  }} 
+                                  onClick={() => window.open(detailsModalEmployee.passport.photoUrl, '_blank')}
+                                />
+                              </Box>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+
+                    {/* Document Summary Stats */}
+                    <Grid item xs={12}>
+                      <Paper sx={{ 
+                        p: 2, 
+                        backgroundColor: alpha(theme.palette.info.main, 0.04),
+                        border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                        borderRadius: 2
+                      }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+                          Document Status Summary
+                        </Typography>
+                        <Box display="flex" flexWrap="wrap" gap={1}>
+                          {detailsModalEmployee?.qidExpiry && (
+                            <Chip 
+                              size="small"
+                              label={`QID: ${(() => {
+                                const days = calculateDaysToExpiry(detailsModalEmployee.qidExpiry);
+                                return days < 0 ? 'Expired' : days < 30 ? 'Expiring Soon' : 'Valid';
+                              })()}`}
+                              color={(() => {
+                                const days = calculateDaysToExpiry(detailsModalEmployee.qidExpiry);
+                                return days < 0 ? 'error' : days < 30 ? 'warning' : 'success';
+                              })()}
+                            />
+                          )}
+                          {detailsModalEmployee?.passportExpiry && (
+                            <Chip 
+                              size="small"
+                              label={`Passport: ${(() => {
+                                const days = calculateDaysToExpiry(detailsModalEmployee.passportExpiry);
+                                return days < 0 ? 'Expired' : days < 90 ? 'Expiring Soon' : 'Valid';
+                              })()}`}
+                              color={(() => {
+                                const days = calculateDaysToExpiry(detailsModalEmployee.passportExpiry);
+                                return days < 0 ? 'error' : days < 90 ? 'warning' : 'success';
+                              })()}
+                            />
+                          )}
+                        </Box>
                       </Paper>
                     </Grid>
                   </Grid>
                 </TabPanel>
 
-                {/* Payroll & Financial Tab */}
+                {/* Payroll Tab - Enhanced with Analytics */}
                 <TabPanel value={modalTabValue} index={2}>
                   <Typography 
-                    variant="h5" 
+                    variant="h6" 
                     gutterBottom 
                     sx={{ 
                       fontWeight: 600,
                       color: 'primary.main',
-                      mb: 3
+                      mb: 3,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 1
                     }}
                   >
-                    Payroll & Financial Summary
+                    <PaymentsIcon />
+                    Payroll & Financial Overview
                   </Typography>
                   
-                  {/* Financial Overview Cards - Solid Backgrounds */}
-                  <Grid container spacing={3} sx={{ mb: 4 }}>
+                  {/* Financial Overview Cards */}
+                  <Grid container spacing={2} sx={{ mb: 4 }}>
                     <Grid item xs={12} sm={4}>
                       <Card 
-                        elevation={3}
+                        elevation={1}
                         sx={{ 
                           p: 3, 
                           textAlign: 'center',
-                          backgroundColor: 'background.paper !important',
-                          border: `2px solid ${alpha(theme.palette.success.main, 0.3)}`,
-                          borderRadius: 2,
-                          '&:hover': {
-                            boxShadow: 6,
-                            transform: 'translateY(-2px)',
-                            transition: 'all 0.3s ease'
-                          }
+                          backgroundColor: '#ffffff',
+                          border: `2px solid ${alpha(theme.palette.success.main, 0.2)}`,
+                          borderRadius: 2
                         }}
                       >
-                        <PaymentsIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
-                        <Typography variant="h4" sx={{ 
+                        <MoneyIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
+                        <Typography variant="h5" sx={{ 
                           fontWeight: 700, 
                           color: 'success.main',
-                          mb: 1
+                          mb: 0.5
                         }}>
                           QAR {detailsModalEmployee?.salary?.toLocaleString() || '0'}
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                           Monthly Salary
                         </Typography>
+                        {detailsModalEmployee?.salary && (
+                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                            Daily: QAR {Math.round(detailsModalEmployee.salary / 30).toLocaleString()}
+                          </Typography>
+                        )}
                       </Card>
                     </Grid>
 
                     <Grid item xs={12} sm={4}>
                       <Card 
-                        elevation={3}
+                        elevation={1}
                         sx={{ 
                           p: 3, 
                           textAlign: 'center',
-                          backgroundColor: 'background.paper !important',
-                          border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
-                          borderRadius: 2,
-                          '&:hover': {
-                            boxShadow: 6,
-                            transform: 'translateY(-2px)',
-                            transition: 'all 0.3s ease'
-                          }
+                          backgroundColor: '#ffffff',
+                          border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+                          borderRadius: 2
                         }}
                       >
-                        <MoneyIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
-                        <Typography variant="h4" sx={{ 
+                        <PaymentsIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
+                        <Typography variant="h5" sx={{ 
                           fontWeight: 700, 
                           color: 'primary.main',
-                          mb: 1
+                          mb: 0.5
                         }}>
-                          QAR {detailsModalEmployee?.totalPaid?.toLocaleString() || '0'}
+                          QAR {(detailsModalEmployee?.totalPaid || 0).toLocaleString()}
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
                           Total Paid
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          {detailsModalEmployee ? calculateDaysPaid(detailsModalEmployee) : 0} days equivalent
                         </Typography>
                       </Card>
                     </Grid>
 
                     <Grid item xs={12} sm={4}>
                       <Card 
-                        elevation={3}
+                        elevation={1}
                         sx={{ 
                           p: 3, 
                           textAlign: 'center',
-                          backgroundColor: 'background.paper !important',
-                          border: `2px solid ${alpha(theme.palette.warning.main, 0.3)}`,
-                          borderRadius: 2,
-                          '&:hover': {
-                            boxShadow: 6,
-                            transform: 'translateY(-2px)',
-                            transition: 'all 0.3s ease'
-                          }
+                          backgroundColor: '#ffffff',
+                          border: `2px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                          borderRadius: 2
                         }}
                       >
-                        <AssignmentIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
-                        <Typography variant="h4" sx={{ 
+                        <AssignmentIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
+                        <Typography variant="h5" sx={{ 
                           fontWeight: 700, 
                           color: 'warning.main',
-                          mb: 1
+                          mb: 0.5
                         }}>
-                          {detailsModalEmployee ? calculateRemainingDays(detailsModalEmployee) : 0}
+                          {detailsModalEmployee?.advances?.filter(a => !a.repaid).length || 0}
                         </Typography>
-                        <Typography variant="body1" color="text.secondary" sx={{ fontWeight: 500 }}>
-                          Days Remaining
+                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
+                          Active Advances
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                          Outstanding amount
                         </Typography>
                       </Card>
                     </Grid>
                   </Grid>
 
-                  {/* Advances Section - Solid Background */}
-                  <Paper 
-                    elevation={2} 
-                    sx={{ 
-                      p: 3, 
-                      mb: 3,
-                      backgroundColor: 'background.paper !important',
-                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-                      borderRadius: 2,
-                      '&:hover': {
-                        boxShadow: 4,
-                        transition: 'box-shadow 0.3s ease'
-                      }
-                    }}
-                  >
-                    <Typography variant="h6" gutterBottom sx={{ 
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
-                      <MoneyIcon color="warning" />
-                      Advances ({detailsModalEmployee?.advances?.filter(a => !a.repaid).length || 0} outstanding)
-                    </Typography>
-                    
-                    {detailsModalEmployee?.advances && detailsModalEmployee.advances.length > 0 ? (
-                      <List sx={{ maxHeight: 200, overflow: 'auto' }}>
-                        {detailsModalEmployee.advances.map((advance, index) => (
-                          <ListItem key={index} divider={index < detailsModalEmployee.advances.length - 1}>
-                            <ListItemText
-                              primary={
-                                <Box display="flex" justifyContent="space-between" alignItems="center">
-                                  <Typography sx={{ fontWeight: 600 }}>
-                                    QAR {advance.amount?.toLocaleString()}
-                                  </Typography>
-                                  <Chip 
-                                    label={advance.repaid ? 'Repaid' : 'Outstanding'} 
-                                    color={advance.repaid ? 'success' : 'warning'}
-                                    size="small"
-                                  />
-                                </Box>
-                              }
-                              secondary={
-                                <Box>
-                                  <Typography variant="body2" color="text.secondary">
-                                    Date: {formatDate(advance.date)}
-                                  </Typography>
-                                  {advance.reason && (
-                                    <Typography variant="body2" color="text.secondary">
-                                      Reason: {advance.reason}
-                                    </Typography>
-                                  )}
-                                </Box>
-                              }
+                  <Grid container spacing={3}>
+                    {/* Advances Section */}
+                    <Grid item xs={12} lg={6}>
+                      <Card 
+                        elevation={1} 
+                        sx={{ 
+                          height: '100%',
+                          backgroundColor: '#ffffff',
+                          border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+                          borderRadius: 2
+                        }}
+                      >
+                        <Box sx={{ 
+                          p: 2, 
+                          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+                          backgroundColor: alpha(theme.palette.warning.main, 0.05)
+                        }}>
+                          <Typography variant="h6" sx={{ 
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            color: 'warning.main'
+                          }}>
+                            <MoneyIcon />
+                            Salary Advances
+                            <Chip 
+                              label={detailsModalEmployee?.advances?.length || 0} 
+                              size="small" 
+                              color="warning"
                             />
-                          </ListItem>
-                        ))}
-                      </List>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                        No advances recorded
-                      </Typography>
-                    )}
-                  </Paper>
+                          </Typography>
+                        </Box>
 
-                  {/* Recent Transactions Section - Solid Background */}
-                  <Paper 
-                    elevation={2} 
-                    sx={{ 
-                      p: 3,
-                      backgroundColor: 'background.paper !important',
-                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-                      borderRadius: 2,
-                      '&:hover': {
-                        boxShadow: 4,
-                        transition: 'box-shadow 0.3s ease'
-                      }
-                    }}
-                  >
-                    <Typography variant="h6" gutterBottom sx={{ 
-                      fontWeight: 600,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}>
-                      <PaymentsIcon color="primary" />
-                      Recent Transactions (Last 5)
-                    </Typography>
-                    
-                    {detailsModalEmployee?.transactions && detailsModalEmployee.transactions.length > 0 ? (
-                      <List sx={{ maxHeight: 200, overflow: 'auto' }}>
-                        {detailsModalEmployee.transactions.slice(0, 5).map((transaction, index) => (
-                          <ListItem key={index} divider={index < 4 && index < detailsModalEmployee.transactions.length - 1}>
-                            <ListItemText
-                              primary={
-                                <Box display="flex" justifyContent="space-between" alignItems="center">
-                                  <Typography sx={{ fontWeight: 600 }}>
-                                    {transaction.type}
-                                  </Typography>
-                                  <Typography 
-                                    sx={{ 
-                                      fontWeight: 600,
-                                      color: transaction.amount > 0 ? 'success.main' : 'error.main'
-                                    }}
-                                  >
-                                    {transaction.amount > 0 ? '+' : ''}QAR {transaction.amount?.toLocaleString()}
-                                  </Typography>
-                                </Box>
-                              }
-                              secondary={formatDate(transaction.date)}
+                        <CardContent sx={{ p: 2 }}>
+                          {detailsModalEmployee?.advances && detailsModalEmployee.advances.length > 0 ? (
+                            <List sx={{ p: 0 }}>
+                              {detailsModalEmployee.advances.slice(0, 4).map((advance, index) => (
+                                <ListItem key={index} sx={{ px: 0, py: 1 }}>
+                                  <ListItemText
+                                    primary={
+                                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                                        <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
+                                          QAR {advance.amount?.toLocaleString()}
+                                        </Typography>
+                                        <Chip 
+                                          label={advance.repaid ? 'Repaid' : 'Outstanding'} 
+                                          color={advance.repaid ? 'success' : 'warning'}
+                                          size="small"
+                                          sx={{ fontSize: '0.7rem', height: 20 }}
+                                        />
+                                      </Box>
+                                    }
+                                    secondary={
+                                      <Box>
+                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                          {formatDate(advance.date)}
+                                        </Typography>
+                                        {advance.reason && (
+                                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', fontStyle: 'italic' }}>
+                                            {advance.reason}
+                                          </Typography>
+                                        )}
+                                      </Box>
+                                    }
+                                  />
+                                  {index < Math.min(detailsModalEmployee.advances.length - 1, 3) && <Divider />}
+                                </ListItem>
+                              ))}
+                            </List>
+                          ) : (
+                            <Box sx={{ py: 3, textAlign: 'center' }}>
+                              <MoneyIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                              <Typography variant="body2" color="text.secondary">
+                                No salary advances recorded
+                              </Typography>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+
+                    {/* Recent Transactions Section */}
+                    <Grid item xs={12} lg={6}>
+                      <Card 
+                        elevation={1} 
+                        sx={{ 
+                          height: '100%',
+                          backgroundColor: '#ffffff',
+                          border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+                          borderRadius: 2
+                        }}
+                      >
+                        <Box sx={{ 
+                          p: 2, 
+                          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+                          backgroundColor: alpha(theme.palette.primary.main, 0.05)
+                        }}>
+                          <Typography variant="h6" sx={{ 
+                            fontWeight: 600,
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: 1,
+                            color: 'primary.main'
+                          }}>
+                            <PaymentsIcon />
+                            Recent Transactions
+                            <Chip 
+                              label={detailsModalEmployee?.transactions?.length || 0} 
+                              size="small" 
+                              color="primary"
                             />
-                          </ListItem>
-                        ))}
-                      </List>
-                    ) : (
-                      <Typography variant="body2" color="text.secondary" sx={{ py: 2, textAlign: 'center' }}>
-                        No transactions recorded
-                      </Typography>
-                    )}
-                  </Paper>
+                          </Typography>
+                        </Box>
+
+                        <CardContent sx={{ p: 2 }}>
+                          {detailsModalEmployee?.transactions && detailsModalEmployee.transactions.length > 0 ? (
+                            <List sx={{ p: 0 }}>
+                              {detailsModalEmployee.transactions.slice(0, 4).map((transaction, index) => (
+                                <ListItem key={index} sx={{ px: 0, py: 1 }}>
+                                  <ListItemText
+                                    primary={
+                                      <Box display="flex" justifyContent="space-between" alignItems="center">
+                                        <Typography sx={{ fontWeight: 500, fontSize: '0.9rem' }}>
+                                          {transaction.type || 'Payment'}
+                                        </Typography>
+                                        <Typography 
+                                          sx={{ 
+                                            fontWeight: 600,
+                                            color: transaction.amount > 0 ? 'success.main' : 'error.main',
+                                            fontSize: '0.95rem'
+                                          }}
+                                        >
+                                          {transaction.amount > 0 ? '+' : ''}QAR {transaction.amount?.toLocaleString()}
+                                        </Typography>
+                                      </Box>
+                                    }
+                                    secondary={
+                                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                        {formatDate(transaction.date)}
+                                      </Typography>
+                                    }
+                                  />
+                                  {index < Math.min(detailsModalEmployee.transactions.length - 1, 3) && <Divider />}
+                                </ListItem>
+                              ))}
+                            </List>
+                          ) : (
+                            <Box sx={{ py: 3, textAlign: 'center' }}>
+                              <PaymentsIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
+                              <Typography variant="body2" color="text.secondary">
+                                No payment transactions recorded
+                              </Typography>
+                            </Box>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </Grid>
+
+                    {/* Financial Summary */}
+                    <Grid item xs={12}>
+                      <Paper sx={{ 
+                        p: 3, 
+                        backgroundColor: alpha(theme.palette.info.main, 0.04),
+                        border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                        borderRadius: 2
+                      }}>
+                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
+                          Financial Summary
+                        </Typography>
+                        <Grid container spacing={2}>
+                          <Grid item xs={12} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Base Salary</Typography>
+                            <Typography variant="h6" color="success.main">
+                              QAR {detailsModalEmployee?.salary?.toLocaleString() || '0'}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Days Worked</Typography>
+                            <Typography variant="h6">
+                              {detailsModalEmployee ? calculateDaysPaid(detailsModalEmployee) : 0} days
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Outstanding Advances</Typography>
+                            <Typography variant="h6" color="warning.main">
+                              QAR {detailsModalEmployee?.advances?.filter(a => !a.repaid).reduce((sum, a) => sum + a.amount, 0)?.toLocaleString() || '0'}
+                            </Typography>
+                          </Grid>
+                          <Grid item xs={12} sm={3}>
+                            <Typography variant="body2" color="text.secondary">Net Position</Typography>
+                            <Typography variant="h6" color="primary.main">
+                              QAR {(detailsModalEmployee?.totalPaid || 0).toLocaleString()}
+                            </Typography>
+                          </Grid>
+                        </Grid>
+                      </Paper>
+                    </Grid>
+                  </Grid>
                 </TabPanel>
               </Container>
             </Box>
           )}
         </DialogContent>
 
-        {/* Action Buttons - Solid Background */}
+        {/* Streamlined Action Buttons */}
         <DialogActions 
           sx={{ 
             p: 3,
-            backgroundColor: 'background.paper !important', // Force solid background
-            borderTop: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-            gap: 2,
-            opacity: 1 // Ensure no transparency
+            backgroundColor: '#ffffff',
+            borderTop: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
+            gap: 1,
+            justifyContent: 'flex-end'
           }}
         >
           <Button 
@@ -2740,8 +2914,14 @@ const Employees = () => {
               borderRadius: 2,
               px: 3,
               py: 1,
-              fontWeight: 600,
-              textTransform: 'none'
+              fontWeight: 500,
+              textTransform: 'none',
+              borderColor: theme.palette.divider,
+              color: 'text.secondary',
+              '&:hover': {
+                borderColor: 'error.main',
+                color: 'error.main'
+              }
             }}
           >
             Close
@@ -2755,12 +2935,9 @@ const Employees = () => {
               py: 1,
               fontWeight: 600,
               textTransform: 'none',
-              boxShadow: 4,
-              background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+              backgroundColor: theme.palette.primary.main,
               '&:hover': {
-                boxShadow: 6,
-                transform: 'translateY(-1px)',
-                transition: 'all 0.2s ease'
+                backgroundColor: theme.palette.primary.dark
               }
             }}
             onClick={() => {
@@ -2775,7 +2952,7 @@ const Employees = () => {
               setShowForm(true);
             }}
           >
-            Edit Employee
+            Edit Details
           </Button>
         </DialogActions>
       </Dialog>
