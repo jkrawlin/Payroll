@@ -58,6 +58,7 @@ import {
 } from '@mui/material';
 import {
   Person as PersonIcon,
+  Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
   Close as CloseIcon,
@@ -670,20 +671,10 @@ const Employees = () => {
                                 variant="body1" 
                                 fontWeight={600} 
                                 noWrap 
-                                onClick={(e) => { 
-                                  e.stopPropagation(); 
-                                  handleEdit(params.row); 
-                                }}
                                 sx={{ 
                                   mb: 0.5,
-                                  cursor: 'pointer',
-                                  color: theme.palette.primary.main,
-                                  '&:hover': { 
-                                    textDecoration: 'underline',
-                                    color: theme.palette.primary.dark
-                                  }
+                                  color: theme.palette.text.primary,
                                 }}
-                                aria-label={`Edit ${params.row.name}`}
                               >
                                 {params.row.name}
                               </Typography>
@@ -870,6 +861,10 @@ const Employees = () => {
                     checkboxSelection={false}
                     disableSelectionOnClick={false}
                     autoHeight={false}
+                    onRowClick={(params) => {
+                      // Open comprehensive details/edit popup when any part of the row is clicked
+                      handleNameClick(params.row);
+                    }}
                     initialState={{
                       pagination: {
                         paginationModel: { pageSize: 10, page: 0 }
