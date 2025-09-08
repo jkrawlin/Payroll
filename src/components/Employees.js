@@ -5,7 +5,7 @@ import { db, storage, isFirebaseConfigured } from '../firebase';
 import { mockEmployees } from '../services/mockData';
 import { useDropzone } from 'react-dropzone';
 import Dropzone from 'react-dropzone';
-import { useFormik } from 'formik';
+import { Formik, Form, Field, useFormik } from 'formik';
 import * as Yup from 'yup';
 import { toast } from 'react-toastify';
 import {
@@ -48,6 +48,7 @@ import {
   Container,
   Alert,
   AlertTitle,
+  Stack,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -66,6 +67,12 @@ import {
   Badge as BadgeIcon,
   FlightTakeoff as FlightTakeoffIcon,
   Payments as PaymentsIcon,
+  Payment as PaymentIcon,
+  Receipt as ReceiptIcon,
+  History as HistoryIcon,
+  AccountBalance as AccountBalanceIcon,
+  Upload as UploadIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -114,9 +121,8 @@ const Employees = () => {
   const [modalTabValue, setModalTabValue] = useState(0);
   const [retryCount, setRetryCount] = useState(0);
   
-  // Inline editing state for modal
-  const [isInlineEditing, setIsInlineEditing] = useState(false);
-  const [editFormData, setEditFormData] = useState({});
+  // Unified edit mode state for modal
+  const [isEditMode, setIsEditMode] = useState(false);
   const [savingChanges, setSavingChanges] = useState(false);
 
   // Helper functions for calculations and formatting
@@ -386,6 +392,21 @@ const Employees = () => {
     position: Yup.string().required('Position is required'),
   });
 
+  // Validation schema for modal inline editing
+  const modalValidationSchema = Yup.object({
+    name: Yup.string().required('Name is required'),
+    email: Yup.string().email('Invalid email format'),
+    phone: Yup.string(),
+    department: Yup.string().required('Department is required'),
+    position: Yup.string().required('Position is required'),
+    salary: Yup.number().positive('Salary must be positive').required('Salary is required'),
+    address: Yup.string(),
+    passportNumber: Yup.string(),
+    passportExpiry: Yup.date(),
+    qidNumber: Yup.string(),
+    qidExpiry: Yup.date(),
+  });
+
   const formik = useFormik({
     initialValues: {
       name: '',
@@ -527,55 +548,34 @@ const Employees = () => {
     formik.resetForm();
   };
 
-  // Inline editing functions for modal
-  const handleStartInlineEdit = () => {
-    setIsInlineEditing(true);
-    setEditFormData({
-      name: detailsModalEmployee?.name || '',
-      email: detailsModalEmployee?.email || '',
-      phone: detailsModalEmployee?.phone || '',
-      department: detailsModalEmployee?.department || '',
-      position: detailsModalEmployee?.position || '',
-      salary: detailsModalEmployee?.salary || '',
-      address: detailsModalEmployee?.address || '',
-      passportNumber: detailsModalEmployee?.passport?.number || '',
-      passportExpiry: detailsModalEmployee?.passport?.expiry || '',
-      qidNumber: detailsModalEmployee?.qid?.number || '',
-      qidExpiry: detailsModalEmployee?.qid?.expiry || '',
-    });
+  // Unified modal edit functions
+  const handleStartEdit = () => {
+    setIsEditMode(true);
   };
 
-  const handleCancelInlineEdit = () => {
-    setIsInlineEditing(false);
-    setEditFormData({});
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
   };
 
-  const handleInlineFieldChange = (field, value) => {
-    setEditFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleSaveInlineChanges = async () => {
+  const handleSaveChanges = async (values, { setSubmitting }) => {
     setSavingChanges(true);
     try {
       const updateData = {
-        name: editFormData.name,
-        email: editFormData.email,
-        phone: editFormData.phone,
-        department: editFormData.department,
-        position: editFormData.position,
-        salary: parseFloat(editFormData.salary) || 0,
-        address: editFormData.address,
+        name: values.name,
+        email: values.email,
+        phone: values.phone,
+        department: values.department,
+        position: values.position,
+        salary: parseFloat(values.salary) || 0,
+        address: values.address,
         passport: {
-          number: editFormData.passportNumber,
-          expiry: editFormData.passportExpiry,
+          number: values.passportNumber,
+          expiry: values.passportExpiry,
           photoUrl: detailsModalEmployee?.passport?.photoUrl || null
         },
         qid: {
-          number: editFormData.qidNumber,
-          expiry: editFormData.qidExpiry,
+          number: values.qidNumber,
+          expiry: values.qidExpiry,
           photoUrl: detailsModalEmployee?.qid?.photoUrl || null
         }
       };
@@ -594,8 +594,7 @@ const Employees = () => {
       }));
 
       toast.success('Employee details updated successfully');
-      setIsInlineEditing(false);
-      setEditFormData({});
+      setIsEditMode(false);
       
       // Refresh employees list
       fetchEmployees();
@@ -604,6 +603,7 @@ const Employees = () => {
       toast.error('Failed to update employee details');
     } finally {
       setSavingChanges(false);
+      setSubmitting(false);
     }
   };
 
@@ -1530,13 +1530,17 @@ const Employees = () => {
               </Typography>
             </Box>
             
-            {/* Edit/Save buttons */}
-            {isInlineEditing ? (
+            {/* Unified Edit/Save buttons */}
+            {isEditMode ? (
               <Box sx={{ display: 'flex', gap: 1 }}>
                 <Button
                   variant="contained"
                   size="small"
-                  onClick={handleSaveInlineChanges}
+                  onClick={() => {
+                    // This will be handled by Formik's submit
+                    const form = document.querySelector('form');
+                    if (form) form.requestSubmit();
+                  }}
                   disabled={savingChanges}
                   sx={{
                     backgroundColor: 'rgba(255,255,255,0.9)',
@@ -1552,7 +1556,7 @@ const Employees = () => {
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={handleCancelInlineEdit}
+                  onClick={handleCancelEdit}
                   sx={{
                     borderColor: 'rgba(255,255,255,0.5)',
                     color: 'white',
@@ -1570,7 +1574,7 @@ const Employees = () => {
                 variant="outlined"
                 size="small"
                 startIcon={<EditIcon />}
-                onClick={handleStartInlineEdit}
+                onClick={handleStartEdit}
                 sx={{
                   borderColor: 'rgba(255,255,255,0.5)',
                   color: 'white',
@@ -1702,946 +1706,886 @@ const Employees = () => {
               </Button>
             </Box>
           ) : (
-            <Box>
-              {/* Clean Navigation Tabs */}
-              <Box sx={{ 
-                borderBottom: 1, 
-                borderColor: 'divider', 
-                backgroundColor: '#ffffff' 
-              }}>
-                <Tabs 
-                  value={modalTabValue} 
-                  onChange={(e, newValue) => setModalTabValue(newValue)}
-                  variant="fullWidth"
-                  textColor="primary"
-                  indicatorColor="primary"
-                  sx={{
-                    backgroundColor: '#ffffff',
-                    '& .MuiTab-root': {
-                      textTransform: 'none',
-                      fontWeight: 500,
-                      fontSize: '0.95rem',
-                      py: 2,
-                      minHeight: 48,
-                      color: 'text.primary'
-                    },
-                    '& .MuiTabs-indicator': {
-                      height: 3,
-                      borderRadius: '2px 2px 0 0'
-                    }
-                  }}
-                >
-                  <Tab label="Personal Info" {...a11yProps(0)} />
-                  <Tab label="Documents" {...a11yProps(1)} />
-                  <Tab label="Payroll" {...a11yProps(2)} />
-                </Tabs>
-              </Box>
-
-              {/* Clean Tab Content */}
-              <Container maxWidth="lg" sx={{ 
-                px: { xs: 2, sm: 3 },
-                backgroundColor: '#ffffff',
-                py: 2
-              }}>
-                {/* Personal Information Tab - Enhanced with Inline Editing */}
-                <TabPanel value={modalTabValue} index={0}>
-                  <Grid container spacing={4} justifyContent="center" alignItems="stretch">
-                    
-                    {/* Profile Photo Section */}
-                    <Grid item xs={12} md={4}>
-                      <Card 
-                        sx={{ 
-                          p: 4, 
-                          textAlign: 'center',
-                          boxShadow: 3,
-                          borderRadius: 3,
-                          height: '100%',
-                          backgroundColor: '#ffffff'
-                        }}
-                      >
-                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
-                          Profile Photo
-                        </Typography>
-                        <Avatar
-                          src={detailsModalEmployee?.photoUrl || detailsModalEmployee?.photoURL}
-                          alt={detailsModalEmployee?.name}
-                          onError={(e) => {
-                            // Fallback for broken images
-                            e.target.style.backgroundColor = theme.palette.grey[300];
-                          }}
-                          sx={{
-                            width: 120,
-                            height: 120,
-                            mx: 'auto',
-                            mb: 3,
-                            backgroundColor: theme.palette.grey[300],
-                            fontSize: '2.5rem',
-                            fontWeight: 600,
-                            border: `4px solid ${theme.palette.primary.main}`,
-                          }}
-                        >
-                          {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
-                        </Avatar>
-                        <Typography variant="h6" fontWeight={600} gutterBottom>
-                          {detailsModalEmployee?.name}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" gutterBottom>
-                          {detailsModalEmployee?.position}
-                        </Typography>
-                        <Chip
-                          label={`ID: ${detailsModalEmployee?.id || 'N/A'}`}
-                          color="primary"
-                          variant="outlined"
-                          sx={{ mt: 1, fontWeight: 500 }}
-                        />
-                      </Card>
-                    </Grid>
-                    
-                    {/* Employment Details */}
-                    <Grid item xs={12} md={8}>
-                      <Card 
-                        sx={{ 
-                          p: 4, 
-                          boxShadow: 3,
-                          borderRadius: 3,
-                          height: '100%',
-                          backgroundColor: '#ffffff'
-                        }}
-                      >
-                        <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
-                          Employment Information
-                        </Typography>
-                        <Divider sx={{ mb: 3 }} />
-                        
-                        <Grid container spacing={3}>
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Employee Name
-                              </Typography>
-                              {isInlineEditing ? (
-                                <TextField
-                                  fullWidth
-                                  value={editFormData.name || ''}
-                                  onChange={(e) => handleInlineFieldChange('name', e.target.value)}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mt: 1 }}
-                                />
-                              ) : (
-                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                  {detailsModalEmployee?.name || 'Not provided'}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Department
-                              </Typography>
-                              {isInlineEditing ? (
-                                <TextField
-                                  fullWidth
-                                  value={editFormData.department || ''}
-                                  onChange={(e) => handleInlineFieldChange('department', e.target.value)}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mt: 1 }}
-                                />
-                              ) : (
-                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                  {detailsModalEmployee?.department || 'Not provided'}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Position
-                              </Typography>
-                              {isInlineEditing ? (
-                                <TextField
-                                  fullWidth
-                                  value={editFormData.position || ''}
-                                  onChange={(e) => handleInlineFieldChange('position', e.target.value)}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mt: 1 }}
-                                />
-                              ) : (
-                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                  {detailsModalEmployee?.position || 'Not provided'}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Monthly Salary
-                              </Typography>
-                              {isInlineEditing ? (
-                                <TextField
-                                  fullWidth
-                                  type="number"
-                                  value={editFormData.salary || ''}
-                                  onChange={(e) => handleInlineFieldChange('salary', e.target.value)}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mt: 1 }}
-                                  InputProps={{
-                                    endAdornment: <InputAdornment position="end">QAR</InputAdornment>
-                                  }}
-                                />
-                              ) : (
-                                <Typography variant="body1" fontWeight={700} color="success.main" sx={{ fontSize: '1.2rem' }}>
-                                  {detailsModalEmployee?.salary?.toLocaleString() || 0} QAR
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Join Date
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                {formatDate(detailsModalEmployee?.joinDate || detailsModalEmployee?.createdAt) || 'Not provided'}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Employee ID
-                              </Typography>
-                              <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                {detailsModalEmployee?.id || 'Not provided'}
-                              </Typography>
-                            </Box>
-                          </Grid>
-                        </Grid>
-                        
-                        <Divider sx={{ my: 3 }} />
-                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'secondary.main' }}>
-                          Contact Information
-                        </Typography>
-                        
-                        <Grid container spacing={3}>
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Email Address
-                              </Typography>
-                              {isInlineEditing ? (
-                                <TextField
-                                  fullWidth
-                                  type="email"
-                                  value={editFormData.email || ''}
-                                  onChange={(e) => handleInlineFieldChange('email', e.target.value)}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mt: 1 }}
-                                />
-                              ) : (
-                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                  {detailsModalEmployee?.email || 'Not provided'}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12} sm={6}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Phone Number
-                              </Typography>
-                              {isInlineEditing ? (
-                                <TextField
-                                  fullWidth
-                                  value={editFormData.phone || ''}
-                                  onChange={(e) => handleInlineFieldChange('phone', e.target.value)}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mt: 1 }}
-                                />
-                              ) : (
-                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                  {detailsModalEmployee?.phone || 'Not provided'}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                          
-                          <Grid item xs={12}>
-                            <Box sx={{ mb: 3 }}>
-                              <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
-                                Address
-                              </Typography>
-                              {isInlineEditing ? (
-                                <TextField
-                                  fullWidth
-                                  multiline
-                                  rows={2}
-                                  value={editFormData.address || ''}
-                                  onChange={(e) => handleInlineFieldChange('address', e.target.value)}
-                                  variant="outlined"
-                                  size="small"
-                                  sx={{ mt: 1 }}
-                                />
-                              ) : (
-                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
-                                  {detailsModalEmployee?.address || 'Not provided'}
-                                </Typography>
-                              )}
-                            </Box>
-                          </Grid>
-                        </Grid>
-                      </Card>
-                    </Grid>
-                  </Grid>
-                </TabPanel>
-
-                {/* Documents Tab - Enhanced with Status Indicators */}
-                <TabPanel value={modalTabValue} index={1}>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom 
-                    sx={{ 
-                      fontWeight: 600,
-                      color: 'primary.main',
-                      mb: 3,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}
-                  >
-                    <AssignmentIcon />
-                    Official Documents & Status
-                  </Typography>
-                  
-                  <Grid container spacing={3}>
-                    {/* Qatar ID Section - Improved */}
-                    <Grid item xs={12} lg={6}>
-                      <Card 
-                        elevation={1}
-                        sx={{ 
-                          height: '100%',
+            <Formik
+              initialValues={{
+                name: detailsModalEmployee?.name || '',
+                email: detailsModalEmployee?.email || '',
+                phone: detailsModalEmployee?.phone || '',
+                department: detailsModalEmployee?.department || '',
+                position: detailsModalEmployee?.position || '',
+                salary: detailsModalEmployee?.salary || '',
+                address: detailsModalEmployee?.address || '',
+                passportNumber: detailsModalEmployee?.passport?.number || '',
+                passportExpiry: detailsModalEmployee?.passport?.expiry || '',
+                qidNumber: detailsModalEmployee?.qid?.number || '',
+                qidExpiry: detailsModalEmployee?.qid?.expiry || '',
+              }}
+              validationSchema={modalValidationSchema}
+              enableReinitialize={true}
+              onSubmit={handleSaveChanges}
+            >
+              {({ values, errors, touched, setFieldValue, isValid, dirty, isSubmitting }) => (
+                <Form>
+                  <Box>
+                    {/* Clean Navigation Tabs */}
+                    <Box sx={{ 
+                      borderBottom: 1, 
+                      borderColor: 'divider', 
+                      backgroundColor: '#ffffff' 
+                    }}>
+                      <Tabs 
+                        value={modalTabValue} 
+                        onChange={(e, newValue) => setModalTabValue(newValue)}
+                        variant="fullWidth"
+                        textColor="primary"
+                        indicatorColor="primary"
+                        sx={{
                           backgroundColor: '#ffffff',
-                          border: `2px solid ${alpha(theme.palette.warning.main, 0.15)}`,
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          '&:hover': {
-                            boxShadow: 3,
-                            borderColor: theme.palette.warning.main
+                          '& .MuiTab-root': {
+                            textTransform: 'none',
+                            fontWeight: 500,
+                            fontSize: '0.95rem',
+                            py: 2,
+                            minHeight: 48,
+                            color: 'text.primary'
+                          },
+                          '& .MuiTabs-indicator': {
+                            height: 3,
+                            borderRadius: '2px 2px 0 0'
                           }
                         }}
                       >
-                        <Box sx={{ 
-                          p: 2, 
-                          backgroundColor: alpha(theme.palette.warning.main, 0.08),
-                          borderBottom: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`
-                        }}>
-                          <Box display="flex" alignItems="center" gap={2}>
-                            <Box sx={{
-                              p: 1,
-                              borderRadius: 1,
-                              backgroundColor: alpha(theme.palette.warning.main, 0.15)
-                            }}>
-                              <BadgeIcon sx={{ color: 'warning.main', fontSize: 24 }} />
-                            </Box>
-                            <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                Qatar ID
-                              </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                National Identity Document
-                              </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
+                        <Tab label="Personal Info" {...a11yProps(0)} />
+                        <Tab label="Documents" {...a11yProps(1)} />
+                        <Tab label="Payroll" {...a11yProps(2)} />
+                      </Tabs>
+                    </Box>
 
-                        <CardContent sx={{ p: 2.5 }}>
-                          <Box mb={2}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                              QID Number
-                            </Typography>
-                            <Typography variant="h6" sx={{ 
-                              fontWeight: 600, 
-                              fontFamily: 'monospace', 
-                              backgroundColor: '#f5f5f5',
-                              p: 1,
-                              borderRadius: 1,
-                              fontSize: '1rem'
-                            }}>
-                              {detailsModalEmployee?.qidNumber || 'Not provided'}
-                            </Typography>
-                          </Box>
+                    {/* Clean Tab Content */}
+                    <Container maxWidth="lg" sx={{ 
+                      px: { xs: 2, sm: 3 },
+                      backgroundColor: '#ffffff',
+                      py: 2
+                    }}>
+                      {/* Personal Information Tab - Enhanced with Inline Editing */}
+                      <TabPanel value={modalTabValue} index={0}>
+                        <Grid container spacing={4} justifyContent="center" alignItems="stretch">
                           
-                          <Box mb={2}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                              Expiry Date
-                            </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 500, mb: 1 }}>
-                              {formatDate(detailsModalEmployee?.qidExpiry)}
-                            </Typography>
-
-                            {detailsModalEmployee?.qidExpiry && (
-                              <Box>
-                                {(() => {
-                                  const daysToExpiry = calculateDaysToExpiry(detailsModalEmployee.qidExpiry);
-                                  if (daysToExpiry === null) return null;
-                                  
-                                  let chipColor = 'success';
-                                  let chipLabel = 'Valid';
-                                  let chipIcon = null;
-                                  
-                                  if (daysToExpiry < 0) {
-                                    chipColor = 'error';
-                                    chipLabel = `Expired ${Math.abs(daysToExpiry)} days ago`;
-                                  } else if (daysToExpiry < 30) {
-                                    chipColor = 'warning';
-                                    chipLabel = `Expires in ${daysToExpiry} days`;
-                                  } else {
-                                    chipLabel = `${daysToExpiry} days remaining`;
-                                  }
-
-                                  return (
-                                    <Chip 
-                                      label={chipLabel}
-                                      color={chipColor}
-                                      size="small"
-                                      sx={{ fontWeight: 500 }}
-                                    />
-                                  );
-                                })()}
-                              </Box>
-                            )}
-                          </Box>
-
-                          {detailsModalEmployee?.qid?.photoUrl && (
-                            <Box>
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.8rem' }}>
-                                Document Copy
+                          {/* Profile Photo Section */}
+                          <Grid item xs={12} md={4}>
+                            <Card 
+                              sx={{ 
+                                p: 4, 
+                                textAlign: 'center',
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
+                                Profile Photo
                               </Typography>
-                              <Box sx={{ 
-                                border: `1px solid ${theme.palette.divider}`, 
-                                borderRadius: 1, 
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                '&:hover': {
-                                  boxShadow: 2
-                                }
-                              }}>
-                                <img 
-                                  src={detailsModalEmployee.qid.photoUrl} 
-                                  alt="Qatar ID Copy" 
-                                  style={{ 
-                                    width: '100%', 
-                                    height: 'auto', 
-                                    display: 'block'
-                                  }} 
-                                  onClick={() => window.open(detailsModalEmployee.qid.photoUrl, '_blank')}
-                                />
-                              </Box>
-                            </Box>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-
-                    {/* Passport Section - Improved */}
-                    <Grid item xs={12} lg={6}>
-                      <Card 
-                        elevation={1}
-                        sx={{ 
-                          height: '100%',
-                          backgroundColor: '#ffffff',
-                          border: `2px solid ${alpha(theme.palette.info.main, 0.15)}`,
-                          borderRadius: 2,
-                          overflow: 'hidden',
-                          '&:hover': {
-                            boxShadow: 3,
-                            borderColor: theme.palette.info.main
-                          }
-                        }}
-                      >
-                        <Box sx={{ 
-                          p: 2, 
-                          backgroundColor: alpha(theme.palette.info.main, 0.08),
-                          borderBottom: `1px solid ${alpha(theme.palette.info.main, 0.2)}`
-                        }}>
-                          <Box display="flex" alignItems="center" gap={2}>
-                            <Box sx={{
-                              p: 1,
-                              borderRadius: 1,
-                              backgroundColor: alpha(theme.palette.info.main, 0.15)
-                            }}>
-                              <FlightTakeoffIcon sx={{ color: 'info.main', fontSize: 24 }} />
-                            </Box>
-                            <Box>
-                              <Typography variant="h6" sx={{ fontWeight: 600, mb: 0.5 }}>
-                                Passport
+                              <Avatar
+                                src={detailsModalEmployee?.photoUrl || detailsModalEmployee?.photoURL}
+                                alt={detailsModalEmployee?.name}
+                                onError={(e) => {
+                                  // Fallback for broken images
+                                  e.target.style.backgroundColor = theme.palette.grey[300];
+                                }}
+                                sx={{
+                                  width: 120,
+                                  height: 120,
+                                  mx: 'auto',
+                                  mb: 3,
+                                  backgroundColor: theme.palette.grey[300],
+                                  fontSize: '2.5rem',
+                                  fontWeight: 600,
+                                  border: `4px solid ${theme.palette.primary.main}`,
+                                }}
+                              >
+                                {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
+                              </Avatar>
+                              <Typography variant="h6" fontWeight={600} gutterBottom>
+                                {detailsModalEmployee?.name}
                               </Typography>
-                              <Typography variant="body2" color="text.secondary">
-                                International Travel Document
+                              <Typography variant="body2" color="text.secondary" gutterBottom>
+                                {detailsModalEmployee?.position}
                               </Typography>
-                            </Box>
-                          </Box>
-                        </Box>
-
-                        <CardContent sx={{ p: 2.5 }}>
-                          <Box mb={2}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                              Passport Number
-                            </Typography>
-                            <Typography variant="h6" sx={{ 
-                              fontWeight: 600, 
-                              fontFamily: 'monospace',
-                              backgroundColor: '#f5f5f5',
-                              p: 1,
-                              borderRadius: 1,
-                              fontSize: '1rem'
-                            }}>
-                              {detailsModalEmployee?.passportNumber || 'Not provided'}
-                            </Typography>
-                          </Box>
+                              <Chip
+                                label={`ID: ${detailsModalEmployee?.id || 'N/A'}`}
+                                color="primary"
+                                variant="outlined"
+                                sx={{ mt: 1, fontWeight: 500 }}
+                              />
+                            </Card>
+                          </Grid>
                           
-                          <Box mb={2}>
-                            <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', mb: 0.5 }}>
-                              Expiry Date
-                            </Typography>
-                            <Typography variant="body1" sx={{ fontWeight: 500, mb: 1 }}>
-                              {formatDate(detailsModalEmployee?.passportExpiry)}
-                            </Typography>
-
-                            {detailsModalEmployee?.passportExpiry && (
-                              <Box>
-                                {(() => {
-                                  const daysToExpiry = calculateDaysToExpiry(detailsModalEmployee.passportExpiry);
-                                  if (daysToExpiry === null) return null;
-                                  
-                                  let chipColor = 'success';
-                                  let chipLabel = 'Valid';
-                                  
-                                  if (daysToExpiry < 0) {
-                                    chipColor = 'error';
-                                    chipLabel = `Expired ${Math.abs(daysToExpiry)} days ago`;
-                                  } else if (daysToExpiry < 90) {
-                                    chipColor = 'warning';
-                                    chipLabel = `Expires in ${daysToExpiry} days`;
-                                  } else {
-                                    chipLabel = `${daysToExpiry} days remaining`;
-                                  }
-
-                                  return (
-                                    <Chip 
-                                      label={chipLabel}
-                                      color={chipColor}
-                                      size="small"
-                                      sx={{ fontWeight: 500 }}
-                                    />
-                                  );
-                                })()}
-                              </Box>
-                            )}
-                          </Box>
-
-                          {detailsModalEmployee?.passport?.photoUrl && (
-                            <Box>
-                              <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontSize: '0.8rem' }}>
-                                Document Copy
+                          {/* Employment Details */}
+                          <Grid item xs={12} md={8}>
+                            <Card 
+                              sx={{ 
+                                p: 4, 
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
+                                Employment Information
                               </Typography>
-                              <Box sx={{ 
-                                border: `1px solid ${theme.palette.divider}`, 
-                                borderRadius: 1, 
-                                overflow: 'hidden',
-                                cursor: 'pointer',
-                                '&:hover': {
-                                  boxShadow: 2
-                                }
-                              }}>
-                                <img 
-                                  src={detailsModalEmployee.passport.photoUrl} 
-                                  alt="Passport Copy" 
-                                  style={{ 
-                                    width: '100%', 
-                                    height: 'auto', 
-                                    display: 'block'
-                                  }} 
-                                  onClick={() => window.open(detailsModalEmployee.passport.photoUrl, '_blank')}
-                                />
-                              </Box>
-                            </Box>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-
-                    {/* Document Summary Stats */}
-                    <Grid item xs={12}>
-                      <Paper sx={{ 
-                        p: 2, 
-                        backgroundColor: alpha(theme.palette.info.main, 0.04),
-                        border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                        borderRadius: 2
-                      }}>
-                        <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-                          Document Status Summary
-                        </Typography>
-                        <Box display="flex" flexWrap="wrap" gap={1}>
-                          {detailsModalEmployee?.qidExpiry && (
-                            <Chip 
-                              size="small"
-                              label={`QID: ${(() => {
-                                const days = calculateDaysToExpiry(detailsModalEmployee.qidExpiry);
-                                return days < 0 ? 'Expired' : days < 30 ? 'Expiring Soon' : 'Valid';
-                              })()}`}
-                              color={(() => {
-                                const days = calculateDaysToExpiry(detailsModalEmployee.qidExpiry);
-                                return days < 0 ? 'error' : days < 30 ? 'warning' : 'success';
-                              })()}
-                            />
-                          )}
-                          {detailsModalEmployee?.passportExpiry && (
-                            <Chip 
-                              size="small"
-                              label={`Passport: ${(() => {
-                                const days = calculateDaysToExpiry(detailsModalEmployee.passportExpiry);
-                                return days < 0 ? 'Expired' : days < 90 ? 'Expiring Soon' : 'Valid';
-                              })()}`}
-                              color={(() => {
-                                const days = calculateDaysToExpiry(detailsModalEmployee.passportExpiry);
-                                return days < 0 ? 'error' : days < 90 ? 'warning' : 'success';
-                              })()}
-                            />
-                          )}
-                        </Box>
-                      </Paper>
-                    </Grid>
-                  </Grid>
-                </TabPanel>
-
-                {/* Payroll Tab - Enhanced with Analytics */}
-                <TabPanel value={modalTabValue} index={2}>
-                  <Typography 
-                    variant="h6" 
-                    gutterBottom 
-                    sx={{ 
-                      fontWeight: 600,
-                      color: 'primary.main',
-                      mb: 3,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 1
-                    }}
-                  >
-                    <PaymentsIcon />
-                    Payroll & Financial Overview
-                  </Typography>
-                  
-                  {/* Financial Overview Cards */}
-                  <Grid container spacing={2} sx={{ mb: 4 }}>
-                    <Grid item xs={12} sm={4}>
-                      <Card 
-                        elevation={1}
-                        sx={{ 
-                          p: 3, 
-                          textAlign: 'center',
-                          backgroundColor: '#ffffff',
-                          border: `2px solid ${alpha(theme.palette.success.main, 0.2)}`,
-                          borderRadius: 2
-                        }}
-                      >
-                        <MoneyIcon sx={{ fontSize: 32, color: 'success.main', mb: 1 }} />
-                        <Typography variant="h5" sx={{ 
-                          fontWeight: 700, 
-                          color: 'success.main',
-                          mb: 0.5
-                        }}>
-                          QAR {detailsModalEmployee?.salary?.toLocaleString() || '0'}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                          Monthly Salary
-                        </Typography>
-                        {detailsModalEmployee?.salary && (
-                          <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                            Daily: QAR {Math.round(detailsModalEmployee.salary / 30).toLocaleString()}
-                          </Typography>
-                        )}
-                      </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={4}>
-                      <Card 
-                        elevation={1}
-                        sx={{ 
-                          p: 3, 
-                          textAlign: 'center',
-                          backgroundColor: '#ffffff',
-                          border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
-                          borderRadius: 2
-                        }}
-                      >
-                        <PaymentsIcon sx={{ fontSize: 32, color: 'primary.main', mb: 1 }} />
-                        <Typography variant="h5" sx={{ 
-                          fontWeight: 700, 
-                          color: 'primary.main',
-                          mb: 0.5
-                        }}>
-                          QAR {(detailsModalEmployee?.totalPaid || 0).toLocaleString()}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                          Total Paid
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          {detailsModalEmployee ? calculateDaysPaid(detailsModalEmployee) : 0} days equivalent
-                        </Typography>
-                      </Card>
-                    </Grid>
-
-                    <Grid item xs={12} sm={4}>
-                      <Card 
-                        elevation={1}
-                        sx={{ 
-                          p: 3, 
-                          textAlign: 'center',
-                          backgroundColor: '#ffffff',
-                          border: `2px solid ${alpha(theme.palette.warning.main, 0.2)}`,
-                          borderRadius: 2
-                        }}
-                      >
-                        <AssignmentIcon sx={{ fontSize: 32, color: 'warning.main', mb: 1 }} />
-                        <Typography variant="h5" sx={{ 
-                          fontWeight: 700, 
-                          color: 'warning.main',
-                          mb: 0.5
-                        }}>
-                          {detailsModalEmployee?.advances?.filter(a => !a.repaid).length || 0}
-                        </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ fontWeight: 500 }}>
-                          Active Advances
-                        </Typography>
-                        <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
-                          Outstanding amount
-                        </Typography>
-                      </Card>
-                    </Grid>
-                  </Grid>
-
-                  <Grid container spacing={3}>
-                    {/* Advances Section */}
-                    <Grid item xs={12} lg={6}>
-                      <Card 
-                        elevation={1} 
-                        sx={{ 
-                          height: '100%',
-                          backgroundColor: '#ffffff',
-                          border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                          borderRadius: 2
-                        }}
-                      >
-                        <Box sx={{ 
-                          p: 2, 
-                          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                          backgroundColor: alpha(theme.palette.warning.main, 0.05)
-                        }}>
-                          <Typography variant="h6" sx={{ 
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            color: 'warning.main'
-                          }}>
-                            <MoneyIcon />
-                            Salary Advances
-                            <Chip 
-                              label={detailsModalEmployee?.advances?.length || 0} 
-                              size="small" 
-                              color="warning"
-                            />
-                          </Typography>
-                        </Box>
-
-                        <CardContent sx={{ p: 2 }}>
-                          {detailsModalEmployee?.advances && detailsModalEmployee.advances.length > 0 ? (
-                            <List sx={{ p: 0 }}>
-                              {detailsModalEmployee.advances.slice(0, 4).map((advance, index) => (
-                                <ListItem key={index} sx={{ px: 0, py: 1 }}>
-                                  <ListItemText
-                                    primary={
-                                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                                        <Typography sx={{ fontWeight: 600, fontSize: '0.95rem' }}>
-                                          QAR {advance.amount?.toLocaleString()}
-                                        </Typography>
-                                        <Chip 
-                                          label={advance.repaid ? 'Repaid' : 'Outstanding'} 
-                                          color={advance.repaid ? 'success' : 'warning'}
-                                          size="small"
-                                          sx={{ fontSize: '0.7rem', height: 20 }}
-                                        />
-                                      </Box>
-                                    }
-                                    secondary={
-                                      <Box>
-                                        <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                                          {formatDate(advance.date)}
-                                        </Typography>
-                                        {advance.reason && (
-                                          <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem', fontStyle: 'italic' }}>
-                                            {advance.reason}
-                                          </Typography>
+                              <Divider sx={{ mb: 3 }} />
+                              
+                              <Grid container spacing={3}>
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Employee Name
+                                    </Typography>
+                                    {isEditMode ? (
+                                      <Field name="name">
+                                        {({ field, meta }) => (
+                                          <TextField
+                                            {...field}
+                                            fullWidth
+                                            label="Employee Name"
+                                            variant="outlined"
+                                            size="small"
+                                            error={meta.touched && meta.error}
+                                            helperText={meta.touched && meta.error}
+                                            sx={{ mt: 1 }}
+                                          />
                                         )}
-                                      </Box>
-                                    }
-                                  />
-                                  {index < Math.min(detailsModalEmployee.advances.length - 1, 3) && <Divider />}
-                                </ListItem>
-                              ))}
-                            </List>
-                          ) : (
-                            <Box sx={{ py: 3, textAlign: 'center' }}>
-                              <MoneyIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                              <Typography variant="body2" color="text.secondary">
-                                No salary advances recorded
-                              </Typography>
-                            </Box>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-
-                    {/* Recent Transactions Section */}
-                    <Grid item xs={12} lg={6}>
-                      <Card 
-                        elevation={1} 
-                        sx={{ 
-                          height: '100%',
-                          backgroundColor: '#ffffff',
-                          border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                          borderRadius: 2
-                        }}
-                      >
-                        <Box sx={{ 
-                          p: 2, 
-                          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                          backgroundColor: alpha(theme.palette.primary.main, 0.05)
-                        }}>
-                          <Typography variant="h6" sx={{ 
-                            fontWeight: 600,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 1,
-                            color: 'primary.main'
-                          }}>
-                            <PaymentsIcon />
-                            Recent Transactions
-                            <Chip 
-                              label={detailsModalEmployee?.transactions?.length || 0} 
-                              size="small" 
-                              color="primary"
-                            />
-                          </Typography>
-                        </Box>
-
-                        <CardContent sx={{ p: 2 }}>
-                          {detailsModalEmployee?.transactions && detailsModalEmployee.transactions.length > 0 ? (
-                            <List sx={{ p: 0 }}>
-                              {detailsModalEmployee.transactions.slice(0, 4).map((transaction, index) => (
-                                <ListItem key={index} sx={{ px: 0, py: 1 }}>
-                                  <ListItemText
-                                    primary={
-                                      <Box display="flex" justifyContent="space-between" alignItems="center">
-                                        <Typography sx={{ fontWeight: 500, fontSize: '0.9rem' }}>
-                                          {transaction.type || 'Payment'}
-                                        </Typography>
-                                        <Typography 
-                                          sx={{ 
-                                            fontWeight: 600,
-                                            color: transaction.amount > 0 ? 'success.main' : 'error.main',
-                                            fontSize: '0.95rem'
-                                          }}
-                                        >
-                                          {transaction.amount > 0 ? '+' : ''}QAR {transaction.amount?.toLocaleString()}
-                                        </Typography>
-                                      </Box>
-                                    }
-                                    secondary={
-                                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
-                                        {formatDate(transaction.date)}
+                                      </Field>
+                                    ) : (
+                                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                        {detailsModalEmployee?.name || 'Not provided'}
                                       </Typography>
-                                    }
-                                  />
-                                  {index < Math.min(detailsModalEmployee.transactions.length - 1, 3) && <Divider />}
-                                </ListItem>
-                              ))}
-                            </List>
-                          ) : (
-                            <Box sx={{ py: 3, textAlign: 'center' }}>
-                              <PaymentsIcon sx={{ fontSize: 48, color: 'text.disabled', mb: 1 }} />
-                              <Typography variant="body2" color="text.secondary">
-                                No payment transactions recorded
+                                    )}
+                                  </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Department
+                                    </Typography>
+                                    {isEditMode ? (
+                                      <Field name="department">
+                                        {({ field, meta }) => (
+                                          <TextField
+                                            {...field}
+                                            fullWidth
+                                            label="Department"
+                                            variant="outlined"
+                                            size="small"
+                                            error={meta.touched && meta.error}
+                                            helperText={meta.touched && meta.error}
+                                            sx={{ mt: 1 }}
+                                          />
+                                        )}
+                                      </Field>
+                                    ) : (
+                                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                        {detailsModalEmployee?.department || 'Not provided'}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Position
+                                    </Typography>
+                                    {isEditMode ? (
+                                      <Field name="position">
+                                        {({ field, meta }) => (
+                                          <TextField
+                                            {...field}
+                                            fullWidth
+                                            label="Position"
+                                            variant="outlined"
+                                            size="small"
+                                            error={meta.touched && meta.error}
+                                            helperText={meta.touched && meta.error}
+                                            sx={{ mt: 1 }}
+                                          />
+                                        )}
+                                      </Field>
+                                    ) : (
+                                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                        {detailsModalEmployee?.position || 'Not provided'}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Monthly Salary
+                                    </Typography>
+                                    {isEditMode ? (
+                                      <Field name="salary">
+                                        {({ field, meta }) => (
+                                          <TextField
+                                            {...field}
+                                            fullWidth
+                                            type="number"
+                                            label="Monthly Salary"
+                                            variant="outlined"
+                                            size="small"
+                                            error={meta.touched && meta.error}
+                                            helperText={meta.touched && meta.error}
+                                            InputProps={{
+                                              endAdornment: <InputAdornment position="end">QAR</InputAdornment>
+                                            }}
+                                            sx={{ mt: 1 }}
+                                          />
+                                        )}
+                                      </Field>
+                                    ) : (
+                                      <Typography variant="body1" fontWeight={700} color="success.main" sx={{ fontSize: '1.2rem' }}>
+                                        {detailsModalEmployee?.salary?.toLocaleString() || 0} QAR
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Join Date
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                      {formatDate(detailsModalEmployee?.joinDate || detailsModalEmployee?.createdAt) || 'Not provided'}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Employee ID
+                                    </Typography>
+                                    <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                      {detailsModalEmployee?.id || 'Not provided'}
+                                    </Typography>
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                              
+                              <Divider sx={{ my: 3 }} />
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'secondary.main' }}>
+                                Contact Information
                               </Typography>
-                            </Box>
-                          )}
-                        </CardContent>
-                      </Card>
-                    </Grid>
-
-                    {/* Financial Summary */}
-                    <Grid item xs={12}>
-                      <Paper sx={{ 
-                        p: 3, 
-                        backgroundColor: alpha(theme.palette.info.main, 0.04),
-                        border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                        borderRadius: 2
-                      }}>
-                        <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 2 }}>
-                          Financial Summary
-                        </Typography>
-                        <Grid container spacing={2}>
-                          <Grid item xs={12} sm={3}>
-                            <Typography variant="body2" color="text.secondary">Base Salary</Typography>
-                            <Typography variant="h6" color="success.main">
-                              QAR {detailsModalEmployee?.salary?.toLocaleString() || '0'}
-                            </Typography>
-                          </Grid>
-                          <Grid item xs={12} sm={3}>
-                            <Typography variant="body2" color="text.secondary">Days Worked</Typography>
-                            <Typography variant="h6">
-                              {detailsModalEmployee ? calculateDaysPaid(detailsModalEmployee) : 0} days
-                            </Typography>
-                          </Grid>
-                          <Grid item xs={12} sm={3}>
-                            <Typography variant="body2" color="text.secondary">Outstanding Advances</Typography>
-                            <Typography variant="h6" color="warning.main">
-                              QAR {detailsModalEmployee?.advances?.filter(a => !a.repaid).reduce((sum, a) => sum + a.amount, 0)?.toLocaleString() || '0'}
-                            </Typography>
-                          </Grid>
-                          <Grid item xs={12} sm={3}>
-                            <Typography variant="body2" color="text.secondary">Net Position</Typography>
-                            <Typography variant="h6" color="primary.main">
-                              QAR {(detailsModalEmployee?.totalPaid || 0).toLocaleString()}
-                            </Typography>
+                              
+                              <Grid container spacing={3}>
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Email Address
+                                    </Typography>
+                                    {isEditMode ? (
+                                      <Field name="email">
+                                        {({ field, meta }) => (
+                                          <TextField
+                                            {...field}
+                                            fullWidth
+                                            type="email"
+                                            label="Email Address"
+                                            variant="outlined"
+                                            size="small"
+                                            error={meta.touched && meta.error}
+                                            helperText={meta.touched && meta.error}
+                                            sx={{ mt: 1 }}
+                                          />
+                                        )}
+                                      </Field>
+                                    ) : (
+                                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                        {detailsModalEmployee?.email || 'Not provided'}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12} sm={6}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Phone Number
+                                    </Typography>
+                                    {isEditMode ? (
+                                      <Field name="phone">
+                                        {({ field, meta }) => (
+                                          <TextField
+                                            {...field}
+                                            fullWidth
+                                            label="Phone Number"
+                                            variant="outlined"
+                                            size="small"
+                                            error={meta.touched && meta.error}
+                                            helperText={meta.touched && meta.error}
+                                            sx={{ mt: 1 }}
+                                          />
+                                        )}
+                                      </Field>
+                                    ) : (
+                                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                        {detailsModalEmployee?.phone || 'Not provided'}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Grid>
+                                
+                                <Grid item xs={12}>
+                                  <Box sx={{ mb: 3 }}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Address
+                                    </Typography>
+                                    {isEditMode ? (
+                                      <Field name="address">
+                                        {({ field, meta }) => (
+                                          <TextField
+                                            {...field}
+                                            fullWidth
+                                            multiline
+                                            rows={2}
+                                            label="Address"
+                                            variant="outlined"
+                                            size="small"
+                                            error={meta.touched && meta.error}
+                                            helperText={meta.touched && meta.error}
+                                            sx={{ mt: 1 }}
+                                          />
+                                        )}
+                                      </Field>
+                                    ) : (
+                                      <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                        {detailsModalEmployee?.address || 'Not provided'}
+                                      </Typography>
+                                    )}
+                                  </Box>
+                                </Grid>
+                              </Grid>
+                            </Card>
                           </Grid>
                         </Grid>
-                      </Paper>
-                    </Grid>
-                  </Grid>
-                </TabPanel>
-              </Container>
-            </Box>
+                      </TabPanel>
+
+                      {/* Documents Tab - Enhanced with Inline Editing */}
+                      <TabPanel value={modalTabValue} index={1}>
+                        <Grid container spacing={4}>
+                          
+                          {/* Passport Information */}
+                          <Grid item xs={12} md={6}>
+                            <Card 
+                              sx={{ 
+                                p: 4, 
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                Passport Information
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Passport Number
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="passportNumber">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="Passport Number"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.passport?.number || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Expiry Date
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="passportExpiry">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        type="date"
+                                        label="Passport Expiry Date"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {formatDate(detailsModalEmployee?.passport?.expiry) || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+                              
+                              {/* Passport Document Upload */}
+                              <Box sx={{ mt: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Passport Document
+                                </Typography>
+                                {detailsModalEmployee?.passport?.documentUrl ? (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                                    <Button
+                                      variant="outlined"
+                                      startIcon={<DownloadIcon />}
+                                      onClick={() => window.open(detailsModalEmployee.passport.documentUrl, '_blank')}
+                                      sx={{ borderRadius: 2, textTransform: 'none' }}
+                                    >
+                                      View Passport
+                                    </Button>
+                                    {isEditMode && (
+                                      <Button
+                                        variant="text"
+                                        color="error"
+                                        startIcon={<DeleteIcon />}
+                                        onClick={() => {
+                                          // Handle document removal
+                                          setFieldValue('passportDocument', null);
+                                        }}
+                                        sx={{ textTransform: 'none' }}
+                                      >
+                                        Remove
+                                      </Button>
+                                    )}
+                                  </Box>
+                                ) : (
+                                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    No passport document uploaded
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Card>
+                          </Grid>
+                          
+                          {/* QID Information */}
+                          <Grid item xs={12} md={6}>
+                            <Card 
+                              sx={{ 
+                                p: 4, 
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                QID Information
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  QID Number
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="qidNumber">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="QID Number"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.qid?.number || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Expiry Date
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="qidExpiry">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        type="date"
+                                        label="QID Expiry Date"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        InputLabelProps={{ shrink: true }}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {formatDate(detailsModalEmployee?.qid?.expiry) || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+                              
+                              {/* QID Document Upload */}
+                              <Box sx={{ mt: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  QID Document
+                                </Typography>
+                                {detailsModalEmployee?.qid?.documentUrl ? (
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                                    <Button
+                                      variant="outlined"
+                                      startIcon={<DownloadIcon />}
+                                      onClick={() => window.open(detailsModalEmployee.qid.documentUrl, '_blank')}
+                                      sx={{ borderRadius: 2, textTransform: 'none' }}
+                                    >
+                                      View QID
+                                    </Button>
+                                    {isEditMode && (
+                                      <Button
+                                        variant="text"
+                                        color="error"
+                                        startIcon={<DeleteIcon />}
+                                        onClick={() => {
+                                          // Handle document removal
+                                          setFieldValue('qidDocument', null);
+                                        }}
+                                        sx={{ textTransform: 'none' }}
+                                      >
+                                        Remove
+                                      </Button>
+                                    )}
+                                  </Box>
+                                ) : (
+                                  <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                    No QID document uploaded
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Card>
+                          </Grid>
+                          
+                          {/* Document Upload Section */}
+                          {isEditMode && (
+                            <Grid item xs={12}>
+                              <Card 
+                                sx={{ 
+                                  p: 4, 
+                                  boxShadow: 3,
+                                  borderRadius: 3,
+                                  backgroundColor: '#ffffff'
+                                }}
+                              >
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                  Upload Documents
+                                </Typography>
+                                <Divider sx={{ mb: 3 }} />
+                                
+                                <Grid container spacing={3}>
+                                  <Grid item xs={12} md={6}>
+                                    <Box sx={{ textAlign: 'center', p: 3, border: `2px dashed ${theme.palette.divider}`, borderRadius: 2 }}>
+                                      <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                                      <Typography variant="h6" gutterBottom>
+                                        Passport Document
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                                        Upload passport copy (PDF, JPG, PNG)
+                                      </Typography>
+                                      <Button
+                                        variant="contained"
+                                        component="label"
+                                        startIcon={<UploadIcon />}
+                                        sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
+                                      >
+                                        Choose File
+                                        <input
+                                          type="file"
+                                          hidden
+                                          accept=".pdf,.jpg,.jpeg,.png"
+                                          onChange={(e) => {
+                                            // Handle passport document upload
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                              // Process file upload
+                                              console.log('Passport file selected:', file.name);
+                                            }
+                                          }}
+                                        />
+                                      </Button>
+                                    </Box>
+                                  </Grid>
+                                  
+                                  <Grid item xs={12} md={6}>
+                                    <Box sx={{ textAlign: 'center', p: 3, border: `2px dashed ${theme.palette.divider}`, borderRadius: 2 }}>
+                                      <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
+                                      <Typography variant="h6" gutterBottom>
+                                        QID Document
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary" gutterBottom>
+                                        Upload QID copy (PDF, JPG, PNG)
+                                      </Typography>
+                                      <Button
+                                        variant="contained"
+                                        component="label"
+                                        startIcon={<UploadIcon />}
+                                        sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
+                                      >
+                                        Choose File
+                                        <input
+                                          type="file"
+                                          hidden
+                                          accept=".pdf,.jpg,.jpeg,.png"
+                                          onChange={(e) => {
+                                            // Handle QID document upload
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                              // Process file upload
+                                              console.log('QID file selected:', file.name);
+                                            }
+                                          }}
+                                        />
+                                      </Button>
+                                    </Box>
+                                  </Grid>
+                                </Grid>
+                              </Card>
+                            </Grid>
+                          )}
+                        </Grid>
+                      </TabPanel>
+
+                      {/* Payroll Tab - Enhanced with Inline Editing */}
+                      <TabPanel value={modalTabValue} index={2}>
+                        <Grid container spacing={4}>
+                          
+                          {/* Salary Information */}
+                          <Grid item xs={12} md={6}>
+                            <Card 
+                              sx={{ 
+                                p: 4, 
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                Salary Information
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Monthly Salary
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="salary">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        type="number"
+                                        label="Monthly Salary"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        InputProps={{
+                                          endAdornment: <InputAdornment position="end">QAR</InputAdornment>
+                                        }}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={700} color="success.main" sx={{ fontSize: '1.5rem' }}>
+                                    {detailsModalEmployee?.salary?.toLocaleString() || 0} QAR
+                                  </Typography>
+                                )}
+                              </Box>
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Annual Salary
+                                </Typography>
+                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.2rem' }}>
+                                  {((detailsModalEmployee?.salary || 0) * 12).toLocaleString()} QAR
+                                </Typography>
+                              </Box>
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Last Payment Date
+                                </Typography>
+                                <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                  {formatDate(detailsModalEmployee?.lastPaymentDate) || 'Not available'}
+                                </Typography>
+                              </Box>
+                              
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Payment Status
+                                </Typography>
+                                <Chip
+                                  label={detailsModalEmployee?.paymentStatus || 'Active'}
+                                  color={detailsModalEmployee?.paymentStatus === 'Overdue' ? 'error' : 'success'}
+                                  variant="outlined"
+                                  sx={{ fontWeight: 500 }}
+                                />
+                              </Box>
+                            </Card>
+                          </Grid>
+                          
+                          {/* Payroll History & Actions */}
+                          <Grid item xs={12} md={6}>
+                            <Card 
+                              sx={{ 
+                                p: 4, 
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                Payroll Actions
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+                              
+                              <Stack spacing={2}>
+                                <Button
+                                  variant="contained"
+                                  startIcon={<PaymentIcon />}
+                                  sx={{ 
+                                    borderRadius: 2, 
+                                    textTransform: 'none',
+                                    py: 1.5,
+                                    fontWeight: 500
+                                  }}
+                                  onClick={() => {
+                                    // Handle salary payment
+                                    console.log('Process salary payment for employee:', detailsModalEmployee?.id);
+                                  }}
+                                >
+                                  Process Salary Payment
+                                </Button>
+                                
+                                <Button
+                                  variant="outlined"
+                                  startIcon={<ReceiptIcon />}
+                                  sx={{ 
+                                    borderRadius: 2, 
+                                    textTransform: 'none',
+                                    py: 1.5,
+                                    fontWeight: 500
+                                  }}
+                                  onClick={() => {
+                                    // Handle generate payslip
+                                    console.log('Generate payslip for employee:', detailsModalEmployee?.id);
+                                  }}
+                                >
+                                  Generate Payslip
+                                </Button>
+                                
+                                <Button
+                                  variant="outlined"
+                                  startIcon={<HistoryIcon />}
+                                  sx={{ 
+                                    borderRadius: 2, 
+                                    textTransform: 'none',
+                                    py: 1.5,
+                                    fontWeight: 500
+                                  }}
+                                  onClick={() => {
+                                    // Handle view payment history
+                                    console.log('View payment history for employee:', detailsModalEmployee?.id);
+                                  }}
+                                >
+                                  View Payment History
+                                </Button>
+                                
+                                <Button
+                                  variant="outlined"
+                                  startIcon={<AccountBalanceIcon />}
+                                  sx={{ 
+                                    borderRadius: 2, 
+                                    textTransform: 'none',
+                                    py: 1.5,
+                                    fontWeight: 500
+                                  }}
+                                  onClick={() => {
+                                    // Handle salary adjustment
+                                    console.log('Adjust salary for employee:', detailsModalEmployee?.id);
+                                  }}
+                                >
+                                  Salary Adjustment
+                                </Button>
+                              </Stack>
+                              
+                              {/* Payroll Summary */}
+                              <Box sx={{ mt: 4, p: 2, backgroundColor: alpha(theme.palette.primary.main, 0.05), borderRadius: 2 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Payroll Summary
+                                </Typography>
+                                <Grid container spacing={1}>
+                                  <Grid item xs={6}>
+                                    <Typography variant="body2" color="text.secondary">This Month</Typography>
+                                    <Typography variant="body1" fontWeight={600}>
+                                      {detailsModalEmployee?.salary?.toLocaleString() || 0} QAR
+                                    </Typography>
+                                  </Grid>
+                                  <Grid item xs={6}>
+                                    <Typography variant="body2" color="text.secondary">YTD Total</Typography>
+                                    <Typography variant="body1" fontWeight={600}>
+                                      {((detailsModalEmployee?.salary || 0) * (new Date().getMonth() + 1)).toLocaleString()} QAR
+                                    </Typography>
+                                  </Grid>
+                                </Grid>
+                              </Box>
+                            </Card>
+                          </Grid>
+                        </Grid>
+                      </TabPanel>
+                    </Container>
+                  </Box>
+                </Form>
+              )}
+            </Formik>
           )}
         </DialogContent>
 
-        {/* Streamlined Action Buttons */}
+        {/* Streamlined Action Buttons - Only Close */}
         <DialogActions 
           sx={{ 
             p: 3,
@@ -2658,6 +2602,7 @@ const Employees = () => {
               setEmployeeDetailsError(null);
               setModalTabValue(0);
               setRetryCount(0);
+              setIsEditMode(false); // Reset edit mode
             }}
             variant="outlined"
             startIcon={<CloseIcon />}
@@ -2676,35 +2621,6 @@ const Employees = () => {
             }}
           >
             Close
-          </Button>
-          <Button
-            variant="contained"
-            startIcon={<EditIcon />}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              py: 1,
-              fontWeight: 600,
-              textTransform: 'none',
-              backgroundColor: theme.palette.primary.main,
-              '&:hover': {
-                backgroundColor: theme.palette.primary.dark
-              }
-            }}
-            onClick={() => {
-              // Store current employee and close details modal, then open edit form
-              const employeeToEdit = detailsModalEmployee;
-              setDetailsModalEmployee(null);
-              setEmployeeDetailsLoading(false);
-              setEmployeeDetailsError(null);
-              setModalTabValue(0);
-              setRetryCount(0);
-              setEditingId(employeeToEdit.id);
-              setDetailsModalEmployee(null);
-              setShowForm(true);
-            }}
-          >
-            Edit Details
           </Button>
         </DialogActions>
       </Dialog>
