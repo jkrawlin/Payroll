@@ -214,44 +214,61 @@ const Employees = () => {
 
   // Handler for clicking employee names to open comprehensive details modal
   const handleNameClick = async (employee) => {
-    setEmployeeDetailsLoading(true);
+    // Prevent multiple concurrent requests
+    if (employeeDetailsLoading) return;
+    
+    // Immediately open modal with basic data for instant feedback
+    setDetailsModalEmployee(employee);
     setOpenEmployeeDetails(true);
     setModalTabValue(0); // Reset to first tab
+    setEmployeeDetailsLoading(true);
     
     try {
       let comprehensiveEmployeeData = { ...employee };
       
       if (isFirebaseConfigured) {
-        // Fetch comprehensive employee data from Firebase
-        const employeeDoc = await getDoc(doc(db, 'employees', employee.id));
-        if (employeeDoc.exists()) {
+        // Fetch all data in parallel for better performance
+        const promises = [];
+        
+        // Main employee document
+        promises.push(getDoc(doc(db, 'employees', employee.id)));
+        
+        // Advances subcollection
+        promises.push(
+          getDocs(collection(db, 'employees', employee.id, 'advances'))
+            .catch(() => null) // Handle missing collection gracefully
+        );
+        
+        // Transactions subcollection  
+        promises.push(
+          getDocs(collection(db, 'employees', employee.id, 'transactions'))
+            .catch(() => null) // Handle missing collection gracefully
+        );
+
+        // Execute all Firebase calls in parallel
+        const [employeeDoc, advancesSnapshot, transactionsSnapshot] = await Promise.all(promises);
+        
+        // Process employee document
+        if (employeeDoc && employeeDoc.exists()) {
           comprehensiveEmployeeData = { ...employeeDoc.data(), id: employee.id };
         }
 
-        // Fetch additional data like advances and transactions if they exist
-        try {
-          const advancesSnapshot = await getDocs(collection(db, 'employees', employee.id, 'advances'));
-          comprehensiveEmployeeData.advances = advancesSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-        } catch (error) {
-          console.log('No advances collection found');
-          comprehensiveEmployeeData.advances = [];
-        }
+        // Process advances
+        comprehensiveEmployeeData.advances = advancesSnapshot?.docs?.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })) || [];
 
-        try {
-          const transactionsSnapshot = await getDocs(collection(db, 'employees', employee.id, 'transactions'));
-          comprehensiveEmployeeData.transactions = transactionsSnapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          })).sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort by date, newest first
-        } catch (error) {
-          console.log('No transactions collection found');
-          comprehensiveEmployeeData.transactions = [];
-        }
+        // Process transactions
+        comprehensiveEmployeeData.transactions = transactionsSnapshot?.docs?.map(doc => ({
+          id: doc.id,
+          ...doc.data()
+        })).sort((a, b) => new Date(b.date) - new Date(a.date)) || []; // Sort by date, newest first
+        
       } else {
-        // Use mock data with additional details
+        // Use mock data with additional details (simulate network delay)
+        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate loading for consistent UX
+        
         const mockAdvances = [
           { id: 1, amount: 5000, date: new Date('2024-08-15'), repaid: false, reason: 'Emergency medical' },
           { id: 2, amount: 2000, date: new Date('2024-07-10'), repaid: true, reason: 'Travel advance' }
@@ -270,11 +287,12 @@ const Employees = () => {
         comprehensiveEmployeeData.address = 'Doha, Qatar';
       }
       
+      // Update modal with comprehensive data
       setDetailsModalEmployee(comprehensiveEmployeeData);
     } catch (error) {
       console.error('Error fetching comprehensive employee data:', error);
       toast.error('Failed to load employee details');
-      setDetailsModalEmployee(employee); // Fallback to basic data
+      // Keep the basic employee data that's already shown
     } finally {
       setEmployeeDetailsLoading(false);
     }
