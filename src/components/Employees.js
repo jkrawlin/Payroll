@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, isFirebaseConfigured } from '../firebase';
-import { mockEmployees, mockFirebaseAPI } from '../services/mockData';
+import { mockEmployees } from '../services/mockData';
 import { useDropzone } from 'react-dropzone';
 import Dropzone from 'react-dropzone';
 import { useFormik } from 'formik';
@@ -22,12 +22,6 @@ import {
   alpha,
   InputAdornment,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   IconButton,
   Dialog,
   DialogTitle,
@@ -50,11 +44,12 @@ import {
   useMediaQuery,
   CircularProgress,
   Backdrop,
-  Fab,
   AppBar,
   Toolbar,
   Slide,
   Container,
+  Alert,
+  AlertTitle,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -73,7 +68,6 @@ import {
   Badge as BadgeIcon,
   FlightTakeoff as FlightTakeoffIcon,
   Payments as PaymentsIcon,
-  ContactMail as ContactMailIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import { DataGrid } from '@mui/x-data-grid';
@@ -119,17 +113,18 @@ const Employees = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
   
-  // Employee Details Modal States
+  // Enhanced modal state management
   const [selectedEmployee, setSelectedEmployee] = useState(null);
   const [openDetailsModal, setOpenDetailsModal] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [tabValue, setTabValue] = useState(0);
   
-  // Comprehensive employee details modal state
+  // Comprehensive employee details modal state - Enhanced with error handling
   const [detailsModalEmployee, setDetailsModalEmployee] = useState(null);
-  const [openEmployeeDetails, setOpenEmployeeDetails] = useState(false);
   const [employeeDetailsLoading, setEmployeeDetailsLoading] = useState(false);
+  const [employeeDetailsError, setEmployeeDetailsError] = useState(null);
   const [modalTabValue, setModalTabValue] = useState(0);
+  const [retryCount, setRetryCount] = useState(0);
 
   // Helper functions for calculations and formatting
   const calculateDaysPaid = (employee) => {
@@ -212,62 +207,116 @@ const Employees = () => {
     disabled: uploading
   });
 
-  // Handler for clicking employee names to open comprehensive details modal
+  // Enhanced handler for clicking employee names with robust error handling and timeout
   const handleNameClick = async (employee) => {
-    // Prevent multiple concurrent requests
-    if (employeeDetailsLoading) return;
+    console.log('🔄 Loading employee details for:', employee.name);
     
-    // Immediately open modal with basic data for instant feedback
+    // Prevent multiple concurrent requests
+    if (employeeDetailsLoading) {
+      console.log('⚠️ Already loading, skipping request');
+      return;
+    }
+    
+    // Immediately open modal with basic data from table row (instant feedback)
     setDetailsModalEmployee(employee);
-    setOpenEmployeeDetails(true);
-    setModalTabValue(0); // Reset to first tab
+    setModalTabValue(0);
     setEmployeeDetailsLoading(true);
+    setEmployeeDetailsError(null);
+    setRetryCount(0);
     
     try {
       let comprehensiveEmployeeData = { ...employee };
       
-      if (isFirebaseConfigured) {
-        // Fetch all data in parallel for better performance
+      if (isFirebaseConfigured()) {
+        console.log('🔥 Firebase configured, fetching comprehensive data...');
+        
+        // Create timeout wrapper for Firebase calls (10 second timeout)
+        const createTimeoutPromise = (ms = 10000) => 
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error(`Request timeout after ${ms/1000}s`)), ms)
+          );
+        
+        // Fetch all data in parallel for better performance with timeout protection
         const promises = [];
         
-        // Main employee document
-        promises.push(getDoc(doc(db, 'employees', employee.id)));
-        
-        // Advances subcollection
+        // Main employee document with timeout
         promises.push(
-          getDocs(collection(db, 'employees', employee.id, 'advances'))
-            .catch(() => null) // Handle missing collection gracefully
+          Promise.race([
+            getDoc(doc(db, 'employees', employee.id)),
+            createTimeoutPromise(8000)
+          ]).catch(err => {
+            console.error('❌ Employee doc fetch failed:', err);
+            return null;
+          })
         );
         
-        // Transactions subcollection  
+        // Advances subcollection with timeout
         promises.push(
-          getDocs(collection(db, 'employees', employee.id, 'transactions'))
-            .catch(() => null) // Handle missing collection gracefully
+          Promise.race([
+            getDocs(collection(db, 'employees', employee.id, 'advances')),
+            createTimeoutPromise(5000)
+          ]).catch(err => {
+            console.warn('⚠️ Advances fetch failed (non-critical):', err);
+            return null;
+          })
+        );
+        
+        // Transactions subcollection with timeout
+        promises.push(
+          Promise.race([
+            getDocs(collection(db, 'employees', employee.id, 'transactions')),
+            createTimeoutPromise(5000)
+          ]).catch(err => {
+            console.warn('⚠️ Transactions fetch failed (non-critical):', err);
+            return null;
+          })
         );
 
-        // Execute all Firebase calls in parallel
-        const [employeeDoc, advancesSnapshot, transactionsSnapshot] = await Promise.all(promises);
+        console.log('⏳ Executing parallel Firebase calls...');
+        
+        // Execute all Firebase calls in parallel with overall timeout
+        const [employeeDoc, advancesSnapshot, transactionsSnapshot] = await Promise.race([
+          Promise.all(promises),
+          createTimeoutPromise(12000) // Overall timeout
+        ]);
+        
+        console.log('✅ Firebase calls completed');
         
         // Process employee document
-        if (employeeDoc && employeeDoc.exists()) {
-          comprehensiveEmployeeData = { ...employeeDoc.data(), id: employee.id };
+        if (employeeDoc && employeeDoc.exists && employeeDoc.exists()) {
+          comprehensiveEmployeeData = { ...comprehensiveEmployeeData, ...employeeDoc.data() };
+          console.log('📄 Employee document data merged');
+        } else {
+          console.log('⚠️ No additional employee document found, using table data');
         }
 
-        // Process advances
-        comprehensiveEmployeeData.advances = advancesSnapshot?.docs?.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })) || [];
+        // Process advances (graceful handling if missing)
+        if (advancesSnapshot && advancesSnapshot.docs) {
+          comprehensiveEmployeeData.advances = advancesSnapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          console.log(`💰 Loaded ${comprehensiveEmployeeData.advances.length} advances`);
+        } else {
+          comprehensiveEmployeeData.advances = [];
+          console.log('💰 No advances found or fetch failed, using empty array');
+        }
 
-        // Process transactions
-        comprehensiveEmployeeData.transactions = transactionsSnapshot?.docs?.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        })).sort((a, b) => new Date(b.date) - new Date(a.date)) || []; // Sort by date, newest first
+        // Process transactions (graceful handling if missing)
+        if (transactionsSnapshot && transactionsSnapshot.docs) {
+          comprehensiveEmployeeData.transactions = transactionsSnapshot.docs
+            .map(doc => ({ id: doc.id, ...doc.data() }))
+            .sort((a, b) => new Date(b.date) - new Date(a.date));
+          console.log(`💵 Loaded ${comprehensiveEmployeeData.transactions.length} transactions`);
+        } else {
+          comprehensiveEmployeeData.transactions = [];
+          console.log('💵 No transactions found or fetch failed, using empty array');
+        }
         
       } else {
-        // Use mock data with additional details (simulate network delay)
-        await new Promise(resolve => setTimeout(resolve, 300)); // Simulate loading for consistent UX
+        // Demo mode with realistic loading delay
+        console.log('🎭 Demo mode active, using mock data...');
+        await new Promise(resolve => setTimeout(resolve, 800));
         
         const mockAdvances = [
           { id: 1, amount: 5000, date: new Date('2024-08-15'), repaid: false, reason: 'Emergency medical' },
@@ -285,16 +334,46 @@ const Employees = () => {
         comprehensiveEmployeeData.phone = '+974 5555 1234';
         comprehensiveEmployeeData.email = `${employee.name.toLowerCase().replace(' ', '.')}@company.com`;
         comprehensiveEmployeeData.address = 'Doha, Qatar';
+        
+        console.log('✅ Mock data loaded successfully');
       }
       
       // Update modal with comprehensive data
       setDetailsModalEmployee(comprehensiveEmployeeData);
+      console.log('🎉 Employee details loaded successfully');
+      
     } catch (error) {
-      console.error('Error fetching comprehensive employee data:', error);
-      toast.error('Failed to load employee details');
-      // Keep the basic employee data that's already shown
+      console.error('💥 Error fetching comprehensive employee data:', error);
+      
+      // Set user-friendly error message
+      let errorMessage = 'Unable to load complete employee details.';
+      if (error.message.includes('timeout')) {
+        errorMessage = 'Request timed out. Please check your connection and try again.';
+      } else if (error.message.includes('permission')) {
+        errorMessage = 'Permission denied. Please contact your administrator.';
+      } else if (error.message.includes('network')) {
+        errorMessage = 'Network error. Please check your internet connection.';
+      }
+      
+      setEmployeeDetailsError(errorMessage);
+      
+      // Keep the basic employee data that's already shown (fallback)
+      console.log('🔄 Falling back to table data');
+      
     } finally {
       setEmployeeDetailsLoading(false);
+      console.log('🏁 Loading process completed');
+    }
+  };
+
+  // Retry handler for failed requests
+  const handleRetryEmployeeDetails = () => {
+    const currentRetryCount = retryCount + 1;
+    setRetryCount(currentRetryCount);
+    console.log(`🔄 Retrying employee details (attempt ${currentRetryCount})`);
+    
+    if (detailsModalEmployee) {
+      handleNameClick(detailsModalEmployee);
     }
   };
 
@@ -309,38 +388,6 @@ const Employees = () => {
 
   const handleTabChange = (event, newValue) => {
     setTabValue(newValue);
-  };
-
-  // TabPanel Component
-  const TabPanel = ({ children, value, index }) => {
-    return (
-      <Box role="tabpanel" hidden={value !== index} sx={{ pt: 3 }}>
-        {value === index && children}
-      </Box>
-    );
-  };
-
-  // Enhanced employee row click handler
-  const handleRowClick = async (employee) => {
-    setSelectedEmployee(employee);
-    setOpenDetailsModal(true);
-    setTabValue(0); // Reset to first tab
-    
-    // Fetch additional details if using Firebase
-    if (isFirebaseConfigured() && employee.id) {
-      setDetailsLoading(true);
-      try {
-        const docSnap = await getDoc(doc(db, 'employees', employee.id));
-        if (docSnap.exists()) {
-          const fullData = { id: employee.id, ...docSnap.data() };
-          setSelectedEmployee(fullData);
-        }
-      } catch (error) {
-        console.error('Error fetching employee details:', error);
-      } finally {
-        setDetailsLoading(false);
-      }
-    }
   };
 
   const validationSchema = Yup.object({
@@ -1779,9 +1826,10 @@ const Employees = () => {
         open={Boolean(detailsModalEmployee)}
         onClose={() => {
           setDetailsModalEmployee(null);
-          setOpenEmployeeDetails(false);
           setEmployeeDetailsLoading(false);
+          setEmployeeDetailsError(null);
           setModalTabValue(0);
+          setRetryCount(0);
         }}
         TransitionComponent={Transition}
         maxWidth="lg"
@@ -1859,9 +1907,10 @@ const Employees = () => {
             <IconButton
               onClick={() => {
                 setDetailsModalEmployee(null);
-                setOpenEmployeeDetails(false);
                 setEmployeeDetailsLoading(false);
+                setEmployeeDetailsError(null);
                 setModalTabValue(0);
+                setRetryCount(0);
               }}
               sx={{
                 color: 'rgba(255,255,255,0.8)',
@@ -1880,9 +1929,11 @@ const Employees = () => {
         <DialogContent 
           sx={{ 
             p: 0, 
-            backgroundColor: 'background.paper', // Solid opaque background
-            color: 'text.primary',
-            overflowY: 'auto'
+            backgroundColor: 'background.paper !important', // Force solid opaque background
+            color: 'text.primary !important',
+            opacity: 1, // Ensure no transparency
+            overflowY: 'auto',
+            minHeight: isMobile ? '60vh' : '500px' // Prevent collapse during loading
           }}
         >
           {employeeDetailsLoading ? (
@@ -1892,12 +1943,94 @@ const Employees = () => {
               justifyContent="center" 
               alignItems="center" 
               py={8}
-              gap={2}
+              gap={3}
+              sx={{
+                backgroundColor: 'background.paper',
+                minHeight: '400px'
+              }}
             >
-              <CircularProgress size={48} thickness={4} />
-              <Typography variant="h6" color="text.secondary">
+              <CircularProgress 
+                size={56} 
+                thickness={4}
+                sx={{
+                  color: 'primary.main',
+                  '& .MuiCircularProgress-circle': {
+                    strokeLinecap: 'round',
+                  },
+                }}
+              />
+              <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600 }}>
                 Loading employee details...
               </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: '300px' }}>
+                Fetching comprehensive employee information, documents, and financial data
+              </Typography>
+              {retryCount > 0 && (
+                <Typography variant="caption" color="text.secondary">
+                  Attempt {retryCount + 1}
+                </Typography>
+              )}
+            </Box>
+          ) : employeeDetailsError ? (
+            <Box 
+              display="flex" 
+              flexDirection="column"
+              justifyContent="center" 
+              alignItems="center" 
+              py={6}
+              px={4}
+              gap={3}
+              sx={{
+                backgroundColor: 'background.paper',
+                minHeight: '400px'
+              }}
+            >
+              <Alert 
+                severity="error" 
+                sx={{ 
+                  width: '100%', 
+                  maxWidth: '500px',
+                  '& .MuiAlert-message': {
+                    width: '100%'
+                  }
+                }}
+                action={
+                  <Button 
+                    color="inherit" 
+                    size="small" 
+                    onClick={handleRetryEmployeeDetails}
+                    sx={{ fontWeight: 600 }}
+                  >
+                    Retry
+                  </Button>
+                }
+              >
+                <AlertTitle sx={{ fontWeight: 600 }}>Unable to Load Details</AlertTitle>
+                {employeeDetailsError}
+                {retryCount > 0 && (
+                  <Typography variant="body2" sx={{ mt: 1, opacity: 0.8 }}>
+                    Failed after {retryCount} attempt{retryCount > 1 ? 's' : ''}
+                  </Typography>
+                )}
+              </Alert>
+              
+              <Typography variant="body1" color="text.secondary" sx={{ textAlign: 'center' }}>
+                Showing basic information from the employee directory
+              </Typography>
+              
+              <Button
+                variant="outlined"
+                onClick={handleRetryEmployeeDetails}
+                startIcon={<CircularProgress size={16} sx={{ mr: 0.5 }} />}
+                sx={{ 
+                  borderRadius: 2,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600
+                }}
+              >
+                Try Again
+              </Button>
             </Box>
           ) : (
             <Box>
@@ -1905,7 +2038,7 @@ const Employees = () => {
               <Box sx={{ 
                 borderBottom: 1, 
                 borderColor: 'divider', 
-                backgroundColor: 'background.paper' // Solid background for tabs
+                backgroundColor: 'background.paper !important' // Force solid background for tabs
               }}>
                 <Tabs 
                   value={modalTabValue} 
@@ -1914,12 +2047,13 @@ const Employees = () => {
                   textColor="primary"
                   indicatorColor="primary"
                   sx={{
-                    backgroundColor: 'background.paper', // Ensure solid background
+                    backgroundColor: 'background.paper !important', // Ensure solid background
                     '& .MuiTab-root': {
                       textTransform: 'none',
                       fontWeight: 600,
                       fontSize: '1rem',
                       py: 3,
+                      color: 'text.primary !important'
                     }
                   }}
                 >
@@ -1932,7 +2066,8 @@ const Employees = () => {
               {/* Tab Content - All with solid backgrounds */}
               <Container maxWidth="lg" sx={{ 
                 px: { xs: 2, sm: 3 },
-                backgroundColor: 'background.paper' // Solid background for content
+                backgroundColor: 'background.paper !important', // Force solid background for content
+                py: 2
               }}>
                 {/* Personal Information Tab */}
                 <TabPanel value={modalTabValue} index={0}>
@@ -1993,14 +2128,15 @@ const Employees = () => {
                         <Grid item xs={12} sm={6}>
                           <Paper sx={{ 
                             p: 2.5, 
-                            backgroundColor: 'background.paper',
+                            backgroundColor: 'background.paper !important',
                             border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`,
-                            borderLeft: `4px solid ${theme.palette.info.main}`
+                            borderLeft: `4px solid ${theme.palette.info.main}`,
+                            boxShadow: 1
                           }}>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                               Department
                             </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
                               {detailsModalEmployee?.department || 'Not assigned'}
                             </Typography>
                           </Paper>
@@ -2009,14 +2145,15 @@ const Employees = () => {
                         <Grid item xs={12} sm={6}>
                           <Paper sx={{ 
                             p: 2.5, 
-                            backgroundColor: 'background.paper',
+                            backgroundColor: 'background.paper !important',
                             border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`,
-                            borderLeft: `4px solid ${theme.palette.secondary.main}`
+                            borderLeft: `4px solid ${theme.palette.secondary.main}`,
+                            boxShadow: 1
                           }}>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                               Position
                             </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
                               {detailsModalEmployee?.position || 'Not specified'}
                             </Typography>
                           </Paper>
@@ -2025,14 +2162,15 @@ const Employees = () => {
                         <Grid item xs={12} sm={6}>
                           <Paper sx={{ 
                             p: 2.5, 
-                            backgroundColor: 'background.paper',
+                            backgroundColor: 'background.paper !important',
                             border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`,
-                            borderLeft: `4px solid ${theme.palette.success.main}`
+                            borderLeft: `4px solid ${theme.palette.success.main}`,
+                            boxShadow: 1
                           }}>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                               Join Date
                             </Typography>
-                            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+                            <Typography variant="h6" sx={{ fontWeight: 600, color: 'text.primary' }}>
                               {formatDate(detailsModalEmployee?.joinDate)}
                             </Typography>
                           </Paper>
@@ -2041,9 +2179,10 @@ const Employees = () => {
                         <Grid item xs={12} sm={6}>
                           <Paper sx={{ 
                             p: 2.5, 
-                            backgroundColor: 'background.paper',
+                            backgroundColor: 'background.paper !important',
                             border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`,
-                            borderLeft: `4px solid ${theme.palette.warning.main}`
+                            borderLeft: `4px solid ${theme.palette.warning.main}`,
+                            boxShadow: 1
                           }}>
                             <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
                               Monthly Salary
@@ -2148,8 +2287,14 @@ const Employees = () => {
                         elevation={3}
                         sx={{ 
                           p: 3,
-                          backgroundColor: 'background.paper',
+                          backgroundColor: 'background.paper !important',
                           border: `2px solid ${alpha(theme.palette.warning.main, 0.2)}`,
+                          borderRadius: 2,
+                          '&:hover': {
+                            boxShadow: 6,
+                            transform: 'translateY(-2px)',
+                            transition: 'all 0.3s ease'
+                          }
                         }}
                       >
                         <Box display="flex" alignItems="center" gap={2} mb={3}>
@@ -2242,8 +2387,14 @@ const Employees = () => {
                         elevation={3}
                         sx={{ 
                           p: 3, 
-                          backgroundColor: 'background.paper',
+                          backgroundColor: 'background.paper !important',
                           border: `2px solid ${alpha(theme.palette.info.main, 0.2)}`,
+                          borderRadius: 2,
+                          '&:hover': {
+                            boxShadow: 6,
+                            transform: 'translateY(-2px)',
+                            transition: 'all 0.3s ease'
+                          }
                         }}
                       >
                         <Box display="flex" alignItems="center" gap={2} mb={3}>
@@ -2354,8 +2505,14 @@ const Employees = () => {
                         sx={{ 
                           p: 3, 
                           textAlign: 'center',
-                          backgroundColor: 'background.paper',
-                          border: `2px solid ${alpha(theme.palette.success.main, 0.3)}`
+                          backgroundColor: 'background.paper !important',
+                          border: `2px solid ${alpha(theme.palette.success.main, 0.3)}`,
+                          borderRadius: 2,
+                          '&:hover': {
+                            boxShadow: 6,
+                            transform: 'translateY(-2px)',
+                            transition: 'all 0.3s ease'
+                          }
                         }}
                       >
                         <PaymentsIcon sx={{ fontSize: 40, color: 'success.main', mb: 1 }} />
@@ -2378,8 +2535,14 @@ const Employees = () => {
                         sx={{ 
                           p: 3, 
                           textAlign: 'center',
-                          backgroundColor: 'background.paper',
-                          border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`
+                          backgroundColor: 'background.paper !important',
+                          border: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                          borderRadius: 2,
+                          '&:hover': {
+                            boxShadow: 6,
+                            transform: 'translateY(-2px)',
+                            transition: 'all 0.3s ease'
+                          }
                         }}
                       >
                         <MoneyIcon sx={{ fontSize: 40, color: 'primary.main', mb: 1 }} />
@@ -2402,8 +2565,14 @@ const Employees = () => {
                         sx={{ 
                           p: 3, 
                           textAlign: 'center',
-                          backgroundColor: 'background.paper',
-                          border: `2px solid ${alpha(theme.palette.warning.main, 0.3)}`
+                          backgroundColor: 'background.paper !important',
+                          border: `2px solid ${alpha(theme.palette.warning.main, 0.3)}`,
+                          borderRadius: 2,
+                          '&:hover': {
+                            boxShadow: 6,
+                            transform: 'translateY(-2px)',
+                            transition: 'all 0.3s ease'
+                          }
                         }}
                       >
                         <AssignmentIcon sx={{ fontSize: 40, color: 'warning.main', mb: 1 }} />
@@ -2427,8 +2596,13 @@ const Employees = () => {
                     sx={{ 
                       p: 3, 
                       mb: 3,
-                      backgroundColor: 'background.paper',
-                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`
+                      backgroundColor: 'background.paper !important',
+                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                      borderRadius: 2,
+                      '&:hover': {
+                        boxShadow: 4,
+                        transition: 'box-shadow 0.3s ease'
+                      }
                     }}
                   >
                     <Typography variant="h6" gutterBottom sx={{ 
@@ -2486,8 +2660,13 @@ const Employees = () => {
                     elevation={2} 
                     sx={{ 
                       p: 3,
-                      backgroundColor: 'background.paper',
-                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`
+                      backgroundColor: 'background.paper !important',
+                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                      borderRadius: 2,
+                      '&:hover': {
+                        boxShadow: 4,
+                        transition: 'box-shadow 0.3s ease'
+                      }
                     }}
                   >
                     <Typography variant="h6" gutterBottom sx={{ 
@@ -2541,17 +2720,19 @@ const Employees = () => {
         <DialogActions 
           sx={{ 
             p: 3,
-            backgroundColor: 'background.paper', // Solid background
+            backgroundColor: 'background.paper !important', // Force solid background
             borderTop: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-            gap: 2
+            gap: 2,
+            opacity: 1 // Ensure no transparency
           }}
         >
           <Button 
             onClick={() => {
               setDetailsModalEmployee(null);
-              setOpenEmployeeDetails(false);
               setEmployeeDetailsLoading(false);
+              setEmployeeDetailsError(null);
               setModalTabValue(0);
+              setRetryCount(0);
             }}
             variant="outlined"
             startIcon={<CloseIcon />}
@@ -2559,7 +2740,8 @@ const Employees = () => {
               borderRadius: 2,
               px: 3,
               py: 1,
-              fontWeight: 600
+              fontWeight: 600,
+              textTransform: 'none'
             }}
           >
             Close
@@ -2572,20 +2754,23 @@ const Employees = () => {
               px: 3,
               py: 1,
               fontWeight: 600,
+              textTransform: 'none',
               boxShadow: 4,
               background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
               '&:hover': {
                 boxShadow: 6,
-                transform: 'translateY(-1px)'
+                transform: 'translateY(-1px)',
+                transition: 'all 0.2s ease'
               }
             }}
             onClick={() => {
               // Store current employee and close details modal, then open edit form
               const employeeToEdit = detailsModalEmployee;
               setDetailsModalEmployee(null);
-              setOpenEmployeeDetails(false);
               setEmployeeDetailsLoading(false);
+              setEmployeeDetailsError(null);
               setModalTabValue(0);
+              setRetryCount(0);
               setSelectedEmployee(employeeToEdit);
               setShowForm(true);
             }}
