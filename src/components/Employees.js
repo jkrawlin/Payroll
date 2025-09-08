@@ -58,7 +58,6 @@ import {
 } from '@mui/material';
 import {
   Person as PersonIcon,
-  Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
   Close as CloseIcon,
@@ -673,7 +672,7 @@ const Employees = () => {
                                 noWrap 
                                 onClick={(e) => { 
                                   e.stopPropagation(); 
-                                  handleNameClick(params.row); 
+                                  handleEdit(params.row); 
                                 }}
                                 sx={{ 
                                   mb: 0.5,
@@ -684,7 +683,7 @@ const Employees = () => {
                                     color: theme.palette.primary.dark
                                   }
                                 }}
-                                aria-label={`View details for ${params.row.name}`}
+                                aria-label={`Edit ${params.row.name}`}
                               >
                                 {params.row.name}
                               </Typography>
@@ -791,16 +790,6 @@ const Employees = () => {
                               sx={{ color: 'primary.main' }}
                             >
                               <CameraAltIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton 
-                              size="small" 
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleRowClick(params.row);
-                              }}
-                              sx={{ color: 'primary.main' }}
-                            >
-                              <EditIcon fontSize="small" />
                             </IconButton>
                             <IconButton 
                               size="small" 

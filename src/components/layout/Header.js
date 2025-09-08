@@ -21,20 +21,16 @@ import {
 import {
   Menu as MenuIcon,
   Search as SearchIcon,
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon,
   NotificationsActive as NotificationIcon,
   AccountCircle,
   Close as CloseIcon,
   Business as BusinessIcon,
 } from '@mui/icons-material';
-import { useTheme as useCustomTheme } from '../../contexts/ThemeContext';
 import { motion } from 'framer-motion';
 
 const Header = ({ onDrawerToggle, role = 'admin' }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const { mode, toggleMode } = useCustomTheme();
   const [anchorEl, setAnchorEl] = useState(null);
   const [showDemoAlert, setShowDemoAlert] = useState(true);
 
@@ -195,24 +191,6 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
                 }}
               >
                 <NotificationIcon />
-              </IconButton>
-            </Tooltip>
-
-            {/* Theme Toggle with enhanced visibility */}
-            <Tooltip title={`Switch to ${mode === 'light' ? 'dark' : 'light'} mode`}>
-              <IconButton 
-                onClick={toggleMode}
-                sx={{ 
-                  backgroundColor: alpha(theme.palette.secondary.main, 0.1),
-                  color: theme.palette.secondary.main,
-                  '&:hover': {
-                    backgroundColor: alpha(theme.palette.secondary.main, 0.2),
-                    transform: 'scale(1.05)',
-                  },
-                  transition: 'all 0.2s ease',
-                }}
-              >
-                {mode === 'light' ? <DarkModeIcon /> : <LightModeIcon />}
               </IconButton>
             </Tooltip>
 
