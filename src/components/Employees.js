@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { keyframes } from '@emotion/react';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, isFirebaseConfigured } from '../firebase';
@@ -46,6 +47,11 @@ import {
   Alert,
   AlertTitle,
   Stack,
+  Tooltip,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemIcon,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -67,8 +73,24 @@ import {
   AccountBalance as AccountBalanceIcon,
   Upload as UploadIcon,
   Download as DownloadIcon,
+  Event as EventIcon,
+  Star as StarIcon,
+  Assessment as AssessmentIcon,
+  Note as NoteIcon,
+  Print as PrintIcon,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
+
+// Define custom animations
+const pulse = keyframes`
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+`;
+
+const spin = keyframes`
+  0% { transform: translate(-50%, -50%) rotate(0deg); }
+  100% { transform: translate(-50%, -50%) rotate(360deg); }
+`;
 
 // Removed animation imports and transition components for better performance
 
@@ -378,6 +400,7 @@ const Employees = () => {
     passportExpiry: Yup.date(),
     qidNumber: Yup.string(),
     qidExpiry: Yup.date(),
+    hrNotes: Yup.string(),
   });
 
   const formik = useFormik({
@@ -550,7 +573,8 @@ const Employees = () => {
           number: values.qidNumber,
           expiry: values.qidExpiry,
           photoUrl: detailsModalEmployee?.qid?.photoUrl || null
-        }
+        },
+        hrNotes: values.hrNotes,
       };
 
       if (isFirebaseConfigured) {
@@ -631,7 +655,9 @@ const Employees = () => {
               bgcolor: alpha('#fff', 0.15),
               color: 'white',
               '&:hover': {
-                bgcolor: alpha('#fff', 0.25)
+                bgcolor: alpha('#fff', 0.25),
+                transform: 'translateY(-2px)',
+                boxShadow: '0 6px 20px rgba(0,0,0,0.15)'
               },
               borderRadius: 2,
               textTransform: 'none',
@@ -639,7 +665,8 @@ const Employees = () => {
               px: 3,
               py: 1.5,
               minWidth: { xs: '100%', sm: 'auto' },
-              boxShadow: 3
+              boxShadow: 3,
+              transition: 'all 0.3s ease'
             }}
           >
             Add New Employee
@@ -663,7 +690,26 @@ const Employees = () => {
                     borderRadius: 2,
                     backgroundColor: alpha(theme.palette.background.paper, 0.7),
                     '&:hover': {
-                      backgroundColor: alpha(theme.palette.background.paper, 0.9)
+                      backgroundColor: alpha(theme.palette.background.paper, 0.9),
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: theme.palette.primary.main,
+                        borderWidth: 2
+                      }
+                    },
+                    '&.Mui-focused': {
+                      backgroundColor: 'white',
+                      boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.1)}`,
+                      '& .MuiOutlinedInput-notchedOutline': {
+                        borderColor: theme.palette.primary.main,
+                        borderWidth: 2
+                      }
+                    },
+                    transition: 'all 0.3s ease'
+                  },
+                  '& .MuiOutlinedInput-input': {
+                    '&::placeholder': {
+                      color: 'text.secondary',
+                      opacity: 0.8
                     }
                   }
                 }}
@@ -673,309 +719,546 @@ const Employees = () => {
                       <PersonIcon color="primary" />
                     </InputAdornment>
                   ),
+                  endAdornment: searchTerm ? (
+                    <InputAdornment position="end">
+                      <Tooltip title="Clear search" arrow>
+                        <IconButton
+                          size="small"
+                          onClick={() => setSearchTerm('')}
+                          sx={{
+                            color: 'text.secondary',
+                            '&:hover': {
+                              color: 'primary.main',
+                              backgroundColor: alpha(theme.palette.primary.main, 0.1)
+                            }
+                          }}
+                        >
+                          <CloseIcon fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </InputAdornment>
+                  ) : null
                 }}
               />
               
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
-                Showing {filteredEmployees.length} of {employees.length} employees
+                <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
+                  <PersonIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
+                  Showing {filteredEmployees.length} of {employees.length} employees
+                  {searchTerm && (
+                    <Chip
+                      label={`"${searchTerm}"`}
+                      size="small"
+                      color="primary"
+                      variant="outlined"
+                      onDelete={() => setSearchTerm('')}
+                      sx={{ 
+                        ml: 1,
+                        fontSize: '0.75rem',
+                        height: 20,
+                        '& .MuiChip-deleteIcon': {
+                          fontSize: '0.75rem'
+                        }
+                      }}
+                    />
+                  )}
+                </Box>
               </Typography>
             </CardContent>
           </Card>
         </Grid>
 
-        {/* Enhanced Employees DataGrid - Performance Optimized */}
+        {/* Professional Employee DataGrid */}
         <Grid item xs={12}>
-          <Card elevation={1} sx={{ borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.12)}` }}>
-            <CardContent sx={{ p: { xs: 2, md: 3 } }}>
-              <Box display="flex" alignItems="center" justifyContent="space-between" mb={2}>
-                <Typography variant="h6" fontWeight={600} color="text.primary">
-                  Employee Directory
-                </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ 
-                  px: 2, 
-                  py: 0.5, 
-                  borderRadius: 1, 
-                  backgroundColor: alpha(theme.palette.primary.main, 0.08)
+          <Card elevation={0} sx={{
+            borderRadius: 3,
+            border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+            background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${theme.palette.background.paper} 100%)`,
+            backdropFilter: 'blur(10px)',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            overflow: 'hidden'
+          }}>
+            <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+              {/* Professional Header */}
+              <Box display="flex" alignItems="center" justifyContent="space-between" mb={4}>
+                <Box>
+                  <Typography
+                    variant="h5"
+                    fontWeight={700}
+                    sx={{
+                      background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                      backgroundClip: 'text',
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      mb: 1
+                    }}
+                  >
+                    Employee Directory
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem' }}>
+                    Comprehensive employee management and oversight
+                  </Typography>
+                </Box>
+                <Box sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 2,
+                  px: 3,
+                  py: 1.5,
+                  borderRadius: 2,
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`
                 }}>
-                  {filteredEmployees.length} records
-                </Typography>
+                  <PersonIcon sx={{ color: 'primary.main', fontSize: '1.2rem' }} />
+                  <Box>
+                    <Typography variant="h6" fontWeight={600} color="primary.main">
+                      {filteredEmployees.length}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                      Active Employees
+                    </Typography>
+                  </Box>
+                </Box>
               </Box>
 
-                <Box sx={{ height: 600, width: '100%' }}>
-                  <DataGrid
-                    rows={filteredEmployees.map((emp, index) => ({ 
-                      ...emp, 
-                      id: emp.id || `employee-${index}`,
-                      qidStatusObj: checkExpiry(emp.qid?.expiry, 'QID'),
-                      passportStatusObj: checkExpiry(emp.passport?.expiry, 'Passport')
-                    }))}
-                    columns={[
-                      {
-                        field: 'employee',
-                        headerName: 'Employee',
-                        width: 250,
-                        renderCell: (params) => (
-                          <Box 
-                            display="flex" 
-                            alignItems="center" 
-                            sx={{ py: 1.5, px: 2, height: '100%' }}
+              {/* Enhanced DataGrid */}
+              <Box sx={{
+                height: 650,
+                width: '100%',
+                '& .MuiDataGrid-root': {
+                  border: 'none',
+                  backgroundColor: 'transparent',
+                  '& .MuiDataGrid-columnHeaders': {
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
+                    color: 'white',
+                    fontWeight: 600,
+                    fontSize: '0.875rem',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                    borderBottom: `2px solid ${theme.palette.primary.dark}`,
+                    minHeight: 60,
+                    '& .MuiDataGrid-columnHeader': {
+                      backgroundColor: 'transparent',
+                      '&:focus': {
+                        outline: 'none'
+                      },
+                      '& .MuiDataGrid-columnHeaderTitle': {
+                        fontWeight: 600,
+                        fontSize: '0.8rem',
+                        color: 'white'
+                      }
+                    },
+                    '& .MuiDataGrid-columnSeparator': {
+                      color: alpha(theme.palette.common.white, 0.3)
+                    }
+                  },
+                  '& .MuiDataGrid-row': {
+                    backgroundColor: 'white',
+                    borderRadius: 2,
+                    mb: 1,
+                    border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                    cursor: 'pointer',
+                    position: 'relative',
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      top: 0,
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, transparent 100%)`,
+                      borderRadius: 2,
+                      opacity: 0,
+                      transition: 'opacity 0.3s ease'
+                    },
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                      transform: 'translateY(-1px) scale(1.002)',
+                      boxShadow: '0 8px 25px rgba(0,0,0,0.08)',
+                      borderColor: alpha(theme.palette.primary.main, 0.2),
+                      '&::before': {
+                        opacity: 1
+                      }
+                    },
+                    '&:nth-of-type(even)': {
+                      backgroundColor: alpha(theme.palette.grey[50], 0.5)
+                    }
+                  },
+                  '& .MuiDataGrid-cell': {
+                    borderBottom: 'none',
+                    py: 3,
+                    px: 2,
+                    fontSize: '0.875rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderRight: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
+                    '&:last-child': {
+                      borderRight: 'none'
+                    },
+                    '&:focus': {
+                      outline: 'none'
+                    }
+                  },
+                  '& .MuiDataGrid-footerContainer': {
+                    backgroundColor: alpha(theme.palette.grey[50], 0.3),
+                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                    minHeight: 60,
+                    borderRadius: '0 0 12px 12px'
+                  },
+                  '& .MuiDataGrid-virtualScroller': {
+                    backgroundColor: 'transparent'
+                  },
+                  '& .MuiDataGrid-toolbarContainer': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                    py: 2,
+                    px: 3
+                  }
+                }
+              }}>
+                <DataGrid
+                  rows={filteredEmployees.map((emp, index) => ({
+                    ...emp,
+                    id: emp.id || `employee-${index}`,
+                    qidStatusObj: checkExpiry(emp.qid?.expiry, 'QID'),
+                    passportStatusObj: checkExpiry(emp.passport?.expiry, 'Passport')
+                  }))}
+                  columns={[
+                    {
+                      field: 'employee',
+                      headerName: 'Employee',
+                      width: 280,
+                      renderCell: (params) => (
+                        <Box
+                          display="flex"
+                          alignItems="center"
+                          sx={{ py: 1, px: 1, height: '100%', width: '100%' }}
+                        >
+                          <Avatar
+                            src={params.row.photoUrl}
+                            sx={{
+                              bgcolor: theme.palette.primary.main,
+                              color: 'white',
+                              mr: 2.5,
+                              width: 48,
+                              height: 48,
+                              fontSize: '1.1rem',
+                              fontWeight: 700,
+                              border: `3px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                              transition: 'all 0.3s ease',
+                              '&:hover': {
+                                transform: 'scale(1.1)',
+                                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+                                borderColor: theme.palette.primary.main
+                              }
+                            }}
                           >
-                            <Avatar 
-                              src={params.row.photoUrl}
-                              sx={{ 
-                                bgcolor: theme.palette.primary.main,
-                                color: 'white',
-                                mr: 2,
-                                width: 40,
-                                height: 40,
-                                fontSize: '1rem',
-                                fontWeight: 600
+                            {params.row.name?.charAt(0).toUpperCase()}
+                          </Avatar>
+                          <Box sx={{ flex: 1, minWidth: 0 }}>
+                            <Typography
+                              variant="body1"
+                              fontWeight={600}
+                              noWrap
+                              sx={{
+                                mb: 0.5,
+                                color: theme.palette.text.primary,
+                                fontSize: '0.95rem',
+                                lineHeight: 1.2
                               }}
                             >
-                              {params.row.name?.charAt(0)}
-                            </Avatar>
-                            <Box sx={{ flex: 1 }}>
-                              <Typography 
-                                variant="body1" 
-                                fontWeight={600} 
-                                noWrap 
-                                sx={{ 
-                                  mb: 0.5,
-                                  color: theme.palette.text.primary,
-                                }}
+                              {params.row.name}
+                            </Typography>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                noWrap
+                                sx={{ fontSize: '0.8rem' }}
                               >
-                                {params.row.name}
+                                {params.row.position}
                               </Typography>
-                              {params.row.email && (
-                                <Typography variant="body2" color="text.secondary" noWrap>
-                                  {params.row.email}
-                                </Typography>
-                              )}
+                              <Box sx={{
+                                width: 4,
+                                height: 4,
+                                borderRadius: '50%',
+                                backgroundColor: 'text.disabled'
+                              }} />
+                              <Typography
+                                variant="body2"
+                                color="text.secondary"
+                                noWrap
+                                sx={{ fontSize: '0.8rem' }}
+                              >
+                                {params.row.department}
+                              </Typography>
                             </Box>
                           </Box>
-                        )
-                      },
-                      {
-                        field: 'department',
-                        headerName: 'Department',
-                        width: 120,
-                        align: 'center',
-                        headerAlign: 'center'
-                      },
-                      {
-                        field: 'position',
-                        headerName: 'Position',
-                        width: 150,
-                        align: 'center',
-                        headerAlign: 'center'
-                      },
-                      {
-                        field: 'qidNumber',
-                        headerName: 'Qatar ID',
-                        width: 130,
-                        align: 'center',
-                        headerAlign: 'center',
-                        renderCell: (params) => (
-                          <Typography variant="body2" fontWeight={500}>
-                            {params.row.qid?.number || 'Not provided'}
+                        </Box>
+                      )
+                    },
+                    {
+                      field: 'contact',
+                      headerName: 'Contact',
+                      width: 200,
+                      renderCell: (params) => (
+                        <Box sx={{ py: 1 }}>
+                          <Typography
+                            variant="body2"
+                            fontWeight={500}
+                            sx={{
+                              mb: 0.5,
+                              color: theme.palette.text.primary,
+                              fontSize: '0.85rem'
+                            }}
+                          >
+                            {params.row.email || 'No email'}
                           </Typography>
-                        )
-                      },
-                      {
-                        field: 'qidStatus',
-                        headerName: 'QID Status',
-                        width: 100,
-                        align: 'center',
-                        headerAlign: 'center',
-                        renderCell: (params) => (
-                          <Chip
-                            label={params.row.qidStatusObj.message}
-                            color={params.row.qidStatusObj.color}
-                            size="small"
-                            variant={params.row.qidStatusObj.color === 'default' ? 'outlined' : 'filled'}
-                          />
-                        )
-                      },
-                      {
-                        field: 'passportStatus',
-                        headerName: 'Passport Status',
-                        width: 120,
-                        align: 'center',
-                        headerAlign: 'center',
-                        renderCell: (params) => (
-                          <Chip
-                            label={params.row.passportStatusObj.message}
-                            color={params.row.passportStatusObj.color}
-                            size="small"
-                            variant={params.row.passportStatusObj.color === 'default' ? 'outlined' : 'filled'}
-                          />
-                        )
-                      },
-                      {
-                        field: 'salary',
-                        headerName: 'Salary',
-                        width: 100,
-                        align: 'right',
-                        headerAlign: 'right',
-                        valueFormatter: (value) => `${value?.toLocaleString() || 0} QAR`
-                      },
-                      {
-                        field: 'totalPaid',
-                        headerName: 'Total Paid',
-                        width: 100,
-                        align: 'right',
-                        headerAlign: 'right',
-                        renderCell: (params) => (
-                          <Typography variant="body2" color="success.main" fontWeight={600}>
-                            {(params.row.salary * 6 || 0).toLocaleString()} QAR
+                          <Typography
+                            variant="body2"
+                            color="text.secondary"
+                            sx={{ fontSize: '0.8rem' }}
+                          >
+                            {params.row.phone || 'No phone'}
                           </Typography>
-                        )
-                      },
-                      {
-                        field: 'actions',
-                        headerName: 'Actions',
-                        width: 120,
-                        align: 'center',
-                        headerAlign: 'center',
-                        sortable: false,
-                        renderCell: (params) => (
-                          <Box sx={{ display: 'flex', justifyContent: 'center', gap: 1 }}>
-                            <IconButton 
-                              size="small" 
+                        </Box>
+                      )
+                    },
+                    {
+                      field: 'documents',
+                      headerName: 'Documents',
+                      width: 180,
+                      align: 'center',
+                      headerAlign: 'center',
+                      renderCell: (params) => (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center' }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              backgroundColor: params.row.qidStatusObj?.color === 'success' ? '#4caf50' :
+                                             params.row.qidStatusObj?.color === 'warning' ? '#ff9800' :
+                                             params.row.qidStatusObj?.color === 'error' ? '#f44336' : '#9e9e9e'
+                            }} />
+                            <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                              QID
+                            </Typography>
+                          </Box>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: '50%',
+                              backgroundColor: params.row.passportStatusObj?.color === 'success' ? '#4caf50' :
+                                             params.row.passportStatusObj?.color === 'warning' ? '#ff9800' :
+                                             params.row.passportStatusObj?.color === 'error' ? '#f44336' : '#9e9e9e'
+                            }} />
+                            <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                              Passport
+                            </Typography>
+                          </Box>
+                        </Box>
+                      )
+                    },
+                    {
+                      field: 'salary',
+                      headerName: 'Salary',
+                      width: 140,
+                      align: 'right',
+                      headerAlign: 'right',
+                      renderCell: (params) => (
+                        <Box sx={{ textAlign: 'right' }}>
+                          <Typography
+                            variant="body1"
+                            fontWeight={700}
+                            sx={{
+                              color: 'success.main',
+                              fontSize: '0.95rem',
+                              mb: 0.5
+                            }}
+                          >
+                            {params.row.salary?.toLocaleString() || 0} QAR
+                          </Typography>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            sx={{ fontSize: '0.7rem' }}
+                          >
+                            Monthly
+                          </Typography>
+                        </Box>
+                      )
+                    },
+                    {
+                      field: 'status',
+                      headerName: 'Status',
+                      width: 120,
+                      align: 'center',
+                      headerAlign: 'center',
+                      renderCell: (params) => {
+                        const qidDays = params.row.qidStatusObj?.message?.includes('days') ?
+                          parseInt(params.row.qidStatusObj.message) : null;
+                        const passportDays = params.row.passportStatusObj?.message?.includes('days') ?
+                          parseInt(params.row.passportStatusObj.message) : null;
+
+                        const getOverallStatus = () => {
+                          if (qidDays !== null && qidDays <= 30) return 'critical';
+                          if (passportDays !== null && passportDays <= 30) return 'critical';
+                          if (qidDays !== null && qidDays <= 90) return 'warning';
+                          if (passportDays !== null && passportDays <= 90) return 'warning';
+                          return 'good';
+                        };
+
+                        const status = getOverallStatus();
+
+                        return (
+                          <Chip
+                            label={status === 'critical' ? 'Action Required' :
+                                   status === 'warning' ? 'Review Soon' : 'Active'}
+                            color={status === 'critical' ? 'error' :
+                                   status === 'warning' ? 'warning' : 'success'}
+                            size="small"
+                            variant="filled"
+                            sx={{
+                              fontSize: '0.7rem',
+                              fontWeight: 600,
+                              height: 24,
+                              '& .MuiChip-label': {
+                                px: 1.5
+                              }
+                            }}
+                          />
+                        );
+                      }
+                    },
+                    {
+                      field: 'actions',
+                      headerName: 'Actions',
+                      width: 100,
+                      align: 'center',
+                      headerAlign: 'center',
+                      sortable: false,
+                      renderCell: (params) => (
+                        <Box sx={{ display: 'flex', justifyContent: 'center', gap: 0.5 }}>
+                          <Tooltip title="View employee details" arrow placement="top">
+                            <IconButton
+                              size="small"
                               onClick={(e) => {
                                 e.stopPropagation();
-                                openPhotoUploadModal(params.row);
+                                handleNameClick(params.row);
                               }}
-                              sx={{ color: 'primary.main' }}
+                              sx={{
+                                color: 'primary.main',
+                                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                '&:hover': {
+                                  backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s ease',
+                                width: 32,
+                                height: 32
+                              }}
                             >
-                              <CameraAltIcon fontSize="small" />
+                              <PersonIcon sx={{ fontSize: '1rem' }} />
                             </IconButton>
-                            <IconButton 
-                              size="small" 
+                          </Tooltip>
+                          <Tooltip title="Delete employee" arrow placement="top">
+                            <IconButton
+                              size="small"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDelete(params.row.id, params.row.name);
                               }}
-                              sx={{ color: 'error.main' }}
+                              sx={{
+                                color: 'error.main',
+                                backgroundColor: alpha(theme.palette.error.main, 0.08),
+                                '&:hover': {
+                                  backgroundColor: alpha(theme.palette.error.main, 0.15),
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s ease',
+                                width: 32,
+                                height: 32
+                              }}
                             >
-                              <DeleteIcon fontSize="small" />
+                              <DeleteIcon sx={{ fontSize: '1rem' }} />
                             </IconButton>
-                          </Box>
-                        )
-                      },
-                    ]}
-                    sx={{
-                      '& .MuiDataGrid-root': {
-                        border: 'none',
-                      },
-                      '& .MuiDataGrid-row': {
-                        minHeight: 80, // Increased from 68 for better spacing
-                        cursor: 'pointer',
+                          </Tooltip>
+                        </Box>
+                      )
+                    },
+                  ]}
+                  pageSize={10}
+                  rowsPerPageOptions={[5, 10, 25]}
+                  checkboxSelection={false}
+                  disableSelectionOnClick={false}
+                  autoHeight={false}
+                  onRowClick={(params) => {
+                    handleNameClick(params.row);
+                  }}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { pageSize: 10, page: 0 }
+                    }
+                  }}
+                  sx={{
+                    border: 'none',
+                    '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': {
+                      outline: `2px solid ${theme.palette.primary.main}`,
+                      outlineOffset: -1
+                    }
+                  }}
+                />
+              </Box>
+
+              {/* Professional Empty State */}
+              {filteredEmployees.length === 0 && (
+                <Box sx={{
+                  p: 8,
+                  textAlign: 'center',
+                  backgroundColor: alpha(theme.palette.background.paper, 0.5),
+                  borderRadius: 3,
+                  border: `2px dashed ${alpha(theme.palette.divider, 0.3)}`
+                }}>
+                  <PersonIcon sx={{
+                    fontSize: '4rem',
+                    color: 'text.disabled',
+                    mb: 3,
+                    opacity: 0.5
+                  }} />
+                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontWeight: 500 }}>
+                    {searchTerm ? 'No employees found' : 'No employees in directory'}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
+                    {searchTerm
+                      ? `No employees match your search for "${searchTerm}". Try adjusting your search terms.`
+                      : 'Get started by adding your first employee to the directory.'
+                    }
+                  </Typography>
+                  {!searchTerm && (
+                    <Button
+                      variant="contained"
+                      startIcon={<AddIcon />}
+                      onClick={() => setShowForm(true)}
+                      sx={{
                         borderRadius: 2,
-                        mb: 1, // Increased from 0.5 for better separation
-                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.15)}`, // More visible divider
-                        backgroundColor: '#ffffff',
-                        transition: 'all 0.2s ease',
-                        '&:hover': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.04),
-                          transform: 'translateY(-1px)',
-                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                        },
-                        '&:nth-of-type(even)': {
-                          backgroundColor: alpha(theme.palette.grey[50], 0.3), // Subtle zebra striping
-                        },
-                        '&:last-child': {
-                          borderBottom: 'none',
-                          mb: 0,
-                        }
-                      },
-                      '& .MuiDataGrid-cell': {
-                        borderBottom: 'none',
-                        py: 2.5, // Increased from 1.5 for better vertical padding
-                        px: 3, // Increased from 2 for better horizontal padding
-                        fontSize: '0.9rem',
-                        display: 'flex',
-                        alignItems: 'center',
-                        borderRight: `1px solid ${alpha(theme.palette.divider, 0.08)}`, // Subtle column dividers
-                        '&:last-child': {
-                          borderRight: 'none',
-                        }
-                      },
-                      '& .MuiDataGrid-columnHeaders': {
-                        backgroundColor: theme.palette.primary.main,
+                        px: 4,
+                        py: 1.5,
                         fontWeight: 600,
-                        fontSize: '0.95rem',
-                        color: 'common.white',
-                        borderBottom: `2px solid ${theme.palette.primary.dark}`,
-                        minHeight: 56, // Increased from 52
-                        '& .MuiDataGrid-columnHeader': {
-                          color: 'common.white',
-                          backgroundColor: 'transparent',
-                        },
-                        '& .MuiDataGrid-columnHeaderTitle': {
-                          color: 'common.white',
-                          fontWeight: 600,
-                          fontSize: '0.9rem',
-                        },
-                        '& .MuiDataGrid-columnSeparator': {
-                          color: alpha(theme.palette.common.white, 0.3),
-                        }
-                      },
-                      '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': {
-                        outline: `2px solid ${theme.palette.primary.main}`,
-                        outlineOffset: -1,
-                      },
-                      backgroundColor: '#ffffff',
-                      borderRadius: 3,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-                      boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
-                      '& .MuiDataGrid-virtualScroller': {
-                        backgroundColor: '#ffffff'
-                      },
-                      '& .MuiDataGrid-footerContainer': {
-                        backgroundColor: alpha(theme.palette.grey[50], 0.5),
-                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
-                        minHeight: 56,
-                        borderRadius: '0 0 8px 8px',
-                      },
-                      '& .MuiDataGrid-toolbarContainer': {
-                        backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
-                        py: 1,
-                        px: 2,
-                      }
-                    }}
-                    pageSize={10}
-                    rowsPerPageOptions={[5, 10, 25]}
-                    checkboxSelection={false}
-                    disableSelectionOnClick={false}
-                    autoHeight={false}
-                    onRowClick={(params) => {
-                      // Open comprehensive details/edit popup when any part of the row is clicked
-                      handleNameClick(params.row);
-                    }}
-                    initialState={{
-                      pagination: {
-                        paginationModel: { pageSize: 10, page: 0 }
-                      }
-                    }}
-                  />
+                        textTransform: 'none',
+                        boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
+                      }}
+                    >
+                      Add First Employee
+                    </Button>
+                  )}
                 </Box>
-                
-                {filteredEmployees.length === 0 && (
-                  <Box sx={{ p: 4, textAlign: 'center' }}>
-                    <Typography variant="h6" color="text.secondary" gutterBottom>
-                      No employees found
-                    </Typography>
-                    {searchTerm && (
-                      <Typography variant="body2" color="text.secondary">
-                        Try adjusting your search terms
-                      </Typography>
-                    )}
-                  </Box>
-                )}
-              </CardContent>
-            </Card>
+              )}
+            </CardContent>
+          </Card>
         </Grid>
       </Grid>
 
@@ -1531,83 +1814,111 @@ const Employees = () => {
               </Typography>
             </Box>
             
-            {/* Unified Edit/Save buttons */}
+            {/* Unified Edit/Save buttons with Tooltips */}
             {isEditMode ? (
               <Box sx={{ display: 'flex', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  size="small"
-                  onClick={() => {
-                    // This will be handled by Formik's submit
-                    const form = document.querySelector('form');
-                    if (form) form.requestSubmit();
-                  }}
-                  disabled={savingChanges}
-                  sx={{
-                    backgroundColor: 'rgba(255,255,255,0.9)',
-                    color: 'primary.main',
-                    fontWeight: 600,
-                    '&:hover': {
-                      backgroundColor: 'white'
-                    }
-                  }}
-                >
-                  {savingChanges ? 'Saving...' : 'Save'}
-                </Button>
+                <Tooltip title="Save all changes to employee details" arrow placement="bottom">
+                  <Button
+                    variant="contained"
+                    size="small"
+                    onClick={() => {
+                      // This will be handled by Formik's submit
+                      const form = document.querySelector('form');
+                      if (form) form.requestSubmit();
+                    }}
+                    disabled={savingChanges}
+                    sx={{
+                      backgroundColor: 'rgba(255,255,255,0.9)',
+                      color: 'primary.main',
+                      fontWeight: 600,
+                      '&:hover': {
+                        backgroundColor: 'white'
+                      },
+                      borderRadius: 2,
+                      px: 2,
+                      minWidth: 'auto'
+                    }}
+                  >
+                    {savingChanges ? (
+                      <>
+                        <CircularProgress size={16} sx={{ mr: 1, color: 'primary.main' }} />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <EditIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                        Save
+                      </>
+                    )}
+                  </Button>
+                </Tooltip>
+                <Tooltip title="Cancel editing and discard changes" arrow placement="bottom">
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={handleCancelEdit}
+                    sx={{
+                      borderColor: 'rgba(255,255,255,0.5)',
+                      color: 'white',
+                      '&:hover': {
+                        borderColor: 'white',
+                        backgroundColor: 'rgba(255,255,255,0.08)'
+                      },
+                      borderRadius: 2,
+                      px: 2,
+                      minWidth: 'auto'
+                    }}
+                  >
+                    <CloseIcon sx={{ mr: 1, fontSize: '1rem' }} />
+                    Cancel
+                  </Button>
+                </Tooltip>
+              </Box>
+            ) : (
+              <Tooltip title="Edit employee information" arrow placement="bottom">
                 <Button
                   variant="outlined"
                   size="small"
-                  onClick={handleCancelEdit}
+                  startIcon={<EditIcon />}
+                  onClick={handleStartEdit}
                   sx={{
                     borderColor: 'rgba(255,255,255,0.5)',
                     color: 'white',
+                    mr: 1,
                     '&:hover': {
                       borderColor: 'white',
                       backgroundColor: 'rgba(255,255,255,0.08)'
-                    }
+                    },
+                    borderRadius: 2,
+                    px: 2,
+                    minWidth: 'auto'
                   }}
                 >
-                  Cancel
+                  Edit
                 </Button>
-              </Box>
-            ) : (
-              <Button
-                variant="outlined"
-                size="small"
-                startIcon={<EditIcon />}
-                onClick={handleStartEdit}
+              </Tooltip>
+            )}
+            
+            <Tooltip title="Close employee details" arrow placement="bottom">
+              <IconButton
+                onClick={() => {
+                  setDetailsModalEmployee(null);
+                  setEmployeeDetailsLoading(false);
+                  setEmployeeDetailsError(null);
+                  setModalTabValue(0);
+                  setRetryCount(0);
+                }}
                 sx={{
-                  borderColor: 'rgba(255,255,255,0.5)',
                   color: 'white',
-                  mr: 1,
                   '&:hover': {
-                    borderColor: 'white',
                     backgroundColor: 'rgba(255,255,255,0.08)'
                   }
                 }}
+                aria-label="Close employee details"
               >
-                Edit
-              </Button>
-            )}
-            
-            <IconButton
-              onClick={() => {
-                setDetailsModalEmployee(null);
-                setEmployeeDetailsLoading(false);
-                setEmployeeDetailsError(null);
-                setModalTabValue(0);
-                setRetryCount(0);
-              }}
-              sx={{
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.08)'
-                }
-              }}
-              aria-label="Close employee details"
-            >
-              <CloseIcon />
-            </IconButton>
+                <CloseIcon />
+              </IconButton>
+            </Tooltip>
           </Toolbar>
         </AppBar>
 
@@ -1626,24 +1937,49 @@ const Employees = () => {
               flexDirection="column"
               justifyContent="center" 
               alignItems="center" 
-              py={6}
-              gap={2}
+              py={8}
+              gap={3}
               sx={{
                 backgroundColor: '#ffffff',
-                minHeight: '350px'
+                minHeight: '400px'
               }}
             >
-              <CircularProgress 
-                size={40} 
-                thickness={3.6}
-                sx={{ color: 'primary.main' }}
-              />
-              <Typography variant="h6" color="text.primary" sx={{ fontWeight: 500 }}>
-                Loading details...
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ textAlign: 'center', maxWidth: '280px' }}>
-                Fetching employee information and records
-              </Typography>
+              <Box sx={{ position: 'relative' }}>
+                <CircularProgress 
+                  size={60} 
+                  thickness={4}
+                  sx={{ 
+                    color: 'primary.main',
+                    filter: 'drop-shadow(0 2px 8px rgba(25, 118, 210, 0.3))'
+                  }}
+                />
+                <Box
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    width: 80,
+                    height: 80,
+                    borderRadius: '50%',
+                    background: `conic-gradient(from 0deg, ${alpha(theme.palette.primary.main, 0.1)} 0deg, transparent 360deg)`,
+                    animation: `${spin} 2s linear infinite`
+                  }}
+                />
+              </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <Typography variant="h6" color="text.primary" sx={{ fontWeight: 600, mb: 1 }}>
+                  Loading Employee Details
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ maxWidth: '280px' }}>
+                  Fetching comprehensive information and records
+                </Typography>
+              </Box>
+              <Box sx={{ display: 'flex', gap: 1, mt: 2 }}>
+                <Box sx={{ width: 20, height: 8, backgroundColor: alpha(theme.palette.primary.main, 0.2), borderRadius: 1, animation: `${pulse} 1.5s ease-in-out infinite` }} />
+                <Box sx={{ width: 20, height: 8, backgroundColor: alpha(theme.palette.primary.main, 0.4), borderRadius: 1, animation: `${pulse} 1.5s ease-in-out 0.2s infinite` }} />
+                <Box sx={{ width: 20, height: 8, backgroundColor: alpha(theme.palette.primary.main, 0.6), borderRadius: 1, animation: `${pulse} 1.5s ease-in-out 0.4s infinite` }} />
+              </Box>
             </Box>
           ) : employeeDetailsError ? (
             <Box 
@@ -1720,6 +2056,7 @@ const Employees = () => {
                 passportExpiry: detailsModalEmployee?.passport?.expiry || '',
                 qidNumber: detailsModalEmployee?.qid?.number || '',
                 qidExpiry: detailsModalEmployee?.qid?.expiry || '',
+                hrNotes: detailsModalEmployee?.hrNotes || '',
               }}
               validationSchema={modalValidationSchema}
               enableReinitialize={true}
@@ -1728,7 +2065,7 @@ const Employees = () => {
               {({ values, errors, touched, setFieldValue, isValid, dirty, isSubmitting }) => (
                 <Form>
                   <Box>
-                    {/* Clean Navigation Tabs */}
+                    {/* Enhanced Navigation Tabs with Icons */}
                     <Box sx={{ 
                       borderBottom: 1, 
                       borderColor: 'divider', 
@@ -1748,7 +2085,17 @@ const Employees = () => {
                             fontSize: '0.95rem',
                             py: 2,
                             minHeight: 48,
-                            color: 'text.primary'
+                            color: 'text.primary',
+                            minWidth: 0,
+                            flex: 1,
+                            display: 'flex',
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            gap: 1,
+                            '&:hover': {
+                              backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                              color: theme.palette.primary.main
+                            }
                           },
                           '& .MuiTabs-indicator': {
                             height: 3,
@@ -1756,10 +2103,66 @@ const Employees = () => {
                           }
                         }}
                       >
-                        <Tab label="Personal Info" {...a11yProps(0)} />
-                        <Tab label="Documents" {...a11yProps(1)} />
-                        <Tab label="Payroll" {...a11yProps(2)} />
-                        <Tab label="Bank Details" {...a11yProps(3)} />
+                        <Tab 
+                          icon={<PersonIcon />} 
+                          iconPosition="start"
+                          label="Personal Info" 
+                          {...a11yProps(0)} 
+                          sx={{ 
+                            '& .MuiTab-iconWrapper': { 
+                              mb: 0.5,
+                              fontSize: '1.1rem'
+                            }
+                          }}
+                        />
+                        <Tab 
+                          icon={<AssignmentIcon />} 
+                          iconPosition="start"
+                          label="Documents" 
+                          {...a11yProps(1)} 
+                          sx={{ 
+                            '& .MuiTab-iconWrapper': { 
+                              mb: 0.5,
+                              fontSize: '1.1rem'
+                            }
+                          }}
+                        />
+                        <Tab 
+                          icon={<MoneyIcon />} 
+                          iconPosition="start"
+                          label="Payroll" 
+                          {...a11yProps(2)} 
+                          sx={{ 
+                            '& .MuiTab-iconWrapper': { 
+                              mb: 0.5,
+                              fontSize: '1.1rem'
+                            }
+                          }}
+                        />
+                        <Tab 
+                          icon={<AccountBalanceIcon />} 
+                          iconPosition="start"
+                          label="Bank Details" 
+                          {...a11yProps(3)} 
+                          sx={{ 
+                            '& .MuiTab-iconWrapper': { 
+                              mb: 0.5,
+                              fontSize: '1.1rem'
+                            }
+                          }}
+                        />
+                        <Tab 
+                          icon={<AssessmentIcon />} 
+                          iconPosition="start"
+                          label="HR Features" 
+                          {...a11yProps(4)} 
+                          sx={{ 
+                            '& .MuiTab-iconWrapper': { 
+                              mb: 0.5,
+                              fontSize: '1.1rem'
+                            }
+                          }}
+                        />
                       </Tabs>
                     </Box>
 
@@ -1779,10 +2182,16 @@ const Employees = () => {
                               sx={{ 
                                 p: 4, 
                                 textAlign: 'center',
-                                boxShadow: 3,
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                                 borderRadius: 3,
                                 height: '100%',
-                                backgroundColor: '#ffffff'
+                                backgroundColor: '#ffffff',
+                                border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                                  transform: 'translateY(-2px)'
+                                }
                               }}
                             >
                               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
@@ -1914,10 +2323,16 @@ const Employees = () => {
                             <Card 
                               sx={{ 
                                 p: 4, 
-                                boxShadow: 3,
+                                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
                                 borderRadius: 3,
                                 height: '100%',
-                                backgroundColor: '#ffffff'
+                                backgroundColor: '#ffffff',
+                                border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                                transition: 'all 0.3s ease',
+                                '&:hover': {
+                                  boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+                                  transform: 'translateY(-2px)'
+                                }
                               }}
                             >
                               <Typography variant="h6" fontWeight={600} gutterBottom sx={{ mb: 3, color: 'primary.main' }}>
@@ -2667,7 +3082,15 @@ const Employees = () => {
                                     borderRadius: 2, 
                                     textTransform: 'none',
                                     py: 1.5,
-                                    fontWeight: 500
+                                    fontWeight: 500,
+                                    backgroundColor: 'success.main',
+                                    '&:hover': {
+                                      backgroundColor: 'success.dark',
+                                      transform: 'translateY(-1px)',
+                                      boxShadow: '0 4px 12px rgba(76, 175, 80, 0.3)'
+                                    },
+                                    transition: 'all 0.3s ease',
+                                    boxShadow: '0 2px 8px rgba(76, 175, 80, 0.2)'
                                   }}
                                   onClick={() => {
                                     // Handle salary payment
@@ -2677,56 +3100,89 @@ const Employees = () => {
                                   Process Salary Payment
                                 </Button>
                                 
-                                <Button
-                                  variant="outlined"
-                                  startIcon={<ReceiptIcon />}
-                                  sx={{ 
-                                    borderRadius: 2, 
-                                    textTransform: 'none',
-                                    py: 1.5,
-                                    fontWeight: 500
-                                  }}
-                                  onClick={() => {
-                                    // Handle generate payslip
-                                    console.log('Generate payslip for employee:', detailsModalEmployee?.id);
-                                  }}
-                                >
-                                  Generate Payslip
-                                </Button>
+                                <Tooltip title="Generate and download payslip" arrow placement="top">
+                                  <Button
+                                    variant="outlined"
+                                    startIcon={<ReceiptIcon />}
+                                    sx={{ 
+                                      borderRadius: 2, 
+                                      textTransform: 'none',
+                                      py: 1.5,
+                                      fontWeight: 500,
+                                      borderColor: 'info.main',
+                                      color: 'info.main',
+                                      '&:hover': {
+                                        borderColor: 'info.dark',
+                                        backgroundColor: alpha(theme.palette.info.main, 0.08),
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                                      },
+                                      transition: 'all 0.3s ease'
+                                    }}
+                                    onClick={() => {
+                                      // Handle generate payslip
+                                      console.log('Generate payslip for employee:', detailsModalEmployee?.id);
+                                    }}
+                                  >
+                                    Generate Payslip
+                                  </Button>
+                                </Tooltip>
                                 
-                                <Button
-                                  variant="outlined"
-                                  startIcon={<HistoryIcon />}
-                                  sx={{ 
-                                    borderRadius: 2, 
-                                    textTransform: 'none',
-                                    py: 1.5,
-                                    fontWeight: 500
-                                  }}
-                                  onClick={() => {
-                                    // Handle view payment history
-                                    console.log('View payment history for employee:', detailsModalEmployee?.id);
-                                  }}
-                                >
-                                  View Payment History
-                                </Button>
+                                <Tooltip title="View payment history and transactions" arrow placement="top">
+                                  <Button
+                                    variant="outlined"
+                                    startIcon={<HistoryIcon />}
+                                    sx={{ 
+                                      borderRadius: 2, 
+                                      textTransform: 'none',
+                                      py: 1.5,
+                                      fontWeight: 500,
+                                      borderColor: 'warning.main',
+                                      color: 'warning.main',
+                                      '&:hover': {
+                                        borderColor: 'warning.dark',
+                                        backgroundColor: alpha(theme.palette.warning.main, 0.08),
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 12px rgba(255, 152, 0, 0.2)'
+                                      },
+                                      transition: 'all 0.3s ease'
+                                    }}
+                                    onClick={() => {
+                                      // Handle view payment history
+                                      console.log('View payment history for employee:', detailsModalEmployee?.id);
+                                    }}
+                                  >
+                                    View Payment History
+                                  </Button>
+                                </Tooltip>
                                 
-                                <Button
-                                  variant="outlined"
-                                  startIcon={<AccountBalanceIcon />}
-                                  sx={{ 
-                                    borderRadius: 2, 
-                                    textTransform: 'none',
-                                    py: 1.5,
-                                    fontWeight: 500
-                                  }}
-                                  onClick={() => {
-                                    // Handle salary adjustment
-                                    console.log('Adjust salary for employee:', detailsModalEmployee?.id);
-                                  }}
-                                >
-                                  Salary Adjustment
-                                </Button>
+                                <Tooltip title="Adjust salary or compensation" arrow placement="top">
+                                  <Button
+                                    variant="outlined"
+                                    startIcon={<AccountBalanceIcon />}
+                                    sx={{ 
+                                      borderRadius: 2, 
+                                      textTransform: 'none',
+                                      py: 1.5,
+                                      fontWeight: 500,
+                                      borderColor: 'secondary.main',
+                                      color: 'secondary.main',
+                                      '&:hover': {
+                                        borderColor: 'secondary.dark',
+                                        backgroundColor: alpha(theme.palette.secondary.main, 0.08),
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 12px rgba(156, 39, 176, 0.2)'
+                                      },
+                                      transition: 'all 0.3s ease'
+                                    }}
+                                    onClick={() => {
+                                      // Handle salary adjustment
+                                      console.log('Adjust salary for employee:', detailsModalEmployee?.id);
+                                    }}
+                                  >
+                                    Salary Adjustment
+                                  </Button>
+                                </Tooltip>
                               </Stack>
                               
                               {/* Payroll Summary */}
@@ -3254,6 +3710,297 @@ const Employees = () => {
                           )}
                         </Grid>
                       </TabPanel>
+
+                      {/* HR Features Tab - Leave Balance, Performance Reviews, HR Notes */}
+                      <TabPanel value={modalTabValue} index={4}>
+                        <Grid container spacing={4}>
+
+                          {/* Leave Balance Section */}
+                          <Grid item xs={12} md={6}>
+                            <Card
+                              sx={{
+                                p: 4,
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                Leave Balance
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Annual Leave
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.2rem' }}>
+                                    {detailsModalEmployee?.leaveBalance?.annual || 25} days
+                                  </Typography>
+                                  <Chip
+                                    label="Available"
+                                    color="success"
+                                    size="small"
+                                    sx={{ fontWeight: 500 }}
+                                  />
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                  Used: {detailsModalEmployee?.leaveBalance?.annualUsed || 0} days
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Sick Leave
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.2rem' }}>
+                                    {detailsModalEmployee?.leaveBalance?.sick || 10} days
+                                  </Typography>
+                                  <Chip
+                                    label="Available"
+                                    color="info"
+                                    size="small"
+                                    sx={{ fontWeight: 500 }}
+                                  />
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                  Used: {detailsModalEmployee?.leaveBalance?.sickUsed || 0} days
+                                </Typography>
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Emergency Leave
+                                </Typography>
+                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.2rem' }}>
+                                    {detailsModalEmployee?.leaveBalance?.emergency || 5} days
+                                  </Typography>
+                                  <Chip
+                                    label="Available"
+                                    color="warning"
+                                    size="small"
+                                    sx={{ fontWeight: 500 }}
+                                  />
+                                </Box>
+                                <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                  Used: {detailsModalEmployee?.leaveBalance?.emergencyUsed || 0} days
+                                </Typography>
+                              </Box>
+
+                              <Divider sx={{ my: 3 }} />
+                              <Tooltip title="Submit a leave request" arrow placement="top">
+                                <Button
+                                  variant="outlined"
+                                  startIcon={<EventIcon />}
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontWeight: 500,
+                                    borderColor: 'primary.main',
+                                    color: 'primary.main',
+                                    '&:hover': {
+                                      borderColor: 'primary.dark',
+                                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                                      transform: 'translateY(-1px)',
+                                      boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                  onClick={() => {
+                                    // Handle leave request
+                                    console.log('Request leave for employee:', detailsModalEmployee?.id);
+                                  }}
+                                >
+                                  Request Leave
+                                </Button>
+                              </Tooltip>
+                            </Card>
+                          </Grid>
+
+                          {/* Performance Reviews Section */}
+                          <Grid item xs={12} md={6}>
+                            <Card
+                              sx={{
+                                p: 4,
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                Performance Reviews
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+
+                              <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+                                {(detailsModalEmployee?.performanceReviews || [
+                                  { date: '2024-01-15', rating: 'Excellent', reviewer: 'John Smith', comments: 'Outstanding performance and dedication to work.' },
+                                  { date: '2023-07-10', rating: 'Good', reviewer: 'Sarah Johnson', comments: 'Consistent performance with room for improvement in leadership skills.' }
+                                ]).map((review, index) => (
+                                  <ListItem key={index} alignItems="flex-start" sx={{ px: 0 }}>
+                                    <ListItemIcon>
+                                      <StarIcon color="primary" />
+                                    </ListItemIcon>
+                                    <ListItemText
+                                      primary={
+                                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+                                          <Typography variant="subtitle2" fontWeight={600}>
+                                            {formatDate(review.date)}
+                                          </Typography>
+                                          <Chip
+                                            label={review.rating}
+                                            color={review.rating === 'Excellent' ? 'success' : review.rating === 'Good' ? 'primary' : 'warning'}
+                                            size="small"
+                                            sx={{ fontWeight: 500 }}
+                                          />
+                                        </Box>
+                                      }
+                                      secondary={
+                                        <Box>
+                                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            Reviewed by: {review.reviewer}
+                                          </Typography>
+                                          <Typography variant="body2" color="text.primary">
+                                            {review.comments}
+                                          </Typography>
+                                        </Box>
+                                      }
+                                    />
+                                  </ListItem>
+                                ))}
+                              </List>
+
+                              <Divider sx={{ my: 3 }} />
+                              <Tooltip title="Add a new performance review" arrow placement="top">
+                                <Button
+                                  variant="outlined"
+                                  startIcon={<AssessmentIcon />}
+                                  sx={{
+                                    borderRadius: 2,
+                                    textTransform: 'none',
+                                    fontWeight: 500,
+                                    borderColor: 'success.main',
+                                    color: 'success.main',
+                                    '&:hover': {
+                                      borderColor: 'success.dark',
+                                      backgroundColor: alpha(theme.palette.success.main, 0.08),
+                                      transform: 'translateY(-1px)',
+                                      boxShadow: '0 4px 12px rgba(76, 175, 80, 0.2)'
+                                    },
+                                    transition: 'all 0.3s ease'
+                                  }}
+                                  onClick={() => {
+                                    // Handle add performance review
+                                    console.log('Add performance review for employee:', detailsModalEmployee?.id);
+                                  }}
+                                >
+                                  Add Review
+                                </Button>
+                              </Tooltip>
+                            </Card>
+                          </Grid>
+
+                          {/* HR Notes Section */}
+                          <Grid item xs={12}>
+                            <Card
+                              sx={{
+                                p: 4,
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                HR Notes
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+
+                              {isEditMode ? (
+                                <Field name="hrNotes">
+                                  {({ field, meta }) => (
+                                    <TextField
+                                      {...field}
+                                      fullWidth
+                                      multiline
+                                      rows={6}
+                                      label="HR Notes"
+                                      variant="outlined"
+                                      placeholder="Add internal HR notes, observations, or important information about this employee..."
+                                      error={meta.touched && meta.error}
+                                      helperText={meta.touched && meta.error}
+                                      sx={{ mt: 1 }}
+                                    />
+                                  )}
+                                </Field>
+                              ) : (
+                                <Typography variant="body1" sx={{ minHeight: 120, whiteSpace: 'pre-wrap' }}>
+                                  {detailsModalEmployee?.hrNotes || 'No HR notes available for this employee.'}
+                                </Typography>
+                              )}
+
+                              <Box sx={{ mt: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                                <Tooltip title="View history of HR notes" arrow placement="top">
+                                  <Button
+                                    variant="outlined"
+                                    startIcon={<NoteIcon />}
+                                    sx={{
+                                      borderRadius: 2,
+                                      textTransform: 'none',
+                                      fontWeight: 500,
+                                      borderColor: 'info.main',
+                                      color: 'info.main',
+                                      '&:hover': {
+                                        borderColor: 'info.dark',
+                                        backgroundColor: alpha(theme.palette.info.main, 0.08),
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 12px rgba(25, 118, 210, 0.2)'
+                                      },
+                                      transition: 'all 0.3s ease'
+                                    }}
+                                    onClick={() => {
+                                      // Handle view note history
+                                      console.log('View note history for employee:', detailsModalEmployee?.id);
+                                    }}
+                                  >
+                                    View History
+                                  </Button>
+                                </Tooltip>
+                                <Tooltip title="Print HR notes and documentation" arrow placement="top">
+                                  <Button
+                                    variant="outlined"
+                                    startIcon={<PrintIcon />}
+                                    sx={{
+                                      borderRadius: 2,
+                                      textTransform: 'none',
+                                      fontWeight: 500,
+                                      borderColor: 'warning.main',
+                                      color: 'warning.main',
+                                      '&:hover': {
+                                        borderColor: 'warning.dark',
+                                        backgroundColor: alpha(theme.palette.warning.main, 0.08),
+                                        transform: 'translateY(-1px)',
+                                        boxShadow: '0 4px 12px rgba(255, 152, 0, 0.2)'
+                                      },
+                                      transition: 'all 0.3s ease'
+                                    }}
+                                    onClick={() => {
+                                      // Handle print HR notes
+                                      console.log('Print HR notes for employee:', detailsModalEmployee?.id);
+                                    }}
+                                  >
+                                    Print Notes
+                                  </Button>
+                                </Tooltip>
+                              </Box>
+                            </Card>
+                          </Grid>
+                        </Grid>
+                      </TabPanel>
                     </Container>
                   </Box>
                 </Form>
@@ -3293,8 +4040,12 @@ const Employees = () => {
               color: 'text.secondary',
               '&:hover': {
                 borderColor: 'error.main',
-                color: 'error.main'
-              }
+                color: 'error.main',
+                backgroundColor: alpha(theme.palette.error.main, 0.04),
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(244, 67, 54, 0.2)'
+              },
+              transition: 'all 0.3s ease'
             }}
           >
             Close
