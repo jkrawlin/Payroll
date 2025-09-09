@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { keyframes } from '@emotion/react';
 import { motion } from 'framer-motion';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
@@ -9,7 +9,13 @@ import { useDropzone } from 'react-dropzone';
 import Dropzone from 'react-dropzone';
 import { Formik, Form, Field, useFormik } from 'formik';
 import * as Yup from 'yup';
-import { toast } from 'react-toastify';
+import { Pie } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  Tooltip,
+  Legend
+} from 'chart.js';
 import {
   Box,
   Card,
@@ -53,6 +59,7 @@ import {
   ListItem,
   ListItemText,
   ListItemIcon,
+  Fab,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -79,6 +86,20 @@ import {
   Assessment as AssessmentIcon,
   Note as NoteIcon,
   Print as PrintIcon,
+  Search as SearchIcon,
+  Clear as ClearIcon,
+  NavigateBefore as NavigateBeforeIcon,
+  NavigateNext as NavigateNextIcon,
+  FilterList as FilterListIcon,
+  People as PeopleIcon,
+  CheckCircle as CheckCircleIcon,
+  PieChart as PieChartIcon,
+  TrendingUp as TrendingUpIcon,
+  PersonAdd as PersonAddIcon,
+  Renew as RenewIcon,
+  UploadFile as UploadFileIcon,
+  Visibility as VisibilityIcon,
+  PictureAsPdf as PictureAsPdfIcon,
 } from '@mui/icons-material';
 import { DataGrid } from '@mui/x-data-grid';
 
@@ -93,7 +114,8 @@ const spin = keyframes`
   100% { transform: translate(-50%, -50%) rotate(360deg); }
 `;
 
-// Removed animation imports and transition components for better performance
+// Register Chart.js components
+ChartJS.register(ArcElement, Tooltip, Legend);
 
 // TabPanel component for organized content sections
 function TabPanel({ children, value, index, ...other }) {
@@ -121,6 +143,15 @@ function a11yProps(index) {
   };
 }
 
+// Debounce utility function
+const debounce = (func, delay) => {
+  let timeoutId;
+  return (...args) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func.apply(null, args), delay);
+  };
+};
+
 const Employees = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -129,7 +160,15 @@ const Employees = () => {
   const [editingId, setEditingId] = useState(null);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [debouncedSearchTerm, setDebouncedSearchTerm] = useState('');
   const [showForm, setShowForm] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(10);
+  
+  // View mode state for responsive design
+  const [viewMode, setViewMode] = useState('table'); // 'table' or 'cards'
   
   // Comprehensive employee details modal state - Enhanced with error handling
   const [detailsModalEmployee, setDetailsModalEmployee] = useState(null);
@@ -508,6 +547,30 @@ const Employees = () => {
     fetchEmployees();
   }, []);
 
+  // Debounced search effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchTerm(searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm]);
+
+  // Responsive view mode detection
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth < 768) {
+        setViewMode('cards');
+      } else {
+        setViewMode('table');
+      }
+    };
+
+    handleResize(); // Set initial view mode
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const checkExpiry = (expiry, type) => {
     if (!expiry) return { status: 'unknown', message: 'No date', color: 'default' };
     
@@ -606,11 +669,205 @@ const Employees = () => {
   };
 
   const filteredEmployees = employees.filter(employee =>
-    employee.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.qid?.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.passport?.number?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    employee.department?.toLowerCase().includes(searchTerm.toLowerCase())
+    employee.name?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    employee.qid?.number?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    employee.passport?.number?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    employee.department?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    employee.position?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    employee.email?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
   );
+
+  // Pagination logic
+  const totalPages = Math.ceil(filteredEmployees.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentEmployees = filteredEmployees.slice(startIndex, endIndex);
+
+  // Department distribution data for pie chart
+  const departmentData = useMemo(() => {
+    const deptCount = {};
+    employees.forEach(employee => {
+      const dept = employee.department || 'Unassigned';
+      deptCount[dept] = (deptCount[dept] || 0) + 1;
+    });
+    return deptCount;
+  }, [employees]);
+
+  const handlePageChange = (event, newPage) => {
+    setCurrentPage(newPage + 1); // Material-UI DataGrid uses 0-based indexing
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setItemsPerPage(newPageSize);
+    setCurrentPage(1);
+  };
+
+  // Render employee card for mobile view
+  const renderEmployeeCard = (employee) => {
+    const qidStatusObj = checkExpiry(employee.qid?.expiry, 'QID');
+    const passportStatusObj = checkExpiry(employee.passport?.expiry, 'Passport');
+
+    const getOverallStatus = () => {
+      if (qidStatusObj?.status === 'expired' || passportStatusObj?.status === 'expired') return 'critical';
+      if (qidStatusObj?.status === 'critical' || passportStatusObj?.status === 'critical') return 'critical';
+      if (qidStatusObj?.status === 'warning' || passportStatusObj?.status === 'warning') return 'warning';
+      return 'good';
+    };
+
+    const status = getOverallStatus();
+
+    return (
+      <Card 
+        key={employee.id} 
+        className="employee-card"
+        onClick={() => handleNameClick(employee)}
+        sx={{ 
+          mb: 2,
+          cursor: 'pointer',
+          transition: 'all 0.3s ease',
+          '&:hover': {
+            transform: 'translateY(-4px)',
+            boxShadow: '0 8px 25px rgba(0,0,0,0.15)'
+          }
+        }}
+      >
+        <CardContent sx={{ p: 3 }}>
+          <Box className="employee-card-header">
+            <Avatar
+              src={employee.photoUrl}
+              className="employee-avatar"
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                color: 'white',
+                width: 60,
+                height: 60,
+                mr: 2,
+                fontSize: '1.2rem',
+                fontWeight: 700,
+                border: `3px solid ${alpha(theme.palette.primary.main, 0.15)}`
+              }}
+            >
+              {employee.name?.charAt(0).toUpperCase()}
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
+                {employee.name}
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {employee.position} • {employee.department}
+              </Typography>
+            </Box>
+            <Chip
+              label={status === 'critical' ? 'Action Required' :
+                     status === 'warning' ? 'Review Soon' : 'Active'}
+              color={status === 'critical' ? 'error' :
+                     status === 'warning' ? 'warning' : 'success'}
+              size="small"
+              variant="filled"
+            />
+          </Box>
+
+          <Divider sx={{ my: 2 }} />
+
+          <Grid container spacing={2}>
+            <Grid item xs={6}>
+              <Box className="employee-detail">
+                <Typography variant="body2" color="text.secondary" className="employee-detail-label">
+                  Email
+                </Typography>
+                <Typography variant="body2" fontWeight={500} className="employee-detail-value">
+                  {employee.email || 'N/A'}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6}>
+              <Box className="employee-detail">
+                <Typography variant="body2" color="text.secondary" className="employee-detail-label">
+                  Phone
+                </Typography>
+                <Typography variant="body2" fontWeight={500} className="employee-detail-value">
+                  {employee.phone || 'N/A'}
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6}>
+              <Box className="employee-detail">
+                <Typography variant="body2" color="text.secondary" className="employee-detail-label">
+                  Salary
+                </Typography>
+                <Typography variant="body2" fontWeight={600} color="success.main" className="employee-detail-value">
+                  {employee.salary?.toLocaleString() || 0} QAR
+                </Typography>
+              </Box>
+            </Grid>
+            <Grid item xs={6}>
+              <Box className="employee-detail">
+                <Typography variant="body2" color="text.secondary" className="employee-detail-label">
+                  QID Status
+                </Typography>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  <Box sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    backgroundColor: qidStatusObj?.color === 'success' ? '#4caf50' :
+                                   qidStatusObj?.color === 'warning' ? '#ff9800' :
+                                   qidStatusObj?.color === 'error' ? '#f44336' : '#9e9e9e'
+                  }} />
+                  <Typography variant="caption" sx={{ fontSize: '0.75rem', fontWeight: 500 }}>
+                    {qidStatusObj?.message || 'Unknown'}
+                  </Typography>
+                </Box>
+              </Box>
+            </Grid>
+          </Grid>
+
+          <Box className="employee-actions" sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+            <Tooltip title="View employee details" arrow placement="top">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleNameClick(employee);
+                }}
+                sx={{
+                  color: 'primary.main',
+                  backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.15),
+                    transform: 'scale(1.1)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <PersonIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            </Tooltip>
+            <Tooltip title="Delete employee" arrow placement="top">
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDelete(employee.id, employee.name);
+                }}
+                sx={{
+                  color: 'error.main',
+                  backgroundColor: alpha(theme.palette.error.main, 0.08),
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.error.main, 0.15),
+                    transform: 'scale(1.1)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                <DeleteIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        </CardContent>
+      </Card>
+    );
+  };
 
   const calculateProgress = (values) => {
     const requiredFields = ['name', 'passportNumber', 'passportExpiry', 'qidNumber', 'qidExpiry', 'salary', 'department', 'position'];
@@ -676,6 +933,108 @@ const Employees = () => {
       </Paper>
 
       <Grid container spacing={3}>
+        {/* Top Metrics Row */}
+        <Grid item xs={12}>
+          <Box sx={{
+            display: 'flex',
+            gap: 3,
+            mb: 3,
+            flexWrap: 'wrap',
+            justifyContent: 'center'
+          }}>
+            {/* Total Workforce Card */}
+            <Card
+              elevation={2}
+              sx={{
+                minWidth: 200,
+                flex: 1,
+                background: `linear-gradient(135deg, #8B0000 0%, #A52A2A 100%)`,
+                color: 'white',
+                borderRadius: 3,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 30px rgba(139, 0, 0, 0.3)',
+                },
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}
+            >
+              <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                <PeopleIcon sx={{ fontSize: '2.5rem', mb: 1, opacity: 0.9 }} />
+                <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+                  {employees.length}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.9rem' }}>
+                  Total Workforce
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Active Employees Card */}
+            <Card
+              elevation={2}
+              sx={{
+                minWidth: 200,
+                flex: 1,
+                background: `linear-gradient(135deg, #8B0000 0%, #A52A2A 100%)`,
+                color: 'white',
+                borderRadius: 3,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 30px rgba(139, 0, 0, 0.3)',
+                },
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}
+            >
+              <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                <CheckCircleIcon sx={{ fontSize: '2.5rem', mb: 1, opacity: 0.9 }} />
+                <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+                  {employees.filter(emp => {
+                    const qidStatus = checkExpiry(emp.qid?.expiry, 'QID');
+                    const passportStatus = checkExpiry(emp.passport?.expiry, 'Passport');
+                    return qidStatus.status !== 'expired' && passportStatus.status !== 'expired';
+                  }).length}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.9rem' }}>
+                  Active Employees
+                </Typography>
+              </CardContent>
+            </Card>
+
+            {/* Average Salary Card */}
+            <Card
+              elevation={2}
+              sx={{
+                minWidth: 200,
+                flex: 1,
+                background: `linear-gradient(135deg, #8B0000 0%, #A52A2A 100%)`,
+                color: 'white',
+                borderRadius: 3,
+                transition: 'all 0.3s ease',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 30px rgba(139, 0, 0, 0.3)',
+                },
+                border: '1px solid rgba(255,255,255,0.1)'
+              }}
+            >
+              <CardContent sx={{ p: 3, textAlign: 'center' }}>
+                <TrendingUpIcon sx={{ fontSize: '2.5rem', mb: 1, opacity: 0.9 }} />
+                <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
+                  {employees.length > 0
+                    ? Math.round(employees.reduce((sum, emp) => sum + (emp.salary || 0), 0) / employees.length).toLocaleString()
+                    : 0
+                  }
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9, fontSize: '0.9rem' }}>
+                  Average Salary (QAR)
+                </Typography>
+              </CardContent>
+            </Card>
+          </Box>
+        </Grid>
+
         {/* Search and Filters - Optimized */}
         <Grid item xs={12}>
           <Card elevation={1} sx={{ borderRadius: 2, border: `1px solid ${alpha(theme.palette.divider, 0.12)}` }}>
@@ -745,10 +1104,10 @@ const Employees = () => {
               <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.9rem', fontWeight: 500 }}>
                 <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center', gap: 1 }}>
                   <PersonIcon sx={{ fontSize: '1rem', color: 'primary.main' }} />
-                  Showing {filteredEmployees.length} of {employees.length} employees
-                  {searchTerm && (
+                  Showing {startIndex + 1}-{Math.min(endIndex, filteredEmployees.length)} of {filteredEmployees.length} employees
+                  {debouncedSearchTerm && (
                     <Chip
-                      label={`"${searchTerm}"`}
+                      label={`"${debouncedSearchTerm}"`}
                       size="small"
                       color="primary"
                       variant="outlined"
@@ -769,8 +1128,102 @@ const Employees = () => {
           </Card>
         </Grid>
 
+        {/* Department Distribution Pie Chart */}
+        <Grid item xs={12} md={4}>
+          <Card
+            elevation={2}
+            sx={{
+              borderRadius: 3,
+              border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+              background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.8)} 0%, ${theme.palette.background.paper} 100%)`,
+              backdropFilter: 'blur(10px)',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              height: '100%',
+              minHeight: 400,
+              transition: 'all 0.3s ease',
+              '&:hover': {
+                transform: 'translateY(-2px)',
+                boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
+              }
+            }}
+          >
+            <CardContent sx={{ p: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+                <PieChartIcon sx={{ color: '#8B0000', mr: 1.5, fontSize: '1.5rem' }} />
+                <Typography variant="h6" fontWeight={600} sx={{ color: '#8B0000' }}>
+                  Department Distribution
+                </Typography>
+              </Box>
+
+              <Box sx={{ height: 300, position: 'relative' }}>
+                <Pie
+                  data={{
+                    labels: Object.keys(departmentData),
+                    datasets: [{
+                      data: Object.values(departmentData),
+                      backgroundColor: [
+                        '#8B0000', // Dark Red
+                        '#A52A2A', // Brown
+                        '#DC143C', // Crimson
+                        '#B22222', // Fire Brick
+                        '#CD5C5C', // Indian Red
+                        '#F08080', // Light Coral
+                      ],
+                      borderColor: 'white',
+                      borderWidth: 2,
+                      hoverBorderColor: 'white',
+                      hoverBorderWidth: 3,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          padding: 20,
+                          usePointStyle: true,
+                          font: {
+                            size: 12,
+                            weight: '500'
+                          }
+                        }
+                      },
+                      tooltip: {
+                        backgroundColor: 'rgba(0,0,0,0.8)',
+                        titleColor: 'white',
+                        bodyColor: 'white',
+                        callbacks: {
+                          label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((value / total) * 100).toFixed(1);
+                            return `${label}: ${value} (${percentage}%)`;
+                          }
+                        }
+                      }
+                    },
+                    animation: {
+                      animateScale: true,
+                      animateRotate: true
+                    }
+                  }}
+                />
+              </Box>
+
+              <Box sx={{ mt: 2, textAlign: 'center' }}>
+                <Typography variant="body2" color="text.secondary">
+                  Total Employees: {employees.length}
+                </Typography>
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+
         {/* Professional Employee DataGrid */}
-        <Grid item xs={12}>
+        <Grid item xs={12} md={8}>
           <Card elevation={0} sx={{
             borderRadius: 3,
             border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
@@ -824,14 +1277,16 @@ const Employees = () => {
 
               {/* Professional Empty State */}
               <Box>
-                <DataGrid
-                  rows={filteredEmployees.map((emp, index) => ({
-                    ...emp,
-                    id: emp.id || `employee-${index}`,
-                    qidStatusObj: checkExpiry(emp.qid?.expiry, 'QID'),
-                    passportStatusObj: checkExpiry(emp.passport?.expiry, 'Passport')
-                  }))}
-                  columns={[
+                {!isMobile ? (
+                  <Box>
+                    <DataGrid
+                      rows={currentEmployees.map((emp, index) => ({
+                        ...emp,
+                        id: emp.id || `employee-${index}`,
+                        qidStatusObj: checkExpiry(emp.qid?.expiry, 'QID'),
+                        passportStatusObj: checkExpiry(emp.passport?.expiry, 'Passport')
+                      }))}
+                    columns={[
                     {
                       field: 'employee',
                       headerName: 'Employee',
@@ -1098,7 +1553,7 @@ const Employees = () => {
                       )
                     },
                   ]}
-                  pageSize={10}
+                  pageSize={itemsPerPage}
                   rowsPerPageOptions={[5, 10, 25]}
                   checkboxSelection={false}
                   disableSelectionOnClick={false}
@@ -1106,9 +1561,15 @@ const Employees = () => {
                   onRowClick={(params) => {
                     handleNameClick(params.row);
                   }}
+                  pagination
+                  paginationMode="server"
+                  rowCount={filteredEmployees.length}
+                  page={currentPage - 1}
+                  onPageChange={handlePageChange}
+                  onPageSizeChange={handlePageSizeChange}
                   initialState={{
                     pagination: {
-                      paginationModel: { pageSize: 10, page: 0 }
+                      paginationModel: { pageSize: itemsPerPage, page: currentPage - 1 }
                     }
                   }}
                   sx={{
@@ -1151,10 +1612,10 @@ const Employees = () => {
                       }
                     },
                     '& .MuiDataGrid-cell': {
-                      py: 2.5,  // 20px vertical (2.5x8px) for ample line spacing
-                      px: 3,  // 24px horizontal (3x8px) to prevent crowding
-                      borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,  // Thin divider for clear row separation (effective 16px gap with py)
-                      '&:focus-within': { backgroundColor: 'action.focus' },  // Focus state for accessibility
+                      py: 2.5,  /* 20px vertical (2.5x8px) for ample line spacing */
+                      px: 3,  /* 24px horizontal (3x8px) to prevent crowding */
+                      borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,  /* Thin divider for clear row separation (effective 16px gap with py) */
+                      '&:focus-within': { backgroundColor: 'action.focus' },  /* Focus state for accessibility */
                     },
                     '& .MuiDataGrid-columnHeaders': {
                       backgroundColor: 'grey.100',  // Light gray for subtle contrast
@@ -1168,60 +1629,154 @@ const Employees = () => {
                     },
                     '& .MuiDataGrid-footerContainer': {
                       borderTop: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
-                      backgroundColor: 'grey.50',  // Subtle footer bg
-                      justifyContent: 'space-between',  // Align count left, pagination right
+                      backgroundColor: 'grey.50',  /* Subtle footer bg */
+                      justifyContent: 'space-between',  /* Align count left, pagination right */
                       py: 1.5,
                     },
-                    '& .MuiDataGrid-virtualScroller': {  // For large datasets
+                    '& .MuiDataGrid-virtualScroller': {  /* For large datasets */
                       overflowY: 'auto',
                     },
                   }}
                 />
-              </Box>
+              ) : (
+                <Box sx={{ mt: 2 }}>
+                  <Box>
+                    {/* Mobile Card View */}
+                    {isMobile && (
+                      <Box sx={{ mt: 2 }}>
+                        <Grid container spacing={2}>
+                          {currentEmployees.map((employee) => (
+                            <Grid item xs={12} sm={6} md={4} key={employee.id}>
+                              <Card
+                                sx={{
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s ease',
+                                  '&:hover': {
+                                    transform: 'translateY(-4px)',
+                                    boxShadow: '0 8px 25px rgba(0,0,0,0.15)',
+                                  },
+                                  borderRadius: 3,
+                                  overflow: 'hidden',
+                                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                                }}
+                                onClick={() => handleViewDetails(employee)}
+                              >
+                                <CardContent sx={{ p: 3 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
+                                    <Avatar
+                                      src={employee.photoUrl || employee.photoURL}
+                                      alt={employee.name}
+                                      sx={{
+                                        width: 50,
+                                        height: 50,
+                                        mr: 2,
+                                        bgcolor: 'primary.main',
+                                        fontSize: '1.2rem',
+                                        fontWeight: 600,
+                                      }}
+                                    >
+                                      {employee.name?.charAt(0).toUpperCase()}
+                                    </Avatar>
+                                    <Box sx={{ flex: 1 }}>
+                                      <Typography variant="h6" fontWeight={600} sx={{ mb: 0.5 }}>
+                                        {employee.name}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        {employee.position}
+                                      </Typography>
+                                    </Box>
+                                  </Box>
 
-              {/* Professional Empty State */}
-              {filteredEmployees.length === 0 && (
-                <Box sx={{
-                  p: 8,
-                  textAlign: 'center',
-                  backgroundColor: alpha(theme.palette.background.paper, 0.5),
-                  borderRadius: 3,
-                  border: `2px dashed ${alpha(theme.palette.divider, 0.3)}`
-                }}>
-                  <PersonIcon sx={{
-                    fontSize: '4rem',
-                    color: 'text.disabled',
-                    mb: 3,
-                    opacity: 0.5
-                  }} />
-                  <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontWeight: 500 }}>
-                    {searchTerm ? 'No employees found' : 'No employees in directory'}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
-                    {searchTerm
-                      ? `No employees match your search for "${searchTerm}". Try adjusting your search terms.`
-                      : 'Get started by adding your first employee to the directory.'
-                    }
-                  </Typography>
-                  {!searchTerm && (
-                    <Button
-                      variant="contained"
-                      startIcon={<AddIcon />}
-                      onClick={() => setShowForm(true)}
-                      sx={{
-                        borderRadius: 2,
-                        px: 4,
-                        py: 1.5,
-                        fontWeight: 600,
-                        textTransform: 'none',
-                        boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
-                      }}
-                    >
-                      Add First Employee
-                    </Button>
-                  )}
+                                  <Box sx={{ mb: 2 }}>
+                                    <Chip
+                                      label={employee.department}
+                                      size="small"
+                                      color="primary"
+                                      variant="outlined"
+                                      sx={{ mb: 1, fontWeight: 500 }}
+                                    />
+                                  </Box>
+
+                                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                    <Box>
+                                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                                        Monthly Salary
+                                      </Typography>
+                                      <Typography variant="h6" color="success.main" fontWeight={700}>
+                                        {employee.salary?.toLocaleString()} QAR
+                                      </Typography>
+                                    </Box>
+                                    <IconButton
+                                      size="small"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleViewDetails(employee);
+                                      }}
+                                      sx={{
+                                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                                        '&:hover': {
+                                          bgcolor: alpha(theme.palette.primary.main, 0.2),
+                                        },
+                                      }}
+                                    >
+                                      <VisibilityIcon fontSize="small" />
+                                    </IconButton>
+                                  </Box>
+                                </CardContent>
+                              </Card>
+                            </Grid>
+                          ))}
+                        </Grid>
+                      </Box>
+                    )}
+
+                    {/* Professional Empty State */}
+                    {currentEmployees.length === 0 && (
+                      <Box sx={{
+                        p: 8,
+                        textAlign: 'center',
+                        backgroundColor: alpha(theme.palette.background.paper, 0.5),
+                        borderRadius: 3,
+                        border: `2px dashed ${alpha(theme.palette.divider, 0.3)}`
+                      }}>
+                        <PersonIcon sx={{
+                          fontSize: '4rem',
+                          color: 'text.disabled',
+                          mb: 3,
+                          opacity: 0.5
+                        }} />
+                        <Typography variant="h6" color="text.secondary" gutterBottom sx={{ fontWeight: 500 }}>
+                          {debouncedSearchTerm ? 'No employees found' : 'No employees in directory'}
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mb: 3, maxWidth: 400, mx: 'auto' }}>
+                          {debouncedSearchTerm
+                            ? `No employees match your search for "${debouncedSearchTerm}". Try adjusting your search terms.`
+                            : 'Get started by adding your first employee to the directory.'
+                          }
+                        </Typography>
+                        {!debouncedSearchTerm && (
+                          <Button
+                            variant="contained"
+                            startIcon={<AddIcon />}
+                            onClick={() => setShowForm(true)}
+                            sx={{
+                              borderRadius: 2,
+                              px: 4,
+                              py: 1.5,
+                              fontWeight: 600,
+                              textTransform: 'none',
+                              boxShadow: '0 4px 12px rgba(25, 118, 210, 0.3)'
+                            }}
+                          >
+                            Add First Employee
+                          </Button>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
                 </Box>
               )}
+
             </CardContent>
           </Card>
         </Grid>

@@ -38,7 +38,7 @@ const DRAWER_WIDTH = 280;
 const menuItems = [
   {
     title: 'Dashboard',
-    path: '/',
+    path: '/dashboard',
     icon: <DashboardIcon />,
     roles: ['admin', 'hr', 'accountant', 'employee'],
   },
@@ -61,7 +61,12 @@ const menuItems = [
       { title: 'Receipts', path: '/receipts', icon: <ReceiptIcon /> },
     ],
   },
-  // Removed "Insights" and "Self Service" for streamlined navigation
+  {
+    title: 'Analytics',
+    path: '/analytics',
+    icon: <AnalyticsIcon />,
+    roles: ['admin', 'hr', 'accountant'],
+  },
 ];
 
 const Sidebar = ({ open, onClose, role = 'admin' }) => {
@@ -90,7 +95,16 @@ const Sidebar = ({ open, onClose, role = 'admin' }) => {
   );
 
   const sidebarContent = (
-    <Box sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
+    <Box
+      component="nav"
+      aria-label="Primary Navigation"
+      sx={{
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        backgroundColor: theme.palette.background.paper,
+      }}
+    >
       {/* Header */}
       <Box sx={{ 
         p: 3, 

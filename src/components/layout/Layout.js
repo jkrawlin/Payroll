@@ -14,27 +14,56 @@ const Layout = ({ children, role = 'admin' }) => {
   };
 
   return (
-    <Box sx={{ display: 'flex', minHeight: '100vh' }}>
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateAreas: isMobile ? "'main'" : "'sidebar main'",
+        gridTemplateColumns: isMobile ? '1fr' : '280px 1fr',
+        gridTemplateRows: 'auto 1fr',
+        minHeight: '100vh',
+        overflow: 'hidden',
+        backgroundColor: theme.palette.background.default,
+      }}
+      className="app-layout"
+    >
       {/* Sidebar */}
-      <Sidebar 
-        open={mobileOpen}
-        onClose={handleDrawerToggle}
-        role={role}
-      />
+      <Box
+        sx={{
+          gridArea: 'sidebar',
+          position: isMobile ? 'fixed' : 'relative',
+          top: 0,
+          left: 0,
+          zIndex: 1000,
+          width: '280px',
+          height: '100vh',
+          transform: isMobile && !mobileOpen ? 'translateX(-100%)' : 'translateX(0)',
+          transition: 'transform 0.3s ease-in-out',
+          backgroundColor: theme.palette.background.paper,
+        }}
+      >
+        <Sidebar
+          open={mobileOpen}
+          onClose={handleDrawerToggle}
+          role={role}
+        />
+      </Box>
 
       {/* Main Content */}
       <Box
         component="main"
+        role="main"
+        aria-label="Employee Management"
         sx={{
-          flexGrow: 1,
+          gridArea: 'main',
           display: 'flex',
           flexDirection: 'column',
           minHeight: '100vh',
           backgroundColor: theme.palette.background.default,
+          marginLeft: isMobile ? 0 : 0,
         }}
       >
         {/* Header */}
-        <Header 
+        <Header
           onDrawerToggle={handleDrawerToggle}
           role={role}
         />
