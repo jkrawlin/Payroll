@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { keyframes } from '@emotion/react';
+import { motion } from 'framer-motion';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc, getDoc } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage, isFirebaseConfigured } from '../firebase';
@@ -821,102 +822,8 @@ const Employees = () => {
                 </Box>
               </Box>
 
-              {/* Enhanced DataGrid */}
-              <Box sx={{
-                height: 650,
-                width: '100%',
-                '& .MuiDataGrid-root': {
-                  border: 'none',
-                  backgroundColor: 'transparent',
-                  '& .MuiDataGrid-columnHeaders': {
-                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`,
-                    color: 'white',
-                    fontWeight: 600,
-                    fontSize: '0.875rem',
-                    textTransform: 'uppercase',
-                    letterSpacing: '0.5px',
-                    borderBottom: `2px solid ${theme.palette.primary.dark}`,
-                    minHeight: 60,
-                    '& .MuiDataGrid-columnHeader': {
-                      backgroundColor: 'transparent',
-                      '&:focus': {
-                        outline: 'none'
-                      },
-                      '& .MuiDataGrid-columnHeaderTitle': {
-                        fontWeight: 600,
-                        fontSize: '0.8rem',
-                        color: 'white'
-                      }
-                    },
-                    '& .MuiDataGrid-columnSeparator': {
-                      color: alpha(theme.palette.common.white, 0.3)
-                    }
-                  },
-                  '& .MuiDataGrid-row': {
-                    backgroundColor: 'white',
-                    borderRadius: 2,
-                    mb: 1,
-                    border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
-                    transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                    cursor: 'pointer',
-                    position: 'relative',
-                    '&::before': {
-                      content: '""',
-                      position: 'absolute',
-                      top: 0,
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, transparent 100%)`,
-                      borderRadius: 2,
-                      opacity: 0,
-                      transition: 'opacity 0.3s ease'
-                    },
-                    '&:hover': {
-                      backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                      transform: 'translateY(-1px) scale(1.002)',
-                      boxShadow: '0 8px 25px rgba(0,0,0,0.08)',
-                      borderColor: alpha(theme.palette.primary.main, 0.2),
-                      '&::before': {
-                        opacity: 1
-                      }
-                    },
-                    '&:nth-of-type(even)': {
-                      backgroundColor: alpha(theme.palette.grey[50], 0.5)
-                    }
-                  },
-                  '& .MuiDataGrid-cell': {
-                    borderBottom: 'none',
-                    py: 3,
-                    px: 2,
-                    fontSize: '0.875rem',
-                    display: 'flex',
-                    alignItems: 'center',
-                    borderRight: `1px solid ${alpha(theme.palette.divider, 0.06)}`,
-                    '&:last-child': {
-                      borderRight: 'none'
-                    },
-                    '&:focus': {
-                      outline: 'none'
-                    }
-                  },
-                  '& .MuiDataGrid-footerContainer': {
-                    backgroundColor: alpha(theme.palette.grey[50], 0.3),
-                    borderTop: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
-                    minHeight: 60,
-                    borderRadius: '0 0 12px 12px'
-                  },
-                  '& .MuiDataGrid-virtualScroller': {
-                    backgroundColor: 'transparent'
-                  },
-                  '& .MuiDataGrid-toolbarContainer': {
-                    backgroundColor: alpha(theme.palette.primary.main, 0.02),
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                    py: 2,
-                    px: 3
-                  }
-                }
-              }}>
+              {/* Professional Empty State */}
+              <Box>
                 <DataGrid
                   rows={filteredEmployees.map((emp, index) => ({
                     ...emp,
@@ -1205,11 +1112,69 @@ const Employees = () => {
                     }
                   }}
                   sx={{
-                    border: 'none',
-                    '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': {
-                      outline: `2px solid ${theme.palette.primary.main}`,
-                      outlineOffset: -1
-                    }
+                    m: 2,  // 16px outer margin for page breathing room
+                    borderRadius: 2,
+                    overflow: 'hidden',  // Clip rounded corners
+                    boxShadow: 4,  // Medium shadow for elevation (Material Design 3 level 4 for tables)
+                    backgroundColor: 'background.paper',
+                    '& .MuiDataGrid-row': {
+                      minHeight: 72,  // 9x8px grid units for perfect spacing
+                      mx: 0,  // No horizontal margin to fill width
+                      my: 0,  // Vertical handled by cell py
+                      borderRadius: 0,  // Flat rows inside rounded container
+                      transition: 'box-shadow 0.2s ease, transform 0.2s ease',  // Smooth animations
+                      cursor: 'pointer',
+                      position: 'relative',
+                      '&::before': {
+                        content: '""',
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        bottom: 0,
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.02)} 0%, transparent 100%)`,
+                        borderRadius: 2,
+                        opacity: 0,
+                        transition: 'opacity 0.3s ease'
+                      },
+                      '&:hover': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                        transform: 'translateY(-2px)',  // Subtle lift for interactivity (2025 motion trend)
+                        boxShadow: '0 8px 25px rgba(0,0,0,0.08)',
+                        borderColor: alpha(theme.palette.primary.main, 0.2),
+                        '&::before': {
+                          opacity: 1
+                        }
+                      },
+                      '&:nth-of-type(odd)': {
+                        backgroundColor: alpha(theme.palette.grey[50], 0.5)
+                      }
+                    },
+                    '& .MuiDataGrid-cell': {
+                      py: 2.5,  // 20px vertical (2.5x8px) for ample line spacing
+                      px: 3,  // 24px horizontal (3x8px) to prevent crowding
+                      borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,  // Thin divider for clear row separation (effective 16px gap with py)
+                      '&:focus-within': { backgroundColor: 'action.focus' },  // Focus state for accessibility
+                    },
+                    '& .MuiDataGrid-columnHeaders': {
+                      backgroundColor: 'grey.100',  // Light gray for subtle contrast
+                      color: 'text.primary',  // Black/dark text (12:1 ratio on gray)
+                      fontWeight: 600,
+                      fontSize: '0.875rem',  // Compact but readable
+                      py: 1.5,  // 12px vertical padding
+                      borderBottom: `2px solid ${theme.palette.primary.main}`,  // Purple accent for branding
+                      minHeight: 60,
+                      '& .MuiDataGrid-columnHeaderTitle': { whiteSpace: 'nowrap' },  // No wrap for headers
+                    },
+                    '& .MuiDataGrid-footerContainer': {
+                      borderTop: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                      backgroundColor: 'grey.50',  // Subtle footer bg
+                      justifyContent: 'space-between',  // Align count left, pagination right
+                      py: 1.5,
+                    },
+                    '& .MuiDataGrid-virtualScroller': {  // For large datasets
+                      overflowY: 'auto',
+                    },
                   }}
                 />
               </Box>
@@ -1261,8 +1226,6 @@ const Employees = () => {
           </Card>
         </Grid>
       </Grid>
-
-
 
       {/* Employee Form Dialog */}
       <Dialog 
