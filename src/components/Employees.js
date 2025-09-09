@@ -1759,6 +1759,7 @@ const Employees = () => {
                         <Tab label="Personal Info" {...a11yProps(0)} />
                         <Tab label="Documents" {...a11yProps(1)} />
                         <Tab label="Payroll" {...a11yProps(2)} />
+                        <Tab label="Bank Details" {...a11yProps(3)} />
                       </Tabs>
                     </Box>
 
@@ -2750,6 +2751,507 @@ const Employees = () => {
                               </Box>
                             </Card>
                           </Grid>
+                        </Grid>
+                      </TabPanel>
+
+                      {/* Bank Details Tab - Enhanced with Inline Editing */}
+                      <TabPanel value={modalTabValue} index={3}>
+                        <Grid container spacing={4}>
+
+                          {/* Bank Account Information */}
+                          <Grid item xs={12} md={6}>
+                            <Card
+                              sx={{
+                                p: 4,
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                Bank Account Information
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Bank Name
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="bankName">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="Bank Name"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.bankName || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Account Holder Name
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="accountHolderName">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="Account Holder Name"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.accountHolderName || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Account Number
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="accountNumber">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="Account Number"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.accountNumber || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  IBAN
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="iban">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="IBAN"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.iban || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Card>
+                          </Grid>
+
+                          {/* Additional Banking Information */}
+                          <Grid item xs={12} md={6}>
+                            <Card
+                              sx={{
+                                p: 4,
+                                boxShadow: 3,
+                                borderRadius: 3,
+                                height: '100%',
+                                backgroundColor: '#ffffff'
+                              }}
+                            >
+                              <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                Additional Banking Information
+                              </Typography>
+                              <Divider sx={{ mb: 3 }} />
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  SWIFT/BIC Code
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="swiftCode">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="SWIFT/BIC Code"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.swiftCode || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Branch Name
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="branchName">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="Branch Name"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.branchName || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Branch Code
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="branchCode">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        fullWidth
+                                        label="Branch Code"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      />
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.branchCode || 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+
+                              <Box sx={{ mb: 3 }}>
+                                <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                  Account Type
+                                </Typography>
+                                {isEditMode ? (
+                                  <Field name="accountType">
+                                    {({ field, meta }) => (
+                                      <TextField
+                                        {...field}
+                                        select
+                                        fullWidth
+                                        label="Account Type"
+                                        variant="outlined"
+                                        size="small"
+                                        error={meta.touched && meta.error}
+                                        helperText={meta.touched && meta.error}
+                                        sx={{ mt: 1 }}
+                                      >
+                                        <MenuItem value="savings">Savings Account</MenuItem>
+                                        <MenuItem value="checking">Checking Account</MenuItem>
+                                        <MenuItem value="current">Current Account</MenuItem>
+                                      </TextField>
+                                    )}
+                                  </Field>
+                                ) : (
+                                  <Typography variant="body1" fontWeight={600} sx={{ fontSize: '1.1rem' }}>
+                                    {detailsModalEmployee?.bankDetails?.accountType ? (
+                                      detailsModalEmployee.bankDetails.accountType === 'savings' ? 'Savings Account' :
+                                      detailsModalEmployee.bankDetails.accountType === 'checking' ? 'Checking Account' :
+                                      detailsModalEmployee.bankDetails.accountType === 'current' ? 'Current Account' :
+                                      detailsModalEmployee.bankDetails.accountType
+                                    ) : 'Not provided'}
+                                  </Typography>
+                                )}
+                              </Box>
+                            </Card>
+                          </Grid>
+
+                          {/* Bank Document Upload Section */}
+                          {isEditMode && (
+                            <Grid item xs={12}>
+                              <Card
+                                sx={{
+                                  p: 4,
+                                  boxShadow: 3,
+                                  borderRadius: 3,
+                                  backgroundColor: '#ffffff'
+                                }}
+                              >
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                  Bank Document Upload
+                                </Typography>
+                                <Divider sx={{ mb: 3 }} />
+
+                                <Grid container spacing={3}>
+                                  <Grid item xs={12} md={6}>
+                                    <Dropzone
+                                      onDrop={async (acceptedFiles) => {
+                                        if (acceptedFiles.length > 0) {
+                                          const file = acceptedFiles[0];
+                                          try {
+                                            const docRef = ref(storage, `documents/${detailsModalEmployee.id}/bank-statement/${file.name}`);
+                                            await uploadBytes(docRef, file);
+                                            const documentUrl = await getDownloadURL(docRef);
+
+                                            // Update employee bank statement document in database
+                                            if (isFirebaseConfigured) {
+                                              const updatedBankDetails = {
+                                                ...detailsModalEmployee.bankDetails,
+                                                bankStatementUrl: documentUrl
+                                              };
+                                              await updateDoc(doc(db, 'employees', detailsModalEmployee.id), {
+                                                bankDetails: updatedBankDetails
+                                              });
+                                            }
+
+                                            // Update local state
+                                            setDetailsModalEmployee(prev => ({
+                                              ...prev,
+                                              bankDetails: {
+                                                ...prev.bankDetails,
+                                                bankStatementUrl: documentUrl
+                                              }
+                                            }));
+
+                                            toast.success('Bank statement uploaded successfully');
+                                          } catch (error) {
+                                            console.error('Bank statement upload error:', error);
+                                            toast.error('Failed to upload bank statement');
+                                          }
+                                        }
+                                      }}
+                                      accept={{
+                                        'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
+                                        'application/pdf': ['.pdf']
+                                      }}
+                                      maxFiles={1}
+                                      maxSize={10485760} // 10MB
+                                    >
+                                      {({ getRootProps, getInputProps, isDragActive }) => (
+                                        <Box
+                                          {...getRootProps()}
+                                          sx={{
+                                            textAlign: 'center',
+                                            p: 3,
+                                            border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
+                                            borderRadius: 2,
+                                            cursor: 'pointer',
+                                            backgroundColor: isDragActive ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                              borderColor: theme.palette.primary.main,
+                                              backgroundColor: alpha(theme.palette.primary.main, 0.02)
+                                            }
+                                          }}
+                                        >
+                                          <input {...getInputProps()} />
+                                          <UploadIcon sx={{ fontSize: 48, color: isDragActive ? 'primary.main' : 'text.secondary', mb: 2 }} />
+                                          <Typography variant="h6" gutterBottom>
+                                            Bank Statement
+                                          </Typography>
+                                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            {isDragActive ? 'Drop bank statement here' : 'Upload bank statement (PDF, JPG, PNG)'}
+                                          </Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            Max 10MB • PDF or Images
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                    </Dropzone>
+                                  </Grid>
+
+                                  <Grid item xs={12} md={6}>
+                                    <Dropzone
+                                      onDrop={async (acceptedFiles) => {
+                                        if (acceptedFiles.length > 0) {
+                                          const file = acceptedFiles[0];
+                                          try {
+                                            const docRef = ref(storage, `documents/${detailsModalEmployee.id}/bank-letter/${file.name}`);
+                                            await uploadBytes(docRef, file);
+                                            const documentUrl = await getDownloadURL(docRef);
+
+                                            // Update employee bank letter document in database
+                                            if (isFirebaseConfigured) {
+                                              const updatedBankDetails = {
+                                                ...detailsModalEmployee.bankDetails,
+                                                bankLetterUrl: documentUrl
+                                              };
+                                              await updateDoc(doc(db, 'employees', detailsModalEmployee.id), {
+                                                bankDetails: updatedBankDetails
+                                              });
+                                            }
+
+                                            // Update local state
+                                            setDetailsModalEmployee(prev => ({
+                                              ...prev,
+                                              bankDetails: {
+                                                ...prev.bankDetails,
+                                                bankLetterUrl: documentUrl
+                                              }
+                                            }));
+
+                                            toast.success('Bank letter uploaded successfully');
+                                          } catch (error) {
+                                            console.error('Bank letter upload error:', error);
+                                            toast.error('Failed to upload bank letter');
+                                          }
+                                        }
+                                      }}
+                                      accept={{
+                                        'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
+                                        'application/pdf': ['.pdf']
+                                      }}
+                                      maxFiles={1}
+                                      maxSize={10485760} // 10MB
+                                    >
+                                      {({ getRootProps, getInputProps, isDragActive }) => (
+                                        <Box
+                                          {...getRootProps()}
+                                          sx={{
+                                            textAlign: 'center',
+                                            p: 3,
+                                            border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
+                                            borderRadius: 2,
+                                            cursor: 'pointer',
+                                            backgroundColor: isDragActive ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                              borderColor: theme.palette.primary.main,
+                                              backgroundColor: alpha(theme.palette.primary.main, 0.02)
+                                            }
+                                          }}
+                                        >
+                                          <input {...getInputProps()} />
+                                          <input {...getInputProps()} />
+                                          <UploadIcon sx={{ fontSize: 48, color: isDragActive ? 'primary.main' : 'text.secondary', mb: 2 }} />
+                                          <Typography variant="h6" gutterBottom>
+                                            Bank Letter
+                                          </Typography>
+                                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            {isDragActive ? 'Drop bank letter here' : 'Upload bank letter (PDF, JPG, PNG)'}
+                                          </Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            Max 10MB • PDF or Images
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                    </Dropzone>
+                                  </Grid>
+                                </Grid>
+                              </Card>
+                            </Grid>
+                          )}
+
+                          {/* Bank Document View Section */}
+                          {!isEditMode && (
+                            <Grid item xs={12}>
+                              <Card
+                                sx={{
+                                  p: 4,
+                                  boxShadow: 3,
+                                  borderRadius: 3,
+                                  backgroundColor: '#ffffff'
+                                }}
+                              >
+                                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3, color: 'primary.main' }}>
+                                  Bank Documents
+                                </Typography>
+                                <Divider sx={{ mb: 3 }} />
+
+                                <Grid container spacing={3}>
+                                  <Grid item xs={12} md={6}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Bank Statement
+                                    </Typography>
+                                    {detailsModalEmployee?.bankDetails?.bankStatementUrl ? (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                                        <Button
+                                          variant="outlined"
+                                          startIcon={<DownloadIcon />}
+                                          onClick={() => window.open(detailsModalEmployee.bankDetails.bankStatementUrl, '_blank')}
+                                          sx={{ borderRadius: 2, textTransform: 'none' }}
+                                        >
+                                          View Bank Statement
+                                        </Button>
+                                      </Box>
+                                    ) : (
+                                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                        No bank statement uploaded
+                                      </Typography>
+                                    )}
+                                  </Grid>
+
+                                  <Grid item xs={12} md={6}>
+                                    <Typography variant="subtitle2" color="text.secondary" gutterBottom sx={{ fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 600 }}>
+                                      Bank Letter
+                                    </Typography>
+                                    {detailsModalEmployee?.bankDetails?.bankLetterUrl ? (
+                                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 1 }}>
+                                        <Button
+                                          variant="outlined"
+                                          startIcon={<DownloadIcon />}
+                                          onClick={() => window.open(detailsModalEmployee.bankDetails.bankLetterUrl, '_blank')}
+                                          sx={{ borderRadius: 2, textTransform: 'none' }}
+                                        >
+                                          View Bank Letter
+                                        </Button>
+                                      </Box>
+                                    ) : (
+                                      <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+                                        No bank letter uploaded
+                                      </Typography>
+                                    )}
+                                  </Grid>
+                                </Grid>
+                              </Card>
+                            </Grid>
+                          )}
                         </Grid>
                       </TabPanel>
                     </Container>
