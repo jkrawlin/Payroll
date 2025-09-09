@@ -116,7 +116,7 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
             </IconButton>
           )}
 
-          {/* Logo and Title */}
+          {/* Logo and Title - Removed for cleaner interface */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -138,35 +138,7 @@ const Header = ({ onDrawerToggle, role = 'admin' }) => {
               >
                 <BusinessIcon sx={{ fontSize: 24, color: 'white' }} />
               </Box>
-              {!isMobile && (
-                <Box>
-                  <Typography 
-                    variant="h6" 
-                    noWrap 
-                    component="div"
-                    sx={{ 
-                      fontWeight: 700,
-                      background: 'linear-gradient(135deg, #6a1b9a 0%, #00bcd4 100%)',
-                      backgroundClip: 'text',
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                    }}
-                  >
-                    Qatar Payroll
-                  </Typography>
-                  <Typography 
-                    variant="caption" 
-                    sx={{ 
-                      color: theme.palette.text.secondary,
-                      display: 'block',
-                      lineHeight: 1,
-                      mt: -0.5,
-                    }}
-                  >
-                    Management System
-                  </Typography>
-                </Box>
-              )}
+              {/* Title removed for cleaner, title-less interface */}
             </Box>
           </motion.div>
 

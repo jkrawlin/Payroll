@@ -37,9 +37,6 @@ import {
   AccordionDetails,
   Tabs,
   Tab,
-  List,
-  ListItem,
-  ListItemText,
   Divider,
   useMediaQuery,
   CircularProgress,
@@ -64,9 +61,6 @@ import {
   AttachMoney as MoneyIcon,
   CloudUpload as CloudUploadIcon,
   CameraAlt as CameraAltIcon,
-  Badge as BadgeIcon,
-  FlightTakeoff as FlightTakeoffIcon,
-  Payments as PaymentsIcon,
   Payment as PaymentIcon,
   Receipt as ReceiptIcon,
   History as HistoryIcon,
@@ -124,27 +118,6 @@ const Employees = () => {
   // Unified edit mode state for modal
   const [isEditMode, setIsEditMode] = useState(false);
   const [savingChanges, setSavingChanges] = useState(false);
-
-  // Helper functions for calculations and formatting
-  const calculateDaysPaid = (employee) => {
-    if (!employee?.totalPaid || !employee?.salary) return 0;
-    const dailyRate = employee.salary / 30; // Assume 30-day month
-    return Math.floor(employee.totalPaid / dailyRate);
-  };
-
-  // Helper function to calculate days until document expiry
-  const calculateDaysToExpiry = (expiryDate) => {
-    if (!expiryDate) return null;
-    try {
-      const expiry = expiryDate.toDate ? expiryDate.toDate() : new Date(expiryDate);
-      const today = new Date();
-      const diffTime = expiry - today;
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      return diffDays;
-    } catch (error) {
-      return null;
-    }
-  };
 
   // Photo upload functionality
   const [photoUploadModal, setPhotoUploadModal] = useState(false);
@@ -896,52 +869,80 @@ const Employees = () => {
                         border: 'none',
                       },
                       '& .MuiDataGrid-row': {
-                        minHeight: 68,
+                        minHeight: 80, // Increased from 68 for better spacing
                         cursor: 'pointer',
-                        borderRadius: 1,
-                        mb: 0.5,
-                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                        borderRadius: 2,
+                        mb: 1, // Increased from 0.5 for better separation
+                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.15)}`, // More visible divider
+                        backgroundColor: '#ffffff',
+                        transition: 'all 0.2s ease',
                         '&:hover': {
-                          backgroundColor: alpha(theme.palette.primary.main, 0.03),
+                          backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                          transform: 'translateY(-1px)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                        },
+                        '&:nth-of-type(even)': {
+                          backgroundColor: alpha(theme.palette.grey[50], 0.3), // Subtle zebra striping
                         },
                         '&:last-child': {
-                          borderBottom: 'none'
+                          borderBottom: 'none',
+                          mb: 0,
                         }
                       },
                       '& .MuiDataGrid-cell': {
                         borderBottom: 'none',
-                        py: 1.5,
-                        px: 2,
+                        py: 2.5, // Increased from 1.5 for better vertical padding
+                        px: 3, // Increased from 2 for better horizontal padding
                         fontSize: '0.9rem',
                         display: 'flex',
-                        alignItems: 'center'
+                        alignItems: 'center',
+                        borderRight: `1px solid ${alpha(theme.palette.divider, 0.08)}`, // Subtle column dividers
+                        '&:last-child': {
+                          borderRight: 'none',
+                        }
                       },
                       '& .MuiDataGrid-columnHeaders': {
                         backgroundColor: theme.palette.primary.main,
                         fontWeight: 600,
                         fontSize: '0.95rem',
                         color: 'common.white',
-                        borderBottom: 'none',
-                        borderRadius: '8px 8px 0 0',
-                        minHeight: 52,
+                        borderBottom: `2px solid ${theme.palette.primary.dark}`,
+                        minHeight: 56, // Increased from 52
                         '& .MuiDataGrid-columnHeader': {
                           color: 'common.white',
+                          backgroundColor: 'transparent',
                         },
                         '& .MuiDataGrid-columnHeaderTitle': {
                           color: 'common.white',
                           fontWeight: 600,
+                          fontSize: '0.9rem',
+                        },
+                        '& .MuiDataGrid-columnSeparator': {
+                          color: alpha(theme.palette.common.white, 0.3),
                         }
                       },
-                      backgroundColor: '#ffffff',
-                      borderRadius: 2,
-                      border: `1px solid ${alpha(theme.palette.divider, 0.12)}`,
-                      '& .MuiDataGrid-footerContainer': {
-                        backgroundColor: alpha(theme.palette.grey[50], 0.3),
-                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
-                        minHeight: 52
+                      '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-cell:focus': {
+                        outline: `2px solid ${theme.palette.primary.main}`,
+                        outlineOffset: -1,
                       },
+                      backgroundColor: '#ffffff',
+                      borderRadius: 3,
+                      border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                      boxShadow: '0 2px 12px rgba(0,0,0,0.08)',
                       '& .MuiDataGrid-virtualScroller': {
                         backgroundColor: '#ffffff'
+                      },
+                      '& .MuiDataGrid-footerContainer': {
+                        backgroundColor: alpha(theme.palette.grey[50], 0.5),
+                        borderTop: `1px solid ${alpha(theme.palette.divider, 0.3)}`,
+                        minHeight: 56,
+                        borderRadius: '0 0 8px 8px',
+                      },
+                      '& .MuiDataGrid-toolbarContainer': {
+                        backgroundColor: alpha(theme.palette.primary.main, 0.02),
+                        borderBottom: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                        py: 1,
+                        px: 2,
                       }
                     }}
                     pageSize={10}
@@ -1786,26 +1787,112 @@ const Employees = () => {
                               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, mb: 3 }}>
                                 Profile Photo
                               </Typography>
-                              <Avatar
-                                src={detailsModalEmployee?.photoUrl || detailsModalEmployee?.photoURL}
-                                alt={detailsModalEmployee?.name}
-                                onError={(e) => {
-                                  // Fallback for broken images
-                                  e.target.style.backgroundColor = theme.palette.grey[300];
-                                }}
-                                sx={{
-                                  width: 120,
-                                  height: 120,
-                                  mx: 'auto',
-                                  mb: 3,
-                                  backgroundColor: theme.palette.grey[300],
-                                  fontSize: '2.5rem',
-                                  fontWeight: 600,
-                                  border: `4px solid ${theme.palette.primary.main}`,
-                                }}
-                              >
-                                {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
-                              </Avatar>
+                              
+                              {/* Inline Photo Upload Dropzone */}
+                              {isEditMode ? (
+                                <Dropzone
+                                  onDrop={async (acceptedFiles) => {
+                                    if (acceptedFiles.length > 0) {
+                                      const file = acceptedFiles[0];
+                                      try {
+                                        const photoRef = ref(storage, `employee-photos/${detailsModalEmployee.id}/${file.name}`);
+                                        await uploadBytes(photoRef, file);
+                                        const photoUrl = await getDownloadURL(photoRef);
+                                        
+                                        // Update employee photo in database
+                                        if (isFirebaseConfigured) {
+                                          await updateDoc(doc(db, 'employees', detailsModalEmployee.id), { photoUrl });
+                                        }
+                                        
+                                        // Update local state
+                                        setDetailsModalEmployee(prev => ({
+                                          ...prev,
+                                          photoUrl
+                                        }));
+                                        
+                                        toast.success('Profile photo updated successfully');
+                                      } catch (error) {
+                                        console.error('Photo upload error:', error);
+                                        toast.error('Failed to upload photo');
+                                      }
+                                    }
+                                  }}
+                                  accept={{ 'image/*': [] }}
+                                  maxFiles={1}
+                                  maxSize={5242880} // 5MB
+                                >
+                                  {({ getRootProps, getInputProps, isDragActive }) => (
+                                    <Box 
+                                      {...getRootProps()} 
+                                      sx={{ 
+                                        cursor: 'pointer',
+                                        border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`,
+                                        borderRadius: 2,
+                                        p: 2,
+                                        mb: 3,
+                                        backgroundColor: isDragActive ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                                        transition: 'all 0.3s ease',
+                                        '&:hover': {
+                                          borderColor: theme.palette.primary.main,
+                                          backgroundColor: alpha(theme.palette.primary.main, 0.02)
+                                        }
+                                      }}
+                                    >
+                                      <input {...getInputProps()} />
+                                      <Avatar
+                                        src={detailsModalEmployee?.photoUrl || detailsModalEmployee?.photoURL}
+                                        alt={detailsModalEmployee?.name}
+                                        onError={(e) => {
+                                          // Fallback for broken images
+                                          e.target.style.backgroundColor = theme.palette.grey[300];
+                                        }}
+                                        sx={{
+                                          width: 120,
+                                          height: 120,
+                                          mx: 'auto',
+                                          mb: 2,
+                                          backgroundColor: theme.palette.grey[300],
+                                          fontSize: '2.5rem',
+                                          fontWeight: 600,
+                                          border: `4px solid ${theme.palette.primary.main}`,
+                                          opacity: isDragActive ? 0.7 : 1,
+                                          transition: 'opacity 0.3s ease'
+                                        }}
+                                      >
+                                        {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
+                                      </Avatar>
+                                      <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.875rem' }}>
+                                        {isDragActive ? 'Drop photo here' : 'Click or drag to change photo'}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        JPG, PNG, GIF (Max 5MB)
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                </Dropzone>
+                              ) : (
+                                <Avatar
+                                  src={detailsModalEmployee?.photoUrl || detailsModalEmployee?.photoURL}
+                                  alt={detailsModalEmployee?.name}
+                                  onError={(e) => {
+                                    // Fallback for broken images
+                                    e.target.style.backgroundColor = theme.palette.grey[300];
+                                  }}
+                                  sx={{
+                                    width: 120,
+                                    height: 120,
+                                    mx: 'auto',
+                                    mb: 3,
+                                    backgroundColor: theme.palette.grey[300],
+                                    fontSize: '2.5rem',
+                                    fontWeight: 600,
+                                    border: `4px solid ${theme.palette.primary.main}`,
+                                  }}
+                                >
+                                  {detailsModalEmployee?.name?.charAt(0).toUpperCase()}
+                                </Avatar>
+                              )}
+                              
                               <Typography variant="h6" fontWeight={600} gutterBottom>
                                 {detailsModalEmployee?.name}
                               </Typography>
@@ -2314,69 +2401,157 @@ const Employees = () => {
                                 
                                 <Grid container spacing={3}>
                                   <Grid item xs={12} md={6}>
-                                    <Box sx={{ textAlign: 'center', p: 3, border: `2px dashed ${theme.palette.divider}`, borderRadius: 2 }}>
-                                      <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                                      <Typography variant="h6" gutterBottom>
-                                        Passport Document
-                                      </Typography>
-                                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                                        Upload passport copy (PDF, JPG, PNG)
-                                      </Typography>
-                                      <Button
-                                        variant="contained"
-                                        component="label"
-                                        startIcon={<UploadIcon />}
-                                        sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
-                                      >
-                                        Choose File
-                                        <input
-                                          type="file"
-                                          hidden
-                                          accept=".pdf,.jpg,.jpeg,.png"
-                                          onChange={(e) => {
-                                            // Handle passport document upload
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                              // Process file upload
-                                              console.log('Passport file selected:', file.name);
+                                    <Dropzone
+                                      onDrop={async (acceptedFiles) => {
+                                        if (acceptedFiles.length > 0) {
+                                          const file = acceptedFiles[0];
+                                          try {
+                                            const docRef = ref(storage, `documents/${detailsModalEmployee.id}/passport/${file.name}`);
+                                            await uploadBytes(docRef, file);
+                                            const documentUrl = await getDownloadURL(docRef);
+                                            
+                                            // Update employee passport document in database
+                                            if (isFirebaseConfigured) {
+                                              const updatedPassport = {
+                                                ...detailsModalEmployee.passport,
+                                                documentUrl
+                                              };
+                                              await updateDoc(doc(db, 'employees', detailsModalEmployee.id), { 
+                                                passport: updatedPassport 
+                                              });
+                                            }
+                                            
+                                            // Update local state
+                                            setDetailsModalEmployee(prev => ({
+                                              ...prev,
+                                              passport: {
+                                                ...prev.passport,
+                                                documentUrl
+                                              }
+                                            }));
+                                            
+                                            toast.success('Passport document uploaded successfully');
+                                          } catch (error) {
+                                            console.error('Document upload error:', error);
+                                            toast.error('Failed to upload passport document');
+                                          }
+                                        }
+                                      }}
+                                      accept={{ 
+                                        'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
+                                        'application/pdf': ['.pdf']
+                                      }}
+                                      maxFiles={1}
+                                      maxSize={10485760} // 10MB
+                                    >
+                                      {({ getRootProps, getInputProps, isDragActive }) => (
+                                        <Box 
+                                          {...getRootProps()} 
+                                          sx={{ 
+                                            textAlign: 'center', 
+                                            p: 3, 
+                                            border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`, 
+                                            borderRadius: 2,
+                                            cursor: 'pointer',
+                                            backgroundColor: isDragActive ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                              borderColor: theme.palette.primary.main,
+                                              backgroundColor: alpha(theme.palette.primary.main, 0.02)
                                             }
                                           }}
-                                        />
-                                      </Button>
-                                    </Box>
+                                        >
+                                          <input {...getInputProps()} />
+                                          <UploadIcon sx={{ fontSize: 48, color: isDragActive ? 'primary.main' : 'text.secondary', mb: 2 }} />
+                                          <Typography variant="h6" gutterBottom>
+                                            Passport Document
+                                          </Typography>
+                                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            {isDragActive ? 'Drop passport document here' : 'Upload passport copy (PDF, JPG, PNG)'}
+                                          </Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            Max 10MB • PDF or Images
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                    </Dropzone>
                                   </Grid>
                                   
                                   <Grid item xs={12} md={6}>
-                                    <Box sx={{ textAlign: 'center', p: 3, border: `2px dashed ${theme.palette.divider}`, borderRadius: 2 }}>
-                                      <UploadIcon sx={{ fontSize: 48, color: 'text.secondary', mb: 2 }} />
-                                      <Typography variant="h6" gutterBottom>
-                                        QID Document
-                                      </Typography>
-                                      <Typography variant="body2" color="text.secondary" gutterBottom>
-                                        Upload QID copy (PDF, JPG, PNG)
-                                      </Typography>
-                                      <Button
-                                        variant="contained"
-                                        component="label"
-                                        startIcon={<UploadIcon />}
-                                        sx={{ mt: 2, borderRadius: 2, textTransform: 'none' }}
-                                      >
-                                        Choose File
-                                        <input
-                                          type="file"
-                                          hidden
-                                          accept=".pdf,.jpg,.jpeg,.png"
-                                          onChange={(e) => {
-                                            // Handle QID document upload
-                                            const file = e.target.files[0];
-                                            if (file) {
-                                              // Process file upload
-                                              console.log('QID file selected:', file.name);
+                                    <Dropzone
+                                      onDrop={async (acceptedFiles) => {
+                                        if (acceptedFiles.length > 0) {
+                                          const file = acceptedFiles[0];
+                                          try {
+                                            const docRef = ref(storage, `documents/${detailsModalEmployee.id}/qid/${file.name}`);
+                                            await uploadBytes(docRef, file);
+                                            const documentUrl = await getDownloadURL(docRef);
+                                            
+                                            // Update employee QID document in database
+                                            if (isFirebaseConfigured) {
+                                              const updatedQid = {
+                                                ...detailsModalEmployee.qid,
+                                                documentUrl
+                                              };
+                                              await updateDoc(doc(db, 'employees', detailsModalEmployee.id), { 
+                                                qid: updatedQid 
+                                              });
+                                            }
+                                            
+                                            // Update local state
+                                            setDetailsModalEmployee(prev => ({
+                                              ...prev,
+                                              qid: {
+                                                ...prev.qid,
+                                                documentUrl
+                                              }
+                                            }));
+                                            
+                                            toast.success('QID document uploaded successfully');
+                                          } catch (error) {
+                                            console.error('Document upload error:', error);
+                                            toast.error('Failed to upload QID document');
+                                          }
+                                        }
+                                      }}
+                                      accept={{ 
+                                        'image/*': ['.jpeg', '.jpg', '.png', '.gif'],
+                                        'application/pdf': ['.pdf']
+                                      }}
+                                      maxFiles={1}
+                                      maxSize={10485760} // 10MB
+                                    >
+                                      {({ getRootProps, getInputProps, isDragActive }) => (
+                                        <Box 
+                                          {...getRootProps()} 
+                                          sx={{ 
+                                            textAlign: 'center', 
+                                            p: 3, 
+                                            border: `2px dashed ${isDragActive ? theme.palette.primary.main : theme.palette.divider}`, 
+                                            borderRadius: 2,
+                                            cursor: 'pointer',
+                                            backgroundColor: isDragActive ? alpha(theme.palette.primary.main, 0.05) : 'transparent',
+                                            transition: 'all 0.3s ease',
+                                            '&:hover': {
+                                              borderColor: theme.palette.primary.main,
+                                              backgroundColor: alpha(theme.palette.primary.main, 0.02)
                                             }
                                           }}
-                                        />
-                                      </Button>
-                                    </Box>
+                                        >
+                                          <input {...getInputProps()} />
+                                          <UploadIcon sx={{ fontSize: 48, color: isDragActive ? 'primary.main' : 'text.secondary', mb: 2 }} />
+                                          <Typography variant="h6" gutterBottom>
+                                            QID Document
+                                          </Typography>
+                                          <Typography variant="body2" color="text.secondary" gutterBottom>
+                                            {isDragActive ? 'Drop QID document here' : 'Upload QID copy (PDF, JPG, PNG)'}
+                                          </Typography>
+                                          <Typography variant="caption" color="text.secondary">
+                                            Max 10MB • PDF or Images
+                                          </Typography>
+                                        </Box>
+                                      )}
+                                    </Dropzone>
                                   </Grid>
                                 </Grid>
                               </Card>
