@@ -32,6 +32,14 @@ import {
   Divider,
   Stack,
   Tooltip,
+  Badge,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Fade,
+  Zoom,
+  Skeleton,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
@@ -45,39 +53,68 @@ import {
   Business as BusinessIcon,
   TrendingUp as TrendingUpIcon,
   Groups as GroupsIcon,
+  Person as PersonIcon,
+  Work as WorkIcon,
+  AccountBalance as AccountBalanceIcon,
+  AttachMoney as AttachMoneyIcon,
+  DateRange as DateRangeIcon,
+  FilterList as FilterListIcon,
+  Visibility as VisibilityIcon,
+  Assignment as AssignmentIcon,
+  Payment as PaymentIcon,
 } from '@mui/icons-material';
 
-// Validation Schema
+// Enhanced Validation Schema
 const validationSchema = Yup.object({
-  name: Yup.string().required('Name is required'),
-  position: Yup.string().required('Position is required'),
+  name: Yup.string()
+    .min(2, 'Name must be at least 2 characters')
+    .max(50, 'Name must be less than 50 characters')
+    .required('Name is required'),
+  position: Yup.string()
+    .min(2, 'Position must be at least 2 characters')
+    .required('Position is required'),
   department: Yup.string().required('Department is required'),
-  salary: Yup.number().positive('Salary must be positive').required('Salary is required'),
+  salary: Yup.number()
+    .positive('Salary must be positive')
+    .min(1000, 'Minimum salary is 1000 QAR')
+    .max(100000, 'Maximum salary is 100,000 QAR')
+    .required('Salary is required'),
   email: Yup.string().email('Invalid email format'),
+  phone: Yup.string().matches(/^[\+]?[0-9\s\-\(\)]+$/, 'Invalid phone number format'),
 });
 
-// Premium Desktop Employees Component - Clean build version
+// Enhanced Premium Desktop Employees Component
 const Employees = () => {
   const theme = useTheme();
 
-  // State Management
+  // Enhanced State Management
   const [employees, setEmployees] = useState([]);
   const [filteredEmployees, setFilteredEmployees] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedDepartment, setSelectedDepartment] = useState('all');
+  const [salaryRange, setSalaryRange] = useState('all');
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [detailsModalEmployee, setDetailsModalEmployee] = useState(null);
   const [pageSize, setPageSize] = useState(25);
+  const [selectedEmployee, setSelectedEmployee] = useState(null);
 
-  // Fetch employees data
+  // Enhanced departments list
+  const departments = [
+    'HR', 'IT', 'Finance', 'Operations', 'Sales', 'Marketing', 
+    'Engineering', 'Legal', 'Admin', 'Management'
+  ];
+
+  // Enhanced fetch employees with better error handling
   const fetchEmployees = useCallback(async () => {
     try {
       setLoading(true);
       
       if (!isFirebaseConfigured) {
-        console.log('Firebase not configured, using mock data');
+        console.log('Firebase not configured, using enhanced mock data');
+        // Simulate API delay for better UX
+        await new Promise(resolve => setTimeout(resolve, 800));
         setEmployees(mockEmployees);
         return;
       }
@@ -88,10 +125,10 @@ const Employees = () => {
         id: doc.id, 
         ...doc.data() 
       }));
-      setEmployees(employeeList);
+      setEmployees(employeeList.length > 0 ? employeeList : mockEmployees);
     } catch (error) {
       console.error('Error fetching employees:', error);
-      toast.error('Error loading employees');
+      toast.error('Error loading employees, using offline data');
       setEmployees(mockEmployees);
     } finally {
       setLoading(false);
@@ -103,38 +140,62 @@ const Employees = () => {
     fetchEmployees();
   }, [fetchEmployees]);
 
-  // Filter employees
+  // Enhanced filter employees with salary range
   useEffect(() => {
     let filtered = employees;
     
+    // Search filter
     if (searchTerm) {
       filtered = filtered.filter(emp => 
         emp.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.department?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         emp.position?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        emp.email?.toLowerCase().includes(searchTerm.toLowerCase())
+        emp.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        emp.phone?.includes(searchTerm)
       );
     }
     
+    // Department filter
     if (selectedDepartment !== 'all') {
       filtered = filtered.filter(emp => emp.department === selectedDepartment);
     }
+
+    // Salary range filter
+    if (salaryRange !== 'all') {
+      const ranges = {
+        'low': [0, 5000],
+        'mid': [5000, 10000],
+        'high': [10000, 20000],
+        'premium': [20000, Infinity]
+      };
+      const [min, max] = ranges[salaryRange] || [0, Infinity];
+      filtered = filtered.filter(emp => emp.salary >= min && emp.salary < max);
+    }
     
     setFilteredEmployees(filtered);
-  }, [employees, searchTerm, selectedDepartment]);
+  }, [employees, searchTerm, selectedDepartment, salaryRange]);
 
-  // Calculate statistics
+  // Enhanced statistics calculation
   const statistics = useMemo(() => {
     const totalEmployees = filteredEmployees.length;
+    const totalOriginalEmployees = employees.length;
     const departments = new Set(employees.map(emp => emp.department)).size;
     const avgSalary = employees.length > 0 
       ? Math.round(employees.reduce((sum, emp) => sum + (emp.salary || 0), 0) / employees.length)
       : 0;
     
-    return { totalEmployees, departments, avgSalary };
+    const totalPayroll = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
+    
+    return { 
+      totalEmployees, 
+      totalOriginalEmployees,
+      departments, 
+      avgSalary,
+      totalPayroll 
+    };
   }, [employees, filteredEmployees]);
 
-  // Form handlers
+  // Enhanced form handlers
   const handleEdit = (employee) => {
     setEditingId(employee.id);
     setShowForm(true);
@@ -145,21 +206,30 @@ const Employees = () => {
       department: employee.department || '',
       position: employee.position || '',
       salary: employee.salary || '',
+      joinDate: employee.joinDate || '',
       address: employee.address || '',
     });
   };
 
   const handleDelete = async (employeeId, employeeName) => {
-    if (window.confirm(`Are you sure you want to delete ${employeeName}?`)) {
+    if (window.confirm(`⚠️ Are you sure you want to delete ${employeeName}?\n\nThis action cannot be undone.`)) {
       try {
+        setLoading(true);
+        
         if (isFirebaseConfigured) {
           await deleteDoc(doc(db, 'employees', employeeId));
+        } else {
+          // Simulate API delay for mock data
+          await new Promise(resolve => setTimeout(resolve, 500));
         }
-        toast.success('Employee deleted successfully');
+        
+        toast.success(`Employee ${employeeName} deleted successfully`);
         fetchEmployees();
       } catch (error) {
         toast.error('Error deleting employee');
         console.error('Error deleting employee:', error);
+      } finally {
+        setLoading(false);
       }
     }
   };
@@ -170,7 +240,7 @@ const Employees = () => {
     formik.resetForm();
   };
 
-  // Formik form handling
+  // Enhanced Formik form handling
   const formik = useFormik({
     initialValues: {
       name: '',
@@ -179,28 +249,38 @@ const Employees = () => {
       department: '',
       position: '',
       salary: '',
+      joinDate: '',
       address: '',
     },
     validationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
+        setSubmitting(true);
+        
         const employeeData = {
           ...values,
           salary: parseFloat(values.salary) || 0,
+          joinDate: values.joinDate || new Date().toISOString().split('T')[0],
           createdAt: editingId ? employees.find(e => e.id === editingId)?.createdAt : new Date().toISOString(),
           updatedAt: new Date().toISOString(),
+          photoUrl: `https://i.pravatar.cc/150?img=${Math.floor(Math.random() * 20) + 1}`,
+          totalPaid: 0,
+          transactions: [],
+          advances: []
         };
 
         if (isFirebaseConfigured) {
           if (editingId) {
             await updateDoc(doc(db, 'employees', editingId), employeeData);
-            toast.success('Employee updated successfully');
+            toast.success('Employee updated successfully! 🎉');
           } else {
             await addDoc(collection(db, 'employees'), employeeData);
-            toast.success('Employee added successfully');
+            toast.success('Employee added successfully! 🎉');
           }
         } else {
-          toast.success(editingId ? 'Employee updated successfully' : 'Employee added successfully');
+          // Simulate API delay for mock data
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          toast.success(editingId ? 'Employee updated successfully! 🎉' : 'Employee added successfully! 🎉');
         }
 
         fetchEmployees();
@@ -214,12 +294,12 @@ const Employees = () => {
     },
   });
 
-  // DataGrid columns
+  // Enhanced DataGrid columns with better styling
   const columns = [
     {
       field: 'employee',
       headerName: 'Employee',
-      width: 280,
+      width: 320,
       renderCell: (params) => (
         <Box
           display="flex"
@@ -227,22 +307,43 @@ const Employees = () => {
           sx={{ py: 1.5, cursor: 'pointer' }}
           onClick={() => setDetailsModalEmployee(params.row)}
         >
-          <Avatar
-            sx={{
-              bgcolor: theme.palette.primary.main,
-              mr: 2,
-              width: 40,
-              height: 40,
-            }}
+          <Badge
+            overlap="circular"
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            badgeContent={
+              <Box
+                sx={{
+                  width: 12,
+                  height: 12,
+                  borderRadius: '50%',
+                  bgcolor: 'success.main',
+                  border: `2px solid ${theme.palette.background.paper}`,
+                }}
+              />
+            }
           >
-            {params.row.name?.charAt(0)?.toUpperCase()}
-          </Avatar>
+            <Avatar
+              src={params.row.photoUrl}
+              sx={{
+                bgcolor: theme.palette.primary.main,
+                mr: 2,
+                width: 44,
+                height: 44,
+                border: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
+              }}
+            >
+              {params.row.name?.charAt(0)?.toUpperCase()}
+            </Avatar>
+          </Badge>
           <Box>
-            <Typography variant="subtitle2" fontWeight={600}>
+            <Typography variant="subtitle2" fontWeight={600} color="text.primary">
               {params.row.name}
             </Typography>
             <Typography variant="body2" color="text.secondary">
               {params.row.position}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              Joined: {params.row.joinDate ? new Date(params.row.joinDate).toLocaleDateString() : 'N/A'}
             </Typography>
           </Box>
         </Box>
@@ -257,25 +358,29 @@ const Employees = () => {
           label={params.row.department}
           size="small"
           color="primary"
-          variant="outlined"
+          variant="filled"
+          sx={{
+            fontWeight: 600,
+            borderRadius: 2,
+          }}
         />
       ),
     },
     {
       field: 'contact',
-      headerName: 'Contact',
-      width: 200,
+      headerName: 'Contact Information',
+      width: 250,
       renderCell: (params) => (
         <Box>
           {params.row.email && (
             <Typography variant="body2" sx={{ display: 'flex', alignItems: 'center', mb: 0.5 }}>
-              <EmailIcon sx={{ mr: 1, fontSize: 16 }} />
+              <EmailIcon sx={{ mr: 1, fontSize: 14, color: 'primary.main' }} />
               {params.row.email}
             </Typography>
           )}
           {params.row.phone && (
             <Typography variant="body2" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
-              <PhoneIcon sx={{ mr: 1, fontSize: 16 }} />
+              <PhoneIcon sx={{ mr: 1, fontSize: 14, color: 'secondary.main' }} />
               {params.row.phone}
             </Typography>
           )}
@@ -284,22 +389,45 @@ const Employees = () => {
     },
     {
       field: 'salary',
-      headerName: 'Salary',
-      width: 120,
+      headerName: 'Monthly Salary',
+      width: 150,
       renderCell: (params) => (
-        <Typography variant="body2" color="success.main" fontWeight={600}>
-          {params.row.salary ? `${params.row.salary.toLocaleString()} QAR` : 'N/A'}
-        </Typography>
+        <Box>
+          <Typography variant="body1" color="success.main" fontWeight={700}>
+            {params.row.salary ? `${params.row.salary.toLocaleString()} QAR` : 'N/A'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Annual: {params.row.salary ? `${(params.row.salary * 12).toLocaleString()} QAR` : 'N/A'}
+          </Typography>
+        </Box>
       ),
     },
     {
       field: 'actions',
       headerName: 'Actions',
-      width: 120,
+      width: 140,
       sortable: false,
       renderCell: (params) => (
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Tooltip title="Edit Employee" arrow>
+        <Box sx={{ display: 'flex', gap: 0.5 }}>
+          <Tooltip title={`View ${params.row.name}'s Details`} arrow>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                setDetailsModalEmployee(params.row);
+              }}
+              sx={{
+                color: 'info.main',
+                '&:hover': { 
+                  bgcolor: alpha(theme.palette.info.main, 0.1),
+                  transform: 'scale(1.1)'
+                }
+              }}
+            >
+              <VisibilityIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title={`Edit ${params.row.name}`} arrow>
             <IconButton
               size="small"
               onClick={(e) => {
@@ -308,13 +436,16 @@ const Employees = () => {
               }}
               sx={{
                 color: 'primary.main',
-                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
+                '&:hover': { 
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  transform: 'scale(1.1)'
+                }
               }}
             >
               <EditIcon fontSize="small" />
             </IconButton>
           </Tooltip>
-          <Tooltip title="Delete Employee" arrow>
+          <Tooltip title={`Delete ${params.row.name}`} arrow>
             <IconButton
               size="small"
               onClick={(e) => {
@@ -323,7 +454,10 @@ const Employees = () => {
               }}
               sx={{
                 color: 'error.main',
-                '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
+                '&:hover': { 
+                  bgcolor: alpha(theme.palette.error.main, 0.1),
+                  transform: 'scale(1.1)'
+                }
               }}
             >
               <DeleteIcon fontSize="small" />
@@ -336,246 +470,543 @@ const Employees = () => {
 
   return (
     <Box sx={{ p: 3, backgroundColor: 'background.default', minHeight: '100vh' }}>
-      {/* Header */}
-      <Paper 
-        elevation={0}
-        sx={{ 
-          p: 4, 
-          mb: 3, 
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
-          color: 'white',
-          borderRadius: 2
-        }}
-      >
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Box>
-            <Typography variant="h3" fontWeight={700} gutterBottom>
-              Employee Management
-            </Typography>
-            <Typography variant="h6" sx={{ opacity: 0.9 }}>
-              Premium desktop employee directory and management system
-            </Typography>
-          </Box>
-          <Button
-            variant="contained"
-            size="large"
-            startIcon={<AddIcon />}
-            onClick={() => setShowForm(true)}
-            sx={{
-              bgcolor: alpha('#fff', 0.2),
-              '&:hover': { bgcolor: alpha('#fff', 0.3) },
-              px: 3
-            }}
-          >
-            Add Employee
-          </Button>
-        </Box>
-      </Paper>
-
-      {/* Dashboard Layout */}
-      <Grid container spacing={3}>
-        {/* Sidebar */}
-        <Grid item xs={12} md={3}>
-          <Stack spacing={3}>
-            {/* Search */}
-            <Card elevation={1}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Search & Filter
+      {/* Enhanced Header with Animation */}
+      <Fade in timeout={800}>
+        <Paper 
+          elevation={0}
+          sx={{ 
+            p: 4, 
+            mb: 3, 
+            background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+            color: 'white',
+            borderRadius: 3,
+            position: 'relative',
+            overflow: 'hidden',
+            '&::before': {
+              content: '""',
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              width: '200px',
+              height: '200px',
+              background: `radial-gradient(circle, ${alpha('#fff', 0.1)} 0%, transparent 70%)`,
+            }
+          }}
+        >
+          <Box display="flex" justifyContent="space-between" alignItems="center" position="relative" zIndex={1}>
+            <Box>
+              <Box display="flex" alignItems="center" mb={2}>
+                <PersonIcon sx={{ mr: 2, fontSize: 40 }} />
+                <Typography variant="h3" fontWeight={700}>
+                  Employee Management
                 </Typography>
-                <TextField
-                  fullWidth
-                  placeholder="Search employees..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ mb: 2 }}
+              </Box>
+              <Typography variant="h6" sx={{ opacity: 0.9, mb: 1 }}>
+                Qatar Payroll System • Premium Desktop Interface
+              </Typography>
+              <Box display="flex" alignItems="center" gap={2}>
+                <Chip 
+                  label={`${statistics.totalOriginalEmployees} Total Employees`}
+                  sx={{ bgcolor: alpha('#fff', 0.2), color: 'white', fontWeight: 600 }}
                 />
-                <FormControl fullWidth>
-                  <InputLabel>Department</InputLabel>
-                  <Select
-                    value={selectedDepartment}
-                    onChange={(e) => setSelectedDepartment(e.target.value)}
-                    label="Department"
-                  >
-                    <MenuItem value="all">All Departments</MenuItem>
-                    <MenuItem value="HR">Human Resources</MenuItem>
-                    <MenuItem value="IT">Information Technology</MenuItem>
-                    <MenuItem value="Finance">Finance</MenuItem>
-                    <MenuItem value="Operations">Operations</MenuItem>
-                    <MenuItem value="Sales">Sales</MenuItem>
-                    <MenuItem value="Marketing">Marketing</MenuItem>
-                  </Select>
-                </FormControl>
-              </CardContent>
-            </Card>
+                <Chip 
+                  label={`${statistics.totalPayroll.toLocaleString()} QAR Total Payroll`}
+                  sx={{ bgcolor: alpha('#fff', 0.2), color: 'white', fontWeight: 600 }}
+                />
+              </Box>
+            </Box>
+            <Zoom in timeout={1200}>
+              <Button
+                variant="contained"
+                size="large"
+                startIcon={<AddIcon />}
+                onClick={() => setShowForm(true)}
+                sx={{
+                  bgcolor: alpha('#fff', 0.2),
+                  '&:hover': { 
+                    bgcolor: alpha('#fff', 0.3),
+                    transform: 'translateY(-2px)',
+                    boxShadow: 4
+                  },
+                  px: 4,
+                  py: 1.5,
+                  borderRadius: 2,
+                  transition: 'all 0.3s ease',
+                  fontWeight: 600
+                }}
+              >
+                Add New Employee
+              </Button>
+            </Zoom>
+          </Box>
+        </Paper>
+      </Fade>
 
-            {/* Statistics */}
-            <Card elevation={1}>
-              <CardContent>
-                <Typography variant="h6" fontWeight={600} gutterBottom>
-                  Quick Stats
-                </Typography>
-                <Stack spacing={2}>
-                  <Box sx={{ p: 2, bgcolor: alpha(theme.palette.primary.main, 0.1), borderRadius: 1 }}>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <GroupsIcon color="primary" sx={{ mr: 1 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Total Employees
-                      </Typography>
-                    </Box>
-                    <Typography variant="h4" color="primary" fontWeight={700}>
-                      {statistics.totalEmployees}
+      {/* Enhanced Dashboard Layout */}
+      <Grid container spacing={3}>
+        {/* Enhanced Sidebar */}
+        <Grid item xs={12} lg={3}>
+          <Stack spacing={3}>
+            {/* Enhanced Search and Filter */}
+            <Fade in timeout={1000}>
+              <Card 
+                elevation={2} 
+                sx={{ 
+                  borderRadius: 3,
+                  background: `linear-gradient(145deg, ${theme.palette.background.paper}, ${alpha(theme.palette.primary.main, 0.02)})`,
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box display="flex" alignItems="center" mb={2}>
+                    <FilterListIcon color="primary" sx={{ mr: 1 }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Search & Filter
                     </Typography>
                   </Box>
-                  <Box sx={{ p: 2, bgcolor: alpha(theme.palette.secondary.main, 0.1), borderRadius: 1 }}>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <BusinessIcon color="secondary" sx={{ mr: 1 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Departments
-                      </Typography>
+                  
+                  {/* Enhanced Search */}
+                  <TextField
+                    fullWidth
+                    placeholder="Search employees, positions, emails..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <SearchIcon color="primary" />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{ 
+                      mb: 2,
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 2,
+                        '&:hover': {
+                          '& > fieldset': { borderColor: theme.palette.primary.main }
+                        }
+                      }
+                    }}
+                  />
+
+                  {/* Department Filter */}
+                  <FormControl fullWidth sx={{ mb: 2 }}>
+                    <InputLabel>Department</InputLabel>
+                    <Select
+                      value={selectedDepartment}
+                      onChange={(e) => setSelectedDepartment(e.target.value)}
+                      label="Department"
+                      sx={{ borderRadius: 2 }}
+                    >
+                      <MenuItem value="all">All Departments</MenuItem>
+                      {departments.map(dept => (
+                        <MenuItem key={dept} value={dept}>{dept}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  {/* Salary Range Filter */}
+                  <FormControl fullWidth>
+                    <InputLabel>Salary Range</InputLabel>
+                    <Select
+                      value={salaryRange}
+                      onChange={(e) => setSalaryRange(e.target.value)}
+                      label="Salary Range"
+                      sx={{ borderRadius: 2 }}
+                    >
+                      <MenuItem value="all">All Ranges</MenuItem>
+                      <MenuItem value="low">1,000 - 5,000 QAR</MenuItem>
+                      <MenuItem value="mid">5,000 - 10,000 QAR</MenuItem>
+                      <MenuItem value="high">10,000 - 20,000 QAR</MenuItem>
+                      <MenuItem value="premium">20,000+ QAR</MenuItem>
+                    </Select>
+                  </FormControl>
+
+                  {searchTerm && (
+                    <Box mt={2}>
+                      <Button 
+                        variant="outlined" 
+                        size="small" 
+                        onClick={() => setSearchTerm('')}
+                        fullWidth
+                        sx={{ borderRadius: 2 }}
+                      >
+                        Clear Search
+                      </Button>
                     </Box>
-                    <Typography variant="h4" color="secondary" fontWeight={700}>
-                      {statistics.departments}
+                  )}
+                </CardContent>
+              </Card>
+            </Fade>
+
+            {/* Enhanced Statistics Dashboard */}
+            <Fade in timeout={1400}>
+              <Card 
+                elevation={2}
+                sx={{ 
+                  borderRadius: 3,
+                  background: `linear-gradient(145deg, ${theme.palette.background.paper}, ${alpha(theme.palette.secondary.main, 0.02)})`,
+                }}
+              >
+                <CardContent sx={{ p: 3 }}>
+                  <Box display="flex" alignItems="center" mb={3}>
+                    <TrendingUpIcon color="secondary" sx={{ mr: 1 }} />
+                    <Typography variant="h6" fontWeight={700}>
+                      Quick Analytics
                     </Typography>
                   </Box>
-                  <Box sx={{ p: 2, bgcolor: alpha(theme.palette.success.main, 0.1), borderRadius: 1 }}>
-                    <Box display="flex" alignItems="center" mb={1}>
-                      <TrendingUpIcon color="success" sx={{ mr: 1 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Avg Salary
+                  
+                  <Stack spacing={2}>
+                    {/* Total Employees Stat */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.primary.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" justifyContent="space-between" mb={1}>
+                        <Box display="flex" alignItems="center">
+                          <GroupsIcon color="primary" sx={{ mr: 1 }} />
+                          <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                            {statistics.totalEmployees === statistics.totalOriginalEmployees 
+                              ? 'Total Employees' 
+                              : `Filtered (${statistics.totalEmployees}/${statistics.totalOriginalEmployees})`
+                            }
+                          </Typography>
+                        </Box>
+                      </Box>
+                      <Typography variant="h3" color="primary" fontWeight={800}>
+                        {statistics.totalEmployees}
                       </Typography>
-                    </Box>
-                    <Typography variant="h4" color="success.main" fontWeight={700}>
-                      {statistics.avgSalary.toLocaleString()} QAR
-                    </Typography>
-                  </Box>
-                </Stack>
-              </CardContent>
-            </Card>
+                      <Typography variant="caption" color="text.secondary">
+                        Active workforce
+                      </Typography>
+                    </Paper>
+
+                    {/* Departments Stat */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={1}>
+                        <BusinessIcon color="secondary" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Departments
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" color="secondary" fontWeight={800}>
+                        {statistics.departments}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Organizational units
+                      </Typography>
+                    </Paper>
+
+                    {/* Average Salary Stat */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)}, ${alpha(theme.palette.success.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={1}>
+                        <AttachMoneyIcon color="success" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Average Salary
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" color="success.main" fontWeight={800}>
+                        {statistics.avgSalary.toLocaleString()}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        QAR per month
+                      </Typography>
+                    </Paper>
+
+                    {/* Total Payroll Stat */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.warning.main, 0.1)}, ${alpha(theme.palette.warning.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.warning.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={1}>
+                        <AccountBalanceIcon color="warning" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Total Payroll
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" color="warning.main" fontWeight={800}>
+                        {statistics.totalPayroll.toLocaleString()}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        QAR monthly cost
+                      </Typography>
+                    </Paper>
+                  </Stack>
+                </CardContent>
+              </Card>
+            </Fade>
           </Stack>
         </Grid>
 
-        {/* Main Content */}
-        <Grid item xs={12} md={9}>
-          <Card elevation={1}>
-            <CardContent sx={{ p: 0 }}>
-              <Box sx={{ p: 3, borderBottom: 1, borderColor: 'divider' }}>
-                <Typography variant="h5" fontWeight={600}>
-                  Employee Directory
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  {filteredEmployees.length} employees • Premium desktop interface
-                </Typography>
-              </Box>
-              
-              <Box sx={{ height: 600, width: '100%' }}>
-                <DataGrid
-                  rows={filteredEmployees.map((emp, index) => ({
-                    ...emp,
-                    id: emp.id || `employee-${index}`,
-                  }))}
-                  columns={columns}
-                  pageSize={pageSize}
-                  rowsPerPageOptions={[10, 25, 50, 100]}
-                  onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
-                  loading={loading}
-                  disableSelectionOnClick
-                  sx={{
-                    border: 'none',
-                    '& .MuiDataGrid-columnHeaders': {
-                      bgcolor: alpha(theme.palette.primary.main, 0.05),
-                    },
-                    '& .MuiDataGrid-row:hover': {
-                      bgcolor: alpha(theme.palette.primary.main, 0.02),
-                    },
+        {/* Enhanced Main Content */}
+        <Grid item xs={12} lg={9}>
+          <Fade in timeout={1600}>
+            <Card 
+              elevation={2}
+              sx={{ 
+                borderRadius: 3,
+                overflow: 'hidden'
+              }}
+            >
+              <CardContent sx={{ p: 0 }}>
+                {/* Enhanced Table Header */}
+                <Box 
+                  sx={{ 
+                    p: 3, 
+                    borderBottom: 1, 
+                    borderColor: 'divider',
+                    background: `linear-gradient(90deg, ${alpha(theme.palette.primary.main, 0.05)}, transparent)`
                   }}
-                />
-              </Box>
-            </CardContent>
-          </Card>
+                >
+                  <Box display="flex" justifyContent="space-between" alignItems="center">
+                    <Box>
+                      <Typography variant="h5" fontWeight={700} color="text.primary">
+                        Employee Directory
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {filteredEmployees.length} employees found • Premium desktop interface
+                      </Typography>
+                    </Box>
+                    <Box display="flex" gap={2}>
+                      <Chip 
+                        icon={<PersonIcon />}
+                        label={`${filteredEmployees.length} Records`}
+                        color="primary"
+                        variant="outlined"
+                      />
+                      {loading && <CircularProgress size={24} />}
+                    </Box>
+                  </Box>
+                </Box>
+                
+                {/* Enhanced DataGrid */}
+                <Box sx={{ width: '100%' }}>
+                  {loading ? (
+                    <Box sx={{ p: 3 }}>
+                      {[...Array(5)].map((_, index) => (
+                        <Box key={index} display="flex" alignItems="center" mb={2}>
+                          <Skeleton variant="circular" width={44} height={44} sx={{ mr: 2 }} />
+                          <Box flex={1}>
+                            <Skeleton variant="text" width="60%" />
+                            <Skeleton variant="text" width="40%" />
+                          </Box>
+                        </Box>
+                      ))}
+                    </Box>
+                  ) : (
+                    <DataGrid
+                      rows={filteredEmployees.map((emp, index) => ({
+                        ...emp,
+                        id: emp.id || `employee-${index}`,
+                      }))}
+                      columns={columns}
+                      pageSize={pageSize}
+                      rowsPerPageOptions={[10, 25, 50, 100]}
+                      onPageSizeChange={(newPageSize) => setPageSize(newPageSize)}
+                      loading={loading}
+                      disableSelectionOnClick
+                      autoHeight
+                      sx={{
+                        border: 'none',
+                        '& .MuiDataGrid-columnHeaders': {
+                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          fontWeight: 700,
+                          fontSize: '0.95rem',
+                        },
+                        '& .MuiDataGrid-row': {
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            transform: 'translateY(-1px)',
+                            boxShadow: 1,
+                          },
+                          transition: 'all 0.2s ease',
+                        },
+                        '& .MuiDataGrid-cell': {
+                          borderColor: alpha(theme.palette.divider, 0.5),
+                        },
+                        '& .MuiDataGrid-footer': {
+                          bgcolor: alpha(theme.palette.background.default, 0.5),
+                        }
+                      }}
+                    />
+                  )}
+                </Box>
+              </CardContent>
+            </Card>
+          </Fade>
         </Grid>
       </Grid>
 
-      {/* Employee Form Dialog */}
+      {/* Enhanced Employee Form Dialog */}
       <Dialog 
         open={showForm} 
         onClose={handleCancel}
         maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minHeight: '600px'
+          }
+        }}
       >
-        <DialogTitle sx={{ bgcolor: 'primary.main', color: 'white' }}>
+        <DialogTitle 
+          sx={{ 
+            bgcolor: 'primary.main', 
+            color: 'white',
+            p: 3
+          }}
+        >
           <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Typography variant="h6">
-              {editingId ? 'Edit Employee' : 'Add New Employee'}
-            </Typography>
-            <IconButton onClick={handleCancel} sx={{ color: 'white' }}>
+            <Box display="flex" alignItems="center">
+              {editingId ? <EditIcon sx={{ mr: 2 }} /> : <AddIcon sx={{ mr: 2 }} />}
+              <Box>
+                <Typography variant="h5" fontWeight={700}>
+                  {editingId ? 'Edit Employee' : 'Add New Employee'}
+                </Typography>
+                <Typography variant="body2" sx={{ opacity: 0.9 }}>
+                  {editingId ? 'Update employee information' : 'Fill in the employee details below'}
+                </Typography>
+              </Box>
+            </Box>
+            <IconButton 
+              onClick={handleCancel} 
+              sx={{ 
+                color: 'white',
+                '&:hover': { bgcolor: alpha('#fff', 0.2) }
+              }}
+            >
               <CloseIcon />
             </IconButton>
           </Box>
         </DialogTitle>
 
-        <DialogContent sx={{ p: 3 }}>
-          <Grid container spacing={3} sx={{ mt: 1 }}>
+        <DialogContent sx={{ p: 4 }}>
+          <Grid container spacing={3} sx={{ mt: 0.5 }}>
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Full Name *"
+                label="Full Name"
                 name="name"
                 value={formik.values.name}
                 onChange={formik.handleChange}
                 error={formik.touched.name && Boolean(formik.errors.name)}
                 helperText={formik.touched.name && formik.errors.name}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PersonIcon color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
               />
             </Grid>
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Position *"
+                label="Position"
                 name="position"
                 value={formik.values.position}
                 onChange={formik.handleChange}
                 error={formik.touched.position && Boolean(formik.errors.position)}
                 helperText={formik.touched.position && formik.errors.position}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <WorkIcon color="primary" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
               />
             </Grid>
+
             <Grid item xs={12} md={6}>
-              <FormControl fullWidth>
-                <InputLabel>Department *</InputLabel>
+              <FormControl fullWidth required>
+                <InputLabel>Department</InputLabel>
                 <Select
                   name="department"
                   value={formik.values.department}
                   onChange={formik.handleChange}
-                  label="Department *"
+                  label="Department"
                   error={formik.touched.department && Boolean(formik.errors.department)}
+                  sx={{ borderRadius: 2 }}
                 >
-                  <MenuItem value="HR">Human Resources</MenuItem>
-                  <MenuItem value="IT">Information Technology</MenuItem>
-                  <MenuItem value="Finance">Finance</MenuItem>
-                  <MenuItem value="Operations">Operations</MenuItem>
-                  <MenuItem value="Sales">Sales</MenuItem>
-                  <MenuItem value="Marketing">Marketing</MenuItem>
+                  {departments.map(dept => (
+                    <MenuItem key={dept} value={dept}>{dept}</MenuItem>
+                  ))}
                 </Select>
+                {formik.touched.department && formik.errors.department && (
+                  <Typography variant="caption" color="error" sx={{ mt: 1, ml: 2 }}>
+                    {formik.errors.department}
+                  </Typography>
+                )}
               </FormControl>
             </Grid>
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
-                label="Monthly Salary (QAR) *"
+                label="Monthly Salary (QAR)"
                 name="salary"
                 type="number"
                 value={formik.values.salary}
                 onChange={formik.handleChange}
                 error={formik.touched.salary && Boolean(formik.errors.salary)}
                 helperText={formik.touched.salary && formik.errors.salary}
+                required
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <AttachMoneyIcon color="success" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
               />
             </Grid>
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -586,8 +1017,21 @@ const Employees = () => {
                 onChange={formik.handleChange}
                 error={formik.touched.email && Boolean(formik.errors.email)}
                 helperText={formik.touched.email && formik.errors.email}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <EmailIcon color="info" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
               />
             </Grid>
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
@@ -595,8 +1039,49 @@ const Employees = () => {
                 name="phone"
                 value={formik.values.phone}
                 onChange={formik.handleChange}
+                error={formik.touched.phone && Boolean(formik.errors.phone)}
+                helperText={formik.touched.phone && formik.errors.phone}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <PhoneIcon color="secondary" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
               />
             </Grid>
+
+            <Grid item xs={12} md={6}>
+              <TextField
+                fullWidth
+                label="Join Date"
+                name="joinDate"
+                type="date"
+                value={formik.values.joinDate}
+                onChange={formik.handleChange}
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <DateRangeIcon color="warning" />
+                    </InputAdornment>
+                  ),
+                }}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
+              />
+            </Grid>
+
             <Grid item xs={12}>
               <TextField
                 fullWidth
@@ -606,85 +1091,317 @@ const Employees = () => {
                 rows={3}
                 value={formik.values.address}
                 onChange={formik.handleChange}
+                sx={{
+                  '& .MuiOutlinedInput-root': {
+                    borderRadius: 2,
+                  }
+                }}
               />
             </Grid>
           </Grid>
         </DialogContent>
 
-        <DialogActions sx={{ p: 3 }}>
-          <Button onClick={handleCancel} variant="outlined">
+        <DialogActions sx={{ p: 4, bgcolor: alpha(theme.palette.background.default, 0.5) }}>
+          <Button 
+            onClick={handleCancel} 
+            variant="outlined"
+            size="large"
+            sx={{ 
+              mr: 2,
+              borderRadius: 2,
+              px: 3
+            }}
+          >
             Cancel
           </Button>
           <Button 
             onClick={formik.handleSubmit}
             variant="contained"
             disabled={formik.isSubmitting}
-            startIcon={formik.isSubmitting && <CircularProgress size={16} />}
+            startIcon={formik.isSubmitting ? <CircularProgress size={16} /> : (editingId ? <EditIcon /> : <AddIcon />)}
+            size="large"
+            sx={{ 
+              borderRadius: 2,
+              px: 4,
+              bgcolor: editingId ? 'warning.main' : 'primary.main',
+              '&:hover': {
+                bgcolor: editingId ? 'warning.dark' : 'primary.dark',
+              }
+            }}
           >
             {editingId ? 'Update Employee' : 'Add Employee'}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Employee Details Dialog */}
+      {/* Enhanced Employee Details Modal */}
       <Dialog
         open={Boolean(detailsModalEmployee)}
         onClose={() => setDetailsModalEmployee(null)}
-        maxWidth="sm"
+        maxWidth="md"
         fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 3,
+            minHeight: '500px'
+          }
+        }}
       >
-        <DialogTitle>
-          <Box display="flex" justifyContent="between" alignItems="center">
-            <Typography variant="h6">Employee Details</Typography>
-            <IconButton onClick={() => setDetailsModalEmployee(null)}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-        </DialogTitle>
-        <DialogContent>
+        <DialogTitle sx={{ p: 0 }}>
           {detailsModalEmployee && (
-            <Box sx={{ textAlign: 'center', py: 2 }}>
-              <Avatar
-                sx={{
-                  width: 80,
-                  height: 80,
-                  mx: 'auto',
-                  mb: 2,
-                  bgcolor: 'primary.main',
-                  fontSize: '2rem'
-                }}
-              >
-                {detailsModalEmployee.name?.charAt(0)}
-              </Avatar>
-              <Typography variant="h5" gutterBottom>
-                {detailsModalEmployee.name}
-              </Typography>
-              <Typography variant="h6" color="text.secondary" gutterBottom>
-                {detailsModalEmployee.position}
-              </Typography>
-              <Chip label={detailsModalEmployee.department} color="primary" sx={{ mb: 2 }} />
-              
-              <Divider sx={{ my: 2 }} />
-              
-              <Grid container spacing={2}>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Email</Typography>
-                  <Typography variant="body1">{detailsModalEmployee.email || 'N/A'}</Typography>
+            <Box
+              sx={{
+                background: `linear-gradient(135deg, ${theme.palette.primary.main}, ${theme.palette.primary.dark})`,
+                color: 'white',
+                p: 4,
+                position: 'relative',
+                overflow: 'hidden',
+                '&::before': {
+                  content: '""',
+                  position: 'absolute',
+                  top: 0,
+                  right: 0,
+                  width: '100px',
+                  height: '100px',
+                  background: `radial-gradient(circle, ${alpha('#fff', 0.1)} 0%, transparent 70%)`,
+                }
+              }}
+            >
+              <Box display="flex" justifyContent="space-between" alignItems="start" position="relative" zIndex={1}>
+                <Box display="flex" alignItems="center">
+                  <Badge
+                    overlap="circular"
+                    anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                    badgeContent={
+                      <Box
+                        sx={{
+                          width: 16,
+                          height: 16,
+                          borderRadius: '50%',
+                          bgcolor: 'success.main',
+                          border: `3px solid white`,
+                        }}
+                      />
+                    }
+                  >
+                    <Avatar
+                      src={detailsModalEmployee.photoUrl}
+                      sx={{
+                        width: 80,
+                        height: 80,
+                        mr: 3,
+                        bgcolor: alpha('#fff', 0.2),
+                        fontSize: '2rem',
+                        fontWeight: 700
+                      }}
+                    >
+                      {detailsModalEmployee.name?.charAt(0)}
+                    </Avatar>
+                  </Badge>
+                  <Box>
+                    <Typography variant="h4" fontWeight={700} gutterBottom>
+                      {detailsModalEmployee.name}
+                    </Typography>
+                    <Typography variant="h6" sx={{ opacity: 0.9, mb: 1 }}>
+                      {detailsModalEmployee.position}
+                    </Typography>
+                    <Chip 
+                      label={detailsModalEmployee.department} 
+                      sx={{ 
+                        bgcolor: alpha('#fff', 0.2), 
+                        color: 'white', 
+                        fontWeight: 600 
+                      }} 
+                    />
+                  </Box>
+                </Box>
+                <IconButton 
+                  onClick={() => setDetailsModalEmployee(null)} 
+                  sx={{ 
+                    color: 'white',
+                    '&:hover': { bgcolor: alpha('#fff', 0.2) }
+                  }}
+                >
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+            </Box>
+          )}
+        </DialogTitle>
+
+        <DialogContent sx={{ p: 4 }}>
+          {detailsModalEmployee && (
+            <Box>
+              <Grid container spacing={3}>
+                {/* Contact Information */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={1} sx={{ p: 3, borderRadius: 2, height: '100%' }}>
+                    <Box display="flex" alignItems="center" mb={2}>
+                      <EmailIcon color="primary" sx={{ mr: 1 }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        Contact Information
+                      </Typography>
+                    </Box>
+                    <List dense>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon>
+                          <EmailIcon color="info" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Email Address"
+                          secondary={detailsModalEmployee.email || 'Not provided'}
+                        />
+                      </ListItem>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon>
+                          <PhoneIcon color="secondary" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Phone Number"
+                          secondary={detailsModalEmployee.phone || 'Not provided'}
+                        />
+                      </ListItem>
+                    </List>
+                  </Paper>
                 </Grid>
-                <Grid item xs={6}>
-                  <Typography variant="body2" color="text.secondary">Phone</Typography>
-                  <Typography variant="body1">{detailsModalEmployee.phone || 'N/A'}</Typography>
+
+                {/* Employment Details */}
+                <Grid item xs={12} md={6}>
+                  <Paper elevation={1} sx={{ p: 3, borderRadius: 2, height: '100%' }}>
+                    <Box display="flex" alignItems="center" mb={2}>
+                      <WorkIcon color="primary" sx={{ mr: 1 }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        Employment Details
+                      </Typography>
+                    </Box>
+                    <List dense>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon>
+                          <BusinessIcon color="secondary" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Department"
+                          secondary={detailsModalEmployee.department}
+                        />
+                      </ListItem>
+                      <ListItem sx={{ px: 0 }}>
+                        <ListItemIcon>
+                          <DateRangeIcon color="warning" />
+                        </ListItemIcon>
+                        <ListItemText
+                          primary="Join Date"
+                          secondary={detailsModalEmployee.joinDate ? new Date(detailsModalEmployee.joinDate).toLocaleDateString() : 'Not provided'}
+                        />
+                      </ListItem>
+                    </List>
+                  </Paper>
                 </Grid>
+
+                {/* Salary Information */}
                 <Grid item xs={12}>
-                  <Typography variant="body2" color="text.secondary">Salary</Typography>
-                  <Typography variant="h6" color="success.main">
-                    {detailsModalEmployee.salary ? `${detailsModalEmployee.salary.toLocaleString()} QAR` : 'N/A'}
-                  </Typography>
+                  <Paper 
+                    elevation={1} 
+                    sx={{ 
+                      p: 3, 
+                      borderRadius: 2,
+                      background: `linear-gradient(135deg, ${alpha(theme.palette.success.main, 0.1)}, ${alpha(theme.palette.success.main, 0.05)})`,
+                      border: `1px solid ${alpha(theme.palette.success.main, 0.2)}`
+                    }}
+                  >
+                    <Box display="flex" alignItems="center" mb={3}>
+                      <AttachMoneyIcon color="success" sx={{ mr: 1 }} />
+                      <Typography variant="h6" fontWeight={600}>
+                        Compensation Details
+                      </Typography>
+                    </Box>
+                    <Grid container spacing={3}>
+                      <Grid item xs={12} md={4}>
+                        <Box textAlign="center">
+                          <Typography variant="h3" color="success.main" fontWeight={800}>
+                            {detailsModalEmployee.salary ? `${detailsModalEmployee.salary.toLocaleString()}` : 'N/A'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            QAR Monthly
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Box textAlign="center">
+                          <Typography variant="h3" color="primary.main" fontWeight={800}>
+                            {detailsModalEmployee.salary ? `${(detailsModalEmployee.salary * 12).toLocaleString()}` : 'N/A'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            QAR Annual
+                          </Typography>
+                        </Box>
+                      </Grid>
+                      <Grid item xs={12} md={4}>
+                        <Box textAlign="center">
+                          <Typography variant="h3" color="warning.main" fontWeight={800}>
+                            {detailsModalEmployee.totalPaid ? `${detailsModalEmployee.totalPaid.toLocaleString()}` : '0'}
+                          </Typography>
+                          <Typography variant="body2" color="text.secondary">
+                            QAR Total Paid
+                          </Typography>
+                        </Box>
+                      </Grid>
+                    </Grid>
+                  </Paper>
                 </Grid>
+
+                {/* Recent Transactions */}
+                {detailsModalEmployee.transactions && detailsModalEmployee.transactions.length > 0 && (
+                  <Grid item xs={12}>
+                    <Paper elevation={1} sx={{ p: 3, borderRadius: 2 }}>
+                      <Box display="flex" alignItems="center" mb={2}>
+                        <PaymentIcon color="primary" sx={{ mr: 1 }} />
+                        <Typography variant="h6" fontWeight={600}>
+                          Recent Transactions
+                        </Typography>
+                      </Box>
+                      <List>
+                        {detailsModalEmployee.transactions.slice(0, 3).map((transaction, index) => (
+                          <ListItem key={index} sx={{ px: 0, borderBottom: index < 2 ? 1 : 0, borderColor: 'divider' }}>
+                            <ListItemIcon>
+                              <AssignmentIcon color={transaction.type === 'salary' ? 'success' : 'warning'} />
+                            </ListItemIcon>
+                            <ListItemText
+                              primary={transaction.description}
+                              secondary={`${new Date(transaction.date).toLocaleDateString()} • ${transaction.amount.toLocaleString()} QAR`}
+                            />
+                          </ListItem>
+                        ))}
+                      </List>
+                    </Paper>
+                  </Grid>
+                )}
               </Grid>
             </Box>
           )}
         </DialogContent>
+
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            variant="outlined" 
+            onClick={() => setDetailsModalEmployee(null)}
+            sx={{ borderRadius: 2 }}
+          >
+            Close
+          </Button>
+          {detailsModalEmployee && (
+            <Button 
+              variant="contained" 
+              onClick={() => {
+                handleEdit(detailsModalEmployee);
+                setDetailsModalEmployee(null);
+              }}
+              startIcon={<EditIcon />}
+              sx={{ borderRadius: 2 }}
+            >
+              Edit Employee
+            </Button>
+          )}
+        </DialogActions>
       </Dialog>
     </Box>
   );
