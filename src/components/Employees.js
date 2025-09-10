@@ -62,6 +62,8 @@ import {
   Visibility as VisibilityIcon,
   Assignment as AssignmentIcon,
   Payment as PaymentIcon,
+  Warning as WarningIcon,
+  CreditCard as CreditCardIcon,
 } from '@mui/icons-material';
 
 // Enhanced Validation Schema
@@ -175,7 +177,7 @@ const Employees = () => {
     setFilteredEmployees(filtered);
   }, [employees, searchTerm, selectedDepartment, salaryRange]);
 
-  // Enhanced statistics calculation
+  // Enhanced statistics calculation with Phase 1 improvements
   const statistics = useMemo(() => {
     const totalEmployees = filteredEmployees.length;
     const totalOriginalEmployees = employees.length;
@@ -186,12 +188,31 @@ const Employees = () => {
     
     const totalPayroll = employees.reduce((sum, emp) => sum + (emp.salary || 0), 0);
     
+    // Additional Excel-like analytics
+    const expiringDocuments = employees.filter(emp => 
+      emp.qid?.status === 'expiring_soon' || 
+      (emp.qid?.expiry && new Date(emp.qid.expiry) < new Date(Date.now() + 30 * 24 * 60 * 60 * 1000))
+    ).length;
+
+    const totalAdvances = employees.reduce((sum, emp) => 
+      sum + (emp.advances?.reduce((advSum, adv) => advSum + (adv.amount || 0), 0) || 0), 0
+    );
+
+    const departmentDistribution = employees.reduce((acc, emp) => {
+      const dept = emp.department || 'Unassigned';
+      acc[dept] = (acc[dept] || 0) + 1;
+      return acc;
+    }, {});
+    
     return { 
       totalEmployees, 
       totalOriginalEmployees,
       departments, 
       avgSalary,
-      totalPayroll 
+      totalPayroll,
+      expiringDocuments,
+      totalAdvances,
+      departmentDistribution
     };
   }, [employees, filteredEmployees]);
 
@@ -756,6 +777,54 @@ const Employees = () => {
                         QAR monthly cost
                       </Typography>
                     </Paper>
+
+                    {/* Expiring Documents Alert */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.error.main, 0.1)}, ${alpha(theme.palette.error.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.error.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={1}>
+                        <WarningIcon color="error" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Expiring QIDs
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" color="error.main" fontWeight={800}>
+                        {statistics.expiringDocuments || 0}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        Need attention
+                      </Typography>
+                    </Paper>
+
+                    {/* Total Advances */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.info.main, 0.1)}, ${alpha(theme.palette.info.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.info.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={1}>
+                        <CreditCardIcon color="info" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Active Advances
+                        </Typography>
+                      </Box>
+                      <Typography variant="h3" color="info.main" fontWeight={800}>
+                        {statistics.totalAdvances?.toLocaleString() || '0'}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
+                        QAR outstanding
+                      </Typography>
+                    </Paper>
                   </Stack>
                 </CardContent>
               </Card>
@@ -831,27 +900,76 @@ const Employees = () => {
                       loading={loading}
                       disableSelectionOnClick
                       autoHeight
+                      checkboxSelection={false}
+                      density="standard"
                       sx={{
-                        border: 'none',
+                        border: `1px solid ${alpha(theme.palette.divider, 0.2)}`,
+                        borderRadius: 2,
+                        bgcolor: 'background.paper',
+                        '& .MuiDataGrid-main': {
+                          borderRadius: 2,
+                        },
                         '& .MuiDataGrid-columnHeaders': {
-                          bgcolor: alpha(theme.palette.primary.main, 0.05),
+                          bgcolor: alpha(theme.palette.primary.main, 0.08),
+                          borderBottom: `2px solid ${alpha(theme.palette.primary.main, 0.2)}`,
                           fontWeight: 700,
                           fontSize: '0.95rem',
+                          color: theme.palette.primary.main,
+                          '& .MuiDataGrid-columnHeader': {
+                            '&:focus': {
+                              outline: 'none',
+                            },
+                          },
+                        },
+                        '& .MuiDataGrid-columnHeaderTitle': {
+                          fontWeight: 700,
                         },
                         '& .MuiDataGrid-row': {
-                          '&:hover': {
-                            bgcolor: alpha(theme.palette.primary.main, 0.04),
-                            transform: 'translateY(-1px)',
-                            boxShadow: 1,
+                          borderBottom: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                          '&:nth-of-type(even)': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.02),
                           },
-                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.08),
+                            transform: 'translateY(-1px)',
+                            boxShadow: `0 2px 8px ${alpha(theme.palette.primary.main, 0.15)}`,
+                            zIndex: 1,
+                          },
+                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+                          cursor: 'pointer',
                         },
                         '& .MuiDataGrid-cell': {
-                          borderColor: alpha(theme.palette.divider, 0.5),
+                          borderColor: alpha(theme.palette.divider, 0.08),
+                          fontSize: '0.875rem',
+                          '&:focus': {
+                            outline: `2px solid ${alpha(theme.palette.primary.main, 0.3)}`,
+                            outlineOffset: '-2px',
+                          },
                         },
                         '& .MuiDataGrid-footer': {
                           bgcolor: alpha(theme.palette.background.default, 0.5),
-                        }
+                          borderTop: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                          '& .MuiTablePagination-toolbar': {
+                            minHeight: 48,
+                          },
+                        },
+                        '& .MuiDataGrid-virtualScroller': {
+                          '&::-webkit-scrollbar': {
+                            width: 8,
+                            height: 8,
+                          },
+                          '&::-webkit-scrollbar-track': {
+                            bgcolor: alpha(theme.palette.grey[300], 0.2),
+                            borderRadius: 4,
+                          },
+                          '&::-webkit-scrollbar-thumb': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.3),
+                            borderRadius: 4,
+                            '&:hover': {
+                              bgcolor: alpha(theme.palette.primary.main, 0.5),
+                            },
+                          },
+                        },
                       }}
                     />
                   )}
