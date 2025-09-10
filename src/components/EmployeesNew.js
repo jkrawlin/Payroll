@@ -31,6 +31,11 @@ import {
   CircularProgress,
   Divider,
   Stack,
+  List,
+  ListItem,
+  ListItemText,
+  Alert,
+  AlertTitle,
   Tooltip as MuiTooltip,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
@@ -42,9 +47,11 @@ import {
   Email as EmailIcon,
   Phone as PhoneIcon,
   Search as SearchIcon,
+  Person as PersonIcon,
   Business as BusinessIcon,
   TrendingUp as TrendingUpIcon,
   Groups as GroupsIcon,
+  WorkOutline as WorkIcon,
 } from '@mui/icons-material';
 
 // Validation Schema
