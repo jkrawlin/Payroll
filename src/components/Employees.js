@@ -31,6 +31,7 @@ import {
   CircularProgress,
   Divider,
   Stack,
+  Tooltip,
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
@@ -298,32 +299,36 @@ const Employees = () => {
       sortable: false,
       renderCell: (params) => (
         <Box sx={{ display: 'flex', gap: 1 }}>
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEdit(params.row);
-            }}
-            sx={{
-              color: 'primary.main',
-              '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
-            }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-          <IconButton
-            size="small"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleDelete(params.row.id, params.row.name);
-            }}
-            sx={{
-              color: 'error.main',
-              '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
-            }}
-          >
-            <DeleteIcon fontSize="small" />
-          </IconButton>
+          <Tooltip title="Edit Employee" arrow>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEdit(params.row);
+              }}
+              sx={{
+                color: 'primary.main',
+                '&:hover': { bgcolor: alpha(theme.palette.primary.main, 0.1) }
+              }}
+            >
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Delete Employee" arrow>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleDelete(params.row.id, params.row.name);
+              }}
+              sx={{
+                color: 'error.main',
+                '&:hover': { bgcolor: alpha(theme.palette.error.main, 0.1) }
+              }}
+            >
+              <DeleteIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </Box>
       ),
     },
