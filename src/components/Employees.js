@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { db, storage, isFirebaseConfigured } from '../firebase';
+import { db, isFirebaseConfigured } from '../firebase';
 import { mockEmployees } from '../services/mockData';
 import { useFormik } from 'formik';
 import * as Yup from 'yup';
@@ -41,16 +40,12 @@ import {
 } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import {
-  Person as PersonIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
   Add as AddIcon,
   Close as CloseIcon,
   Email as EmailIcon,
   Phone as PhoneIcon,
-  Business as BusinessIcon,
-  AttachMoney as MoneyIcon,
-  Visibility as VisibilityIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
 
