@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { format } from 'date-fns';
 import { collection, addDoc, getDocs, updateDoc, doc, deleteDoc } from 'firebase/firestore';
 import { db, isFirebaseConfigured } from '../firebase';
 import { mockEmployees } from '../services/mockData';
@@ -64,6 +65,7 @@ import {
   Payment as PaymentIcon,
   Warning as WarningIcon,
   CreditCard as CreditCardIcon,
+  Download as DownloadIcon,
 } from '@mui/icons-material';
 
 // Enhanced Validation Schema
@@ -215,6 +217,57 @@ const Employees = () => {
       departmentDistribution
     };
   }, [employees, filteredEmployees]);
+
+  // Excel export functionality
+  const handleExportEmployees = useCallback(() => {
+    try {
+      const exportData = filteredEmployees.map(emp => ({
+        'Employee ID': emp.id,
+        'Full Name': emp.name,
+        'Email': emp.email,
+        'Phone': emp.phone,
+        'Department': emp.department,
+        'Position': emp.position,
+        'Monthly Salary (QAR)': emp.salary,
+        'Annual Salary (QAR)': emp.salary ? emp.salary * 12 : 0,
+        'Join Date': emp.joinDate,
+        'Status': emp.status,
+        'QID Number': emp.qid?.number,
+        'QID Expiry': emp.qid?.expiry,
+        'QID Status': emp.qid?.status,
+        'Passport Number': emp.passport?.number,
+        'Passport Expiry': emp.passport?.expiry,
+        'Total Paid (QAR)': emp.totalPaid,
+        'Active Advances (QAR)': emp.advances?.reduce((sum, adv) => sum + adv.amount, 0) || 0,
+        'Created Date': emp.createdAt,
+        'Last Updated': emp.updatedAt
+      }));
+
+      // Create and download CSV
+      const headers = Object.keys(exportData[0]).join(',');
+      const csvData = exportData.map(row => 
+        Object.values(row).map(value => 
+          typeof value === 'string' && value.includes(',') ? `"${value}"` : value
+        ).join(',')
+      ).join('\n');
+      
+      const csv = headers + '\n' + csvData;
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `employees_export_${format(new Date(), 'yyyy-MM-dd_HH-mm')}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast.success(`Exported ${exportData.length} employees successfully!`);
+    } catch (error) {
+      console.error('Export error:', error);
+      toast.error('Failed to export employee data');
+    }
+  }, [filteredEmployees]);
 
   // Enhanced form handlers
   const handleEdit = (employee) => {
@@ -409,19 +462,114 @@ const Employees = () => {
       ),
     },
     {
-      field: 'salary',
-      headerName: 'Monthly Salary',
-      width: 150,
+      field: 'department',
+      headerName: 'Department',
+      width: 140,
+      editable: true,
+      renderCell: (params) => (
+        <Chip
+          label={params.row.department || 'Unassigned'}
+          size="small"
+          sx={{
+            bgcolor: alpha(theme.palette.secondary.main, 0.1),
+            color: 'secondary.main',
+            fontWeight: 600,
+            minWidth: 80
+          }}
+        />
+      ),
+    },
+    {
+      field: 'email',
+      headerName: 'Contact',
+      width: 200,
+      editable: true,
       renderCell: (params) => (
         <Box>
-          <Typography variant="body1" color="success.main" fontWeight={700}>
-            {params.row.salary ? `${params.row.salary.toLocaleString()} QAR` : 'N/A'}
+          <Typography variant="body2" color="text.primary" sx={{ display: 'flex', alignItems: 'center' }}>
+            <EmailIcon fontSize="small" sx={{ mr: 0.5, color: 'text.secondary' }} />
+            {params.row.email?.length > 18 ? `${params.row.email.substring(0, 18)}...` : params.row.email}
           </Typography>
-          <Typography variant="caption" color="text.secondary">
-            Annual: {params.row.salary ? `${(params.row.salary * 12).toLocaleString()} QAR` : 'N/A'}
+          <Typography variant="caption" color="text.secondary" sx={{ display: 'flex', alignItems: 'center' }}>
+            <PhoneIcon fontSize="small" sx={{ mr: 0.5 }} />
+            {params.row.phone}
           </Typography>
         </Box>
       ),
+    },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 120,
+      editable: true,
+      renderCell: (params) => {
+        const qidExpiring = params.row.qid?.status === 'expiring_soon';
+        return (
+          <Box>
+            <Chip
+              label={params.row.status || 'active'}
+              size="small"
+              color={params.row.status === 'active' ? 'success' : 'default'}
+              sx={{ mb: 0.5 }}
+            />
+            {qidExpiring && (
+              <Chip
+                label="QID Expiring"
+                size="small"
+                color="error"
+                sx={{ fontSize: '0.7rem', height: 16 }}
+              />
+            )}
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'joinDate',
+      headerName: 'Join Date / Tenure',
+      width: 160,
+      editable: true,
+      renderCell: (params) => {
+        const joinDate = new Date(params.row.joinDate);
+        const tenure = Math.floor((new Date() - joinDate) / (1000 * 60 * 60 * 24 * 30));
+        return (
+          <Box>
+            <Typography variant="body2" color="text.primary">
+              {format(joinDate, 'MMM dd, yyyy')}
+            </Typography>
+            <Typography variant="caption" color="text.secondary">
+              {tenure > 0 ? `${tenure} months` : 'New hire'}
+            </Typography>
+          </Box>
+        );
+      },
+    },
+    {
+      field: 'salary',
+      headerName: 'Salary & Advances',
+      width: 160,
+      editable: true,
+      renderCell: (params) => {
+        const hasAdvances = params.row.advances && params.row.advances.length > 0;
+        const totalAdvances = hasAdvances ? 
+          params.row.advances.reduce((sum, adv) => sum + adv.amount, 0) : 0;
+        
+        return (
+          <Box>
+            <Typography variant="body1" color="success.main" fontWeight={700}>
+              {params.row.salary ? `${params.row.salary.toLocaleString()}` : 'N/A'}
+            </Typography>
+            {hasAdvances && (
+              <Typography variant="caption" color="warning.main" fontWeight={600}>
+                Advance: {totalAdvances.toLocaleString()} QAR
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary" display="block">
+              Total Paid: {params.row.totalPaid?.toLocaleString() || '0'} QAR
+            </Typography>
+          </Box>
+        );
+      },
     },
     {
       field: 'actions',
@@ -536,29 +684,57 @@ const Employees = () => {
                 />
               </Box>
             </Box>
-            <Zoom in timeout={1200}>
-              <Button
-                variant="contained"
-                size="large"
-                startIcon={<AddIcon />}
-                onClick={() => setShowForm(true)}
-                sx={{
-                  bgcolor: alpha('#fff', 0.2),
-                  '&:hover': { 
-                    bgcolor: alpha('#fff', 0.3),
-                    transform: 'translateY(-2px)',
-                    boxShadow: 4
-                  },
-                  px: 4,
-                  py: 1.5,
-                  borderRadius: 2,
-                  transition: 'all 0.3s ease',
-                  fontWeight: 600
-                }}
-              >
-                Add New Employee
-              </Button>
-            </Zoom>
+            <Box display="flex" gap={2} alignItems="center">
+              <Zoom in timeout={1200}>
+                <Button
+                  variant="outlined"
+                  size="large"
+                  startIcon={<DownloadIcon />}
+                  onClick={handleExportEmployees}
+                  sx={{
+                    bgcolor: alpha('#fff', 0.1),
+                    borderColor: alpha('#fff', 0.3),
+                    color: 'white',
+                    '&:hover': { 
+                      bgcolor: alpha('#fff', 0.2),
+                      borderColor: alpha('#fff', 0.5),
+                      transform: 'translateY(-2px)',
+                      boxShadow: 2
+                    },
+                    px: 3,
+                    py: 1.5,
+                    borderRadius: 2,
+                    transition: 'all 0.3s ease',
+                    fontWeight: 600
+                  }}
+                >
+                  Export Excel
+                </Button>
+              </Zoom>
+              <Zoom in timeout={1200}>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<AddIcon />}
+                  onClick={() => setShowForm(true)}
+                  sx={{
+                    bgcolor: alpha('#fff', 0.2),
+                    '&:hover': { 
+                      bgcolor: alpha('#fff', 0.3),
+                      transform: 'translateY(-2px)',
+                      boxShadow: 4
+                    },
+                    px: 4,
+                    py: 1.5,
+                    borderRadius: 2,
+                    transition: 'all 0.3s ease',
+                    fontWeight: 600
+                  }}
+                >
+                  Add New Employee
+                </Button>
+              </Zoom>
+            </Box>
           </Box>
         </Paper>
       </Fade>
