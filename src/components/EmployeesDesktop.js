@@ -57,7 +57,7 @@ import {
 // Register Chart.js components
 ChartJS.register(ArcElement, Legend);
 
-const Employees = () => {
+const EmployeesDesktop = () => {
   // Premium Desktop Theme
   const theme = useTheme();
 
@@ -1066,4 +1066,4 @@ const Employees = () => {
   );
 };
 
-export default Employees;
+export default EmployeesDesktop;
