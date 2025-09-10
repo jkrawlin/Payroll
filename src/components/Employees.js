@@ -1001,6 +1001,229 @@ const Employees = () => {
                         QAR outstanding
                       </Typography>
                     </Paper>
+
+                    {/* Phase 3: Department Distribution */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.secondary.main, 0.1)}, ${alpha(theme.palette.secondary.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.secondary.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={2}>
+                        <BusinessIcon color="secondary" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Department Distribution
+                        </Typography>
+                      </Box>
+                      <Stack spacing={1}>
+                        {Object.entries(statistics.departmentDistribution || {})
+                          .sort(([,a], [,b]) => b - a)
+                          .slice(0, 5)
+                          .map(([dept, count]) => (
+                          <Box key={dept} display="flex" alignItems="center" justifyContent="space-between">
+                            <Typography variant="body2" color="text.primary" sx={{ minWidth: 80 }}>
+                              {dept}
+                            </Typography>
+                            <Box display="flex" alignItems="center" flex={1} mx={1}>
+                              <Box
+                                sx={{
+                                  height: 6,
+                                  borderRadius: 3,
+                                  bgcolor: alpha(theme.palette.secondary.main, 0.3),
+                                  flex: 1,
+                                  mr: 1,
+                                  position: 'relative',
+                                  overflow: 'hidden'
+                                }}
+                              >
+                                <Box
+                                  sx={{
+                                    height: '100%',
+                                    width: `${(count / Math.max(...Object.values(statistics.departmentDistribution))) * 100}%`,
+                                    bgcolor: theme.palette.secondary.main,
+                                    borderRadius: 3,
+                                    transition: 'width 1s ease-out'
+                                  }}
+                                />
+                              </Box>
+                              <Typography variant="caption" color="secondary.main" fontWeight={700} sx={{ minWidth: 20 }}>
+                                {count}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </Paper>
+
+                    {/* Phase 3: Quick Actions Panel */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.1)}, ${alpha(theme.palette.primary.main, 0.05)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={2}>
+                        <TrendingUpIcon color="primary" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Quick Actions
+                        </Typography>
+                      </Box>
+                      <Stack spacing={1.5}>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          startIcon={<AddIcon />}
+                          onClick={() => setShowForm(true)}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            borderColor: alpha(theme.palette.primary.main, 0.3),
+                            '&:hover': {
+                              borderColor: theme.palette.primary.main,
+                              bgcolor: alpha(theme.palette.primary.main, 0.05),
+                            }
+                          }}
+                        >
+                          Add Employee
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          startIcon={<DownloadIcon />}
+                          onClick={handleExportEmployees}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            borderColor: alpha(theme.palette.success.main, 0.3),
+                            color: 'success.main',
+                            '&:hover': {
+                              borderColor: theme.palette.success.main,
+                              bgcolor: alpha(theme.palette.success.main, 0.05),
+                            }
+                          }}
+                        >
+                          Export Data
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          startIcon={<WarningIcon />}
+                          onClick={() => {
+                            const expiringEmployees = employees.filter(emp => 
+                              emp.qid?.status === 'expiring_soon'
+                            );
+                            if (expiringEmployees.length > 0) {
+                              const names = expiringEmployees.map(emp => emp.name).join(', ');
+                              toast.warning(`QIDs expiring soon: ${names}`, { autoClose: 8000 });
+                            } else {
+                              toast.success('No QIDs expiring soon!');
+                            }
+                          }}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            borderColor: alpha(theme.palette.warning.main, 0.3),
+                            color: 'warning.main',
+                            '&:hover': {
+                              borderColor: theme.palette.warning.main,
+                              bgcolor: alpha(theme.palette.warning.main, 0.05),
+                            }
+                          }}
+                        >
+                          Check Expiring
+                        </Button>
+                        <Button
+                          variant="outlined"
+                          size="small"
+                          fullWidth
+                          startIcon={<FilterListIcon />}
+                          onClick={() => {
+                            setSelectedDepartment('');
+                            setSalaryRange([0, 30000]);
+                            setSearchTerm('');
+                            toast.info('Filters cleared');
+                          }}
+                          sx={{
+                            justifyContent: 'flex-start',
+                            borderColor: alpha(theme.palette.grey[500], 0.3),
+                            color: 'text.secondary',
+                            '&:hover': {
+                              borderColor: theme.palette.grey[500],
+                              bgcolor: alpha(theme.palette.grey[500], 0.05),
+                            }
+                          }}
+                        >
+                          Clear Filters
+                        </Button>
+                      </Stack>
+                    </Paper>
+
+                    {/* Phase 3: Recent Activity Feed */}
+                    <Paper 
+                      elevation={1} 
+                      sx={{ 
+                        p: 2.5, 
+                        background: `linear-gradient(135deg, ${alpha(theme.palette.grey[100], 0.8)}, ${alpha(theme.palette.grey[50], 0.9)})`,
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.grey[300], 0.3)}`
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" mb={2}>
+                        <AssignmentIcon color="action" sx={{ mr: 1 }} />
+                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                          Recent Activity
+                        </Typography>
+                      </Box>
+                      <Stack spacing={1.5}>
+                        {employees
+                          .sort((a, b) => new Date(b.updatedAt || b.createdAt) - new Date(a.updatedAt || a.createdAt))
+                          .slice(0, 4)
+                          .map((emp) => (
+                          <Box key={emp.id} display="flex" alignItems="center" gap={1.5}>
+                            <Avatar
+                              src={emp.photoUrl}
+                              sx={{
+                                width: 32,
+                                height: 32,
+                                bgcolor: theme.palette.primary.main,
+                                fontSize: '0.8rem'
+                              }}
+                            >
+                              {emp.name?.charAt(0)?.toUpperCase()}
+                            </Avatar>
+                            <Box flex={1}>
+                              <Typography variant="body2" color="text.primary" fontWeight={500}>
+                                {emp.name}
+                              </Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {emp.updatedAt ? 'Updated' : 'Added'} {format(new Date(emp.updatedAt || emp.createdAt), 'MMM dd')}
+                              </Typography>
+                            </Box>
+                            <Chip
+                              label={emp.department}
+                              size="small"
+                              sx={{
+                                bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                                color: 'secondary.main',
+                                fontSize: '0.7rem',
+                                height: 20
+                              }}
+                            />
+                          </Box>
+                        ))}
+                        {employees.length === 0 && (
+                          <Typography variant="caption" color="text.secondary" textAlign="center" py={2}>
+                            No recent activity
+                          </Typography>
+                        )}
+                      </Stack>
+                    </Paper>
                   </Stack>
                 </CardContent>
               </Card>
